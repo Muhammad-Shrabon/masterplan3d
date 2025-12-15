@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monochromatic Stepped Land Plan</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* Define the color palette based on the image (Dark Blue/Green/White) */
+        :root {
+            --bg-dark: #000b21; /* Dark Navy/Black for background/border */
+            --land-green: #689f38; /* Vibrant Green for Land */
+            --road-dark: #1b273b; /* Slightly lighter dark for inner roads */
+            --text-light: #ffffff; /* White text for labels */
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden; 
+        }
+
+        .map-container {
+            width: 100%;
+            max-width: 600px;
+            height: 90vh;
+            max-height: 900px;
+            /* The dark border is achieved by the difference between the SVG background and the colored polygons */
+        }
+
+        /* SVG Text Styling */
+        .plan-label {
+            fill: var(--text-light);
+            font-size: 40px;
+            font-weight: bold;
+            letter-spacing: 5px;
+            text-anchor: middle;
+            font-family: 'Times New Roman', serif; /* Matching the classic font style in the image */
+        }
+        
+        .point-label {
+            fill: var(--text-light);
+            font-size: 20px;
+            text-anchor: middle;
+            font-family: 'Times New Roman', serif;
+        }
+
+        /* SVG Shape Styles */
+        .land-fill { fill: var(--land-green); }
+        .road-fill { fill: var(--road-dark); }
+        .main-border { stroke: var(--bg-dark); stroke-width: 4px; }
+        .cluster-border { stroke: var(--bg-dark); stroke-width: 2px; } /* Thinner border for internal clusters */
+    </style>
+</head>
+<body>
+
+    <div class="map-container shadow-2xl">
+        <svg id="steppedPlanSvg" viewBox="0 0 800 1000" preserveAspectRatio="xMidYMid meet" style="background-color: var(--bg-dark);">
+
+            <!--
+                COORDINATES (ViewBox 0 0 800 1000):
+                - Bottom Line: Y=900
+                - Top Line (L2/R2/L3): Y=100
+                - Step Line (L1/R1): Y=400
+                - Slanted Top X shift: 20 units (e.g., L2 starts at 280 bottom, 300 top)
+            -->
+
+            <!-- Land Block 3 (Right) - Divided into 8 Clusters -->
+            <!--
+                Land 3 Bottom X range: 530 to 750 (220 units wide)
+                Land 3 Top X range: 550 to 770 (220 units wide)
+                Total Height: 800 units (900 - 100)
+                Cluster Height: 800 / 8 = 100 units
+                
+                The slope difference (Top X - Bottom X) is 20 units over 800 units of height (20/800 = 0.025 slope)
+            -->
+            
+            <g id="landBlock3Clusters">
+                <!-- Loop for 8 Clusters (y_start goes from 100 up to 900) -->
+                <!-- Cluster 1 (Topmost: Y=100 to Y=200) -->
+                <polygon 
+                    points="550,100 770,100 772.5,200 552.5,200" 
+                    class="land-fill cluster-border" 
+                />
+                <!-- Cluster 2 (Y=200 to Y=300) -->
+                <polygon 
+                    points="552.5,200 772.5,200 775,300 555,300" 
+                    class="land-fill cluster-border" 
+                />
+                <!-- Cluster 3 (Y=300 to Y=400) -->
+                <polygon 
+                    points="555,300 775,300 777.5,400 557.5,400" 
+                    class="land-fill cluster-border" 
+                />
+                <!-- Cluster 4 (Y=400 to Y=500) -->
+                <polygon 
+                    points="557.5,400 777.5,400 780,500 560,500" 
+                    class="land-fill cluster-border" 
+                />
+                <!-- Cluster 5 (Y=500 to Y=600) -->
+                <polygon 
+                    points="560,500 780,500 782.5,600 562.5,600" 
+                    class="land-fill cluster-border" 
+                />
+                <!-- Cluster 6 (Y=600 to Y=700) -->
+                <polygon 
+                    points="562.5,600 782.5,600 785,700 565,700" 
+                    class="land-fill cluster-border" 
+                />
+                <!-- Cluster 7 (Y=700 to Y=800) -->
+                <polygon 
+                    points="565,700 785,700 787.5,800 567.5,800" 
+                    class="land-fill cluster-border" 
+                />
+                <!-- Cluster 8 (Bottommost: Y=800 to Y=900) -->
+                <polygon 
+                    points="567.5,800 787.5,800 750,900 530,900" 
+                    class="land-fill cluster-border" 
+                />
+            </g>
+            <!-- END Land Block 3 Clusters -->
+
+            <!-- Road 2 (Middle Right Divider) -->
+            <polygon 
+                points="500,900 530,900 550,100 520,100" 
+                class="road-fill main-border" 
+            />
+
+            <!-- Land Block 2 (Middle) -->
+            <polygon 
+                points="280,900 500,900 520,100 300,100" 
+                class="land-fill main-border" 
+            />
+
+            <!-- Road 1 (Left Divider) -->
+            <polygon 
+                points="250,900 280,900 280,400 250,400" 
+                class="road-fill main-border" 
+            />
+
+            <!-- Land Block 1 (Small Left) -->
+            <polygon 
+                points="100,900 250,900 250,400 100,400" 
+                class="land-fill main-border" 
+            />
+
+            <!-- TEXT LABELS -->
+
+            <!-- Land 1 Label (Rotated 90 deg counter-clockwise) -->
+            <text x="175" y="650" transform="rotate(-90 175,650)" class="plan-label">LAND</text>
+
+            <!-- Road 1 Label (Rotated 90 deg clockwise) -->
+            <text x="265" y="650" transform="rotate(90 265,650)" class="plan-label" style="font-size: 15px; letter-spacing: 2px;">ROAD</text>
+
+            <!-- Land 2 Label (Rotated 90 deg counter-clockwise) -->
+            <text x="390" y="500" transform="rotate(-90 390,500)" class="plan-label">LAND</text>
+
+            <!-- Road 2 Label (Rotated 90 deg clockwise) -->
+            <text x="515" y="500" transform="rotate(90 515,500)" class="plan-label" style="font-size: 15px; letter-spacing: 2px;">ROAD</text>
+            
+            <!-- Land 3 Label (Rotated 90 deg counter-clockwise) -->
+            <!-- Removing large "LAND" label since it's now 8 clusters, replacing with 8 numbers -->
+            
+            <!-- Adding labels for the 8 clusters (Cluster 1 is top, Cluster 8 is bottom) -->
+            <text x="660" y="150" class="point-label">1 sdf</text>
+            <text x="660" y="250" class="point-label">2</text>
+            <text x="660" y="350" class="point-label">3</text>
+            <text x="660" y="450" class="point-label">4</text>
+            <text x="660" y="550" class="point-label">5</text>
+            <text x="660" y="650" class="point-label">6</text>
+            <text x="660" y="750" class="point-label">7</text>
+            <text x="660" y="850" class="point-label">8</text>
+
+            <!-- Road 3 Label (Implicit Right Border, Rotated 90 deg clockwise) -->
+            <text x="760" y="500" transform="rotate(90 760,500)" class="plan-label" style="font-size: 15px; letter-spacing: 2px;">ROAD</text>
+
+
+            <!-- START/END POINT LABELS -->
+            
+            <!-- END POINT -->
+            <text x="550" y="60" class="point-label">END POINT</text>
+
+            <!-- START POINT -->
+            <g transform="translate(300, 950) rotate(20)">
+                <line x1="0" y1="0" x2="100" y2="0" stroke="var(--text-light)" stroke-width="2"/>
+                <polygon points="100,0 90,-5 90,5" fill="var(--text-light)" />
+                <text x="130" y="10" class="point-label" text-anchor="start">START POINT</text>
+            </g>
+
+        </svg>
+    </div>
+
+</body>
+</html>

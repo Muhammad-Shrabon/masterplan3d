@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horizontal Scroll Portfolio</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+
+    <style>
+        /* RESET & BASE STYLES */
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth; /* Native smooth scrolling for anchors */
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden; /* Prevent native horizontal scrollbar */
+            background-color: #0f0f0f;
+            color: #ffffff;
+            line-height: 1.5;
+        }
+
+        /* UTILITY & TYPOGRAPHY */
+        h1, h2, p {
+            margin: 0;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        /* LAYOUT COMPONENTS */
+        .hero, .footer {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            z-index: 10;
+            background-color: #171717; /* Neutral-900 equivalent */
+            padding: 20px;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* HERO STYLES */
+        .hero-title {
+            font-size: 4rem;
+            font-weight: 800;
+            line-height: 1;
+            letter-spacing: -0.05em;
+            margin-bottom: 1rem;
+        }
+
+        @media (min-width: 768px) {
+            .hero-title {
+                font-size: 6rem;
+            }
+        }
+
+        .text-highlight {
+            color: #6366f1; /* Indigo-500 equivalent */
+        }
+
+        .hero-subtitle {
+            color: #9ca3af; /* Gray-400 equivalent */
+            font-size: 1.25rem;
+            margin-bottom: 3rem;
+        }
+
+        .scroll-icon {
+            animation: bounce 2s infinite;
+            margin-top: 3rem;
+        }
+
+        .scroll-icon svg {
+            width: 32px;
+            height: 32px;
+            stroke: #ffffff;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(-25%); animation-timing-function: cubic-bezier(0.8,0,1,1); }
+            50% { transform: none; animation-timing-function: cubic-bezier(0,0,0.2,1); }
+        }
+
+        /* HORIZONTAL SCROLL SECTION */
+        
+        /* The Track: Provides the vertical height to scroll through */
+        .portfolio-track {
+            position: relative;
+            width: 100%;
+            /* Height is set dynamically via JS */
+        }
+
+        /* The Sticky Container: Pins to viewport */
+        .portfolio-sticky {
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            width: 100%;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            background-color: #0f0f0f;
+        }
+
+        /* The Moving List: Translates horizontally */
+        .portfolio-list {
+            display: flex;
+            gap: 5vw;
+            padding-left: 5vw;
+            padding-right: 5vw;
+            width: max-content;
+            height: 80vh;
+            will-change: transform;
+        }
+
+        /* Portfolio Items */
+        .portfolio-item {
+            width: 90vw; /* 90% of viewport width */
+            height: 100%;
+            flex-shrink: 0;
+            border-radius: 24px;
+            overflow: hidden;
+            position: relative;
+            background: #1a1a1a;
+        }
+
+        .portfolio-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.7;
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            display: block;
+        }
+
+        .portfolio-item:hover img {
+            opacity: 1;
+            transform: scale(1.05);
+        }
+
+        .item-content {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            padding: 2rem;
+            background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+            width: 100%;
+            pointer-events: none; /* Let clicks pass through if needed */
+        }
+
+        .item-tag {
+            color: #818cf8; /* Indigo-400 */
+            font-family: monospace;
+            margin-bottom: 0.5rem;
+            display: block;
+            text-transform: uppercase;
+        }
+
+        .item-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        /* FOOTER STYLES */
+        .footer {
+            border-top: 1px solid #262626; /* Neutral-800 */
+        }
+
+        .footer-cta {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn-primary {
+            display: inline-block;
+            background-color: #ffffff;
+            color: #000000;
+            padding: 1rem 2rem;
+            border-radius: 9999px; /* Full pill shape */
+            font-weight: 700;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background-color: #6366f1;
+            color: #ffffff;
+        }
+
+        .footer-copy {
+            margin-top: 3rem;
+            font-size: 0.875rem;
+            color: #525252;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- HERO SECTION -->
+    <header class="hero">
+        <div class="container">
+            <h1 class="hero-title">CREATIVE<br><span class="text-highlight">PORTFOLIO</span></h1>
+            <p class="hero-subtitle">Scroll down to explore selected works.</p>
+            <a href="./map.html">3D Master Plan MAP</a>
+            <div class="scroll-icon">
+                <svg fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
+            </div>
+        </div>
+    </header>
+
+    <!-- PORTFOLIO SECTION -->
+    <section class="portfolio-track" id="portfolio-track">
+        <div class="portfolio-sticky">
+            <div class="portfolio-list" id="portfolio-list">
+                
+                <!-- Item 1 -->
+                <div class="portfolio-item">
+                    <img src="https://images.unsplash.com/photo-1481487484168-9b930d5b7d9d?q=80&w=2070&auto=format&fit=crop" alt="Project 1">
+                    <div class="item-content">
+                        <span class="item-tag">01 / BRANDING</span>
+                        <h2 class="item-title">Neon Abstract</h2>
+                    </div>
+                </div>
+
+                <!-- Item 2 -->
+                <div class="portfolio-item">
+                    <img src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070&auto=format&fit=crop" alt="Project 2">
+                    <div class="item-content">
+                        <span class="item-tag">02 / TECHNOLOGY</span>
+                        <h2 class="item-title">Cyber Systems</h2>
+                    </div>
+                </div>
+
+                <!-- Item 3 -->
+                <div class="portfolio-item">
+                    <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1964&auto=format&fit=crop" alt="Project 3">
+                    <div class="item-content">
+                        <span class="item-tag">03 / ART DIRECTION</span>
+                        <h2 class="item-title">Fluid Motion</h2>
+                    </div>
+                </div>
+
+                <!-- Item 4 -->
+                <div class="portfolio-item">
+                    <img src="https://images.unsplash.com/photo-1515462277126-2dd0c162007a?q=80&w=1970&auto=format&fit=crop" alt="Project 4">
+                    <div class="item-content">
+                        <span class="item-tag">04 / PHOTOGRAPHY</span>
+                        <h2 class="item-title">Retro Vibe</h2>
+                    </div>
+                </div>
+
+                <!-- Item 5 -->
+                <div class="portfolio-item">
+                    <img src="https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?q=80&w=1974&auto=format&fit=crop" alt="Project 5">
+                    <div class="item-content">
+                        <span class="item-tag">05 / UI DESIGN</span>
+                        <h2 class="item-title">Minimal Dark</h2>
+                    </div>
+                </div>
+
+                <!-- Item 6 -->
+                <div class="portfolio-item">
+                    <img src="https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2070&auto=format&fit=crop" alt="Project 6">
+                    <div class="item-content">
+                        <span class="item-tag">06 / DEVELOPMENT</span>
+                        <h2 class="item-title">Code Structure</h2>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER SECTION -->
+    <footer class="footer">
+        <div class="container">
+            <h2 class="footer-cta">Ready to start a project?</h2>
+            <p style="color: #9ca3af; margin-bottom: 2rem;">Let's build something amazing together.</p>
+            <a href="#" class="btn-primary">
+                Get in Touch
+            </a>
+            <p class="footer-copy">© 2024 Portfolio Index. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // CORE HORIZONTAL SCROLL LOGIC
+        // No external libraries used. Pure Vanilla JS.
+
+        const track = document.getElementById('portfolio-track');
+        const list = document.getElementById('portfolio-list');
+
+        function initHorizontalScroll() {
+            // 1. Calculate the total width of the horizontal content
+            const scrollWidth = list.scrollWidth;
+            const windowWidth = window.innerWidth;
+            
+            // 2. The distance we need to "scroll" horizontally
+            // Subtraction ensures the last item stops exactly in view
+            const xScrollDistance = scrollWidth - windowWidth;
+            
+            // 3. Set the height of the track
+            // Logic: Viewport Height (sticky time) + Horizontal Distance needed
+            track.style.height = `calc(100vh + ${xScrollDistance}px)`;
+
+            // 4. Update Function
+            function handleScroll() {
+                const trackTop = track.offsetTop;
+                const scrollTop = window.scrollY;
+                
+                // Determine how far into the section we are
+                const offset = scrollTop - trackTop;
+                
+                // Clamp the value so it doesn't overscroll
+                const x = Math.max(0, Math.min(offset, xScrollDistance));
+                
+                // Apply the transform
+                list.style.transform = `translateX(-${x}px)`;
+            }
+
+            // 5. Add Event Listener
+            // Removing old listeners if function is re-run (optional safety)
+            window.removeEventListener('scroll', handleScroll);
+            window.addEventListener('scroll', handleScroll);
+            
+            // Initial calculation
+            handleScroll();
+        }
+
+        // Initialize on load
+        window.addEventListener('load', initHorizontalScroll);
+        
+        // Handle Resize
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(initHorizontalScroll, 100);
+        });
+    </script>
+</body>
+</html>
