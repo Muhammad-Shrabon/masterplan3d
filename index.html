@@ -133,8 +133,8 @@
         let transverseZ = [];
 
         // --- Configuration: Increased Map Size ---
-        const MAP_WIDTH = 2500; // Doubled width for a larger area
-        const MAP_LENGTH = 2800; // Doubled length for a larger area
+        const MAP_WIDTH = 4500; // Doubled width for a larger area
+        const MAP_LENGTH = 3800; // Doubled length for a larger area
 
         /**
          * Initializes the Three.js scene, camera, renderer, and controls.
@@ -186,11 +186,14 @@
 
                 // 6. Create Map Elements
                 createGroundAndBoundary();
-                createRiver();
+                // createRiver();
 
-                createGridRoads(); // Must run first to populate road arrays
-                createAmenitiesAndRoads(); // Uses road positions for placement, placed before blocks to reserve space
-                populateGridBlocks(); // Fills the blocks around amenities and grid roads
+                // createGridRoads(); // Must run first to populate road arrays
+                // createAmenitiesAndRoads(); // Uses road positions for placement, placed before blocks to reserve space
+                createLine1_Cluster(); // Right-most (Land 1)
+                createLine2_Cluster(); // Center-Right (Land 2)
+                createLine3_Bunch();   // Center-Left (Land 3)
+                // createLine4_Empty();   // Left-most (Land 4)
                 createResidentialBlocks(); // Curved strip is still separate
 
                 // 7. Event Listeners
@@ -351,7 +354,7 @@
          */
         function createHouseModel(width, length, id) {
             const houseGroup = new THREE.Group();
-            const bodyHeight = 8;
+            const bodyHeight = 12;
 
             // Generate Random Status
             // 40% Available, 30% Sold, 20% Reserved, 10% Booked
@@ -445,7 +448,7 @@
             // --- Dormer (Small extension) ---
             const dormerWidth = roofWidth * 0.4;
             const dormerHeight = roofHeight * 0.6;
-            const dormerLength = roofWidth * 0.5;
+            const dormerLength = roofWidth * 0.4;
 
             const dormerShape = new THREE.Shape();
             dormerShape.moveTo(0, 0);
@@ -506,12 +509,30 @@
             const doorTexture = new THREE.CanvasTexture(canvas);
 
             // Simplified door/window proxies
-            const doorHeight = bodyHeight * 0.8;
+            const doorHeight = bodyHeight * 0.9;
             const doorGeometry = new THREE.BoxGeometry(width * 0.25, doorHeight, 0.1);
             const doorMaterial = new THREE.MeshLambertMaterial({ map: doorTexture });
             const door = new THREE.Mesh(doorGeometry, doorMaterial);
             door.position.set(0, doorHeight / 2, length / 2 + 0.05);
             houseGroup.add(door);
+
+            // --- Add Side Door (Under Dormer) ---
+            // Dormer is at x = roofWidth / 3.
+            // roofWidth = width * 1.2
+            // So dormerX = (width * 1.2) / 3 = width * 0.4
+
+            // Side Door Geometry (Same as front)
+            const sideDoor = new THREE.Mesh(doorGeometry, doorMaterial);
+
+            // Position:
+            // X: width / 2 + 0.05 (Outside the wall)
+            // Y: doorHeight / 2
+            // Z: 0 (Centered, as dormer is centered)
+
+            sideDoor.position.set(width / 2 + 0.05, doorHeight / 2, 0);
+            sideDoor.rotation.y = Math.PI / 2; // Rotate to face outward (+X)
+
+            houseGroup.add(sideDoor);
 
             // --- Add Tree ---
             const tree = createTree();
@@ -542,32 +563,74 @@
             // Material for the Road Divider
             const roadDividerMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
 
-            const HOUSE_WIDTH = 40;
-            const HOUSE_LENGTH = 70;
+            const HOUSE_WIDTH = 64; // Match Line 1/2/3 style
+            const HOUSE_LENGTH = 68; // Match Line 1/2/3 style
             // HOUSE_SPACING is now calculated automatically
 
-            // Block Configuration: House counts per block
-            const blockCounts = [20, 26, 36, 12, 30];
+            // Block Configuration: 4 Zones with specified house counts
+            const blockCounts = [17, 56, 29, 17]; // Zone A, B, C, D
+            const zoneNames = ['A', 'B', 'C', 'D'];
             const totalHousesInBlocks = blockCounts.reduce((a, b) => a + b, 0);
             // Separation between the two house strips
             const stripSeparation = HOUSE_LENGTH * 1.5;
 
-            // --- Curve Definition Change ---
-            // Target: 90-Degree "L" Shape
-            // Path: Top-Left -> Bottom-Left (Turn) -> Bottom-Right
+            // --- Curve Definition - Following Line 3 Left Road Path ---
+            // CHL now follows the same curve as Line 3's left road
+            // We'll create points that match the Line 3 left road curve
 
-            const startZ = MAP_LENGTH * 0.25;
-            const endZ = MAP_LENGTH * 0.85;
-
-            const residentialPoints2D = [
-                new THREE.Vector2(200, startZ),                         // Start: Top-Left
-                new THREE.Vector2(200, endZ - 400),                     // Vertical Leg (Down to corner)
-                new THREE.Vector2(600, endZ),                           // Horizontal Leg (After turn)
-                new THREE.Vector2(MAP_WIDTH - 100, endZ),               // End: Bottom-Right
+            // Get Line 3 bunch specifications to calculate curve points
+            const line3BunchSpecs = [
+                { houses: 30 }, // Bunch 6
+                { houses: 28 }, // Bunch 5
+                { houses: 24 }, // Bunch 4
+                { houses: 28 }, // Bunch 3
+                { houses: 28 }, // Bunch 2
+                { houses: 36 }  // Bunch 1
             ];
 
+            const HOUSE_WIDTH_L3 = 64;
+            const HOUSE_DEPTH_L3 = 68;
+            const UNIT_GAP_L3 = 66;
+            const UNIT_WIDTH_L3 = (HOUSE_WIDTH_L3 * 2) + UNIT_GAP_L3;
+            const UNIT_X_SPACING_L3 = UNIT_WIDTH_L3 - 70;
+            const CLUSTER_ROAD_GAP_L3 = 180;
+            const CLUSTER_INTERNAL_GAP_L3 = 60;
+            const BLOCK_HEIGHT_L3 = (HOUSE_DEPTH_L3 * 1.2) + CLUSTER_INTERNAL_GAP_L3;
+
+            // Calculate Line 3 positions
+            const LINE2_WIDTH = (8 * UNIT_X_SPACING_L3) + 100;
+            const LINE_TOTAL_WIDTH_L3 = (18 * UNIT_X_SPACING_L3) + 100;
+            const X_MAX_LINE3 = MAP_WIDTH - LINE2_WIDTH - LINE_TOTAL_WIDTH_L3;
+
+            // Build curve points matching Line 3's left road
+            const chlCurvePoints = [];
+            let currentZ_CHL = 250;
+
+            // Start point - offset from Line 3 left road start for spacing
+            const startBunchWidth = (line3BunchSpecs[0].houses / 2) * UNIT_X_SPACING_L3;
+            const startX = X_MAX_LINE3 - startBunchWidth - 140;
+            const CHL_SPACING_OFFSET = -1000; // Distance between CHL and Line 3 road
+            chlCurvePoints.push(new THREE.Vector3(startX - CHL_SPACING_OFFSET, 0, 0));
+
+            // Add points for each bunch endpoint - following Line 3 left road exactly
+            line3BunchSpecs.forEach((bunch) => {
+                const unitsCount = bunch.houses / 2;
+                const cWidth = unitsCount * UNIT_X_SPACING_L3;
+                currentZ_CHL += BLOCK_HEIGHT_L3;
+                const roadZ = currentZ_CHL + CLUSTER_ROAD_GAP_L3 / 2;
+                const leftEndX = X_MAX_LINE3 - cWidth - 140; // Same as Line 3 road
+
+                chlCurvePoints.push(new THREE.Vector3(leftEndX - CHL_SPACING_OFFSET, 0, roadZ));
+                currentZ_CHL += CLUSTER_ROAD_GAP_L3;
+            });
+
+            // Add transition and end point
+            const lastPoint = chlCurvePoints[chlCurvePoints.length - 1];
+            chlCurvePoints.push(new THREE.Vector3(lastPoint.x, 0, lastPoint.z + 200));
+            chlCurvePoints.push(new THREE.Vector3(MAP_WIDTH - 100, 0, MAP_LENGTH * 0.85));
+
             const residentialCurve = new THREE.CatmullRomCurve3(
-                residentialPoints2D.map(p => new THREE.Vector3(p.x, 0, p.y)),
+                chlCurvePoints,
                 false, 'centripetal'
             );
 
@@ -579,7 +642,7 @@
             const numGaps = blockCounts.length - 1;
             const HOUSE_SPACING = curveLength / (totalPairs + (numGaps * gapSizeMultiplier));
 
-            console.log("Auto-calculated Spacing:", HOUSE_SPACING);
+            // console.log("Auto-calculated Spacing:", HOUSE_SPACING);
 
             // --- Control Points for Identity ---
             // Visual markers for Start and End of the curve
@@ -600,10 +663,42 @@
             mapGroup.add(endMarker);
 
 
+            // --- Create Center Divider Road (between house area and river) ---
+            const centerRoadPoints = [];
+            const centerDivisions = 350;
+            // Position road between outer house strip and parallel road
+            const centerRoadOffset = stripSeparation / 2 + 50; // Halfway between outer houses and river
+
+            for (let i = 0; i <= centerDivisions; i++) {
+                const t = i / centerDivisions;
+                const point = residentialCurve.getPoint(t);
+                const tangent = residentialCurve.getTangent(t).normalize();
+                const normal = new THREE.Vector3(-tangent.z, 0, tangent.x);
+
+                // Offset to position between house area and river
+                const roadPos = point.clone().add(normal.clone().multiplyScalar(centerRoadOffset));
+                centerRoadPoints.push(roadPos);
+            }
+
+            const centerRoadCurve = new THREE.CatmullRomCurve3(centerRoadPoints);
+            const centerRoadGeometry = new THREE.TubeGeometry(centerRoadCurve, 250, 25, 8, false); // Width 25 (Radius 25)
+
+            const centerRoadMaterial = new THREE.MeshBasicMaterial({
+                color: 0x515151, // Dark grey road
+            });
+
+            const centerRoadMesh = new THREE.Mesh(centerRoadGeometry, centerRoadMaterial);
+            centerRoadMesh.position.y = 0.5; // Just above ground
+            // Flatten to look like a road
+            centerRoadMesh.scale.set(1, 0.05, 1);
+
+            mapGroup.add(centerRoadMesh);
+
+
             // --- Create Parallel Road (formerly River) ---
             const parallelRoadPoints = [];
-            const roadOffsetDistance = stripSeparation + 180; // Distance from center spine to parallel road
-            const divisions = 250;
+            const roadOffsetDistance = stripSeparation + 100; // Distance from center spine to parallel road
+            const divisions = 350;
 
             for (let i = 0; i <= divisions; i++) {
                 const t = i / divisions;
@@ -620,12 +715,12 @@
             const parallelRoadGeometry = new THREE.TubeGeometry(parallelRoadCurve, 250, 70, 8, false); // Width 70 (Radius 70)
 
             // "Road Style": Grey color, flat appearance
-            const parallelRoadMaterial = new THREE.MeshLambertMaterial({
-                color: 0x555555, // Grey road
+            const parallelRoadMaterial = new THREE.MeshBasicMaterial({
+                color: 0x74f7e3, // Grey road
             });
 
             const parallelRoadMesh = new THREE.Mesh(parallelRoadGeometry, parallelRoadMaterial);
-            parallelRoadMesh.position.y = 0.5; // Just above ground
+            parallelRoadMesh.position.y = .5; // Just above ground
             // Flatten to look like a road
             parallelRoadMesh.scale.set(1, 0.05, 1);
 
@@ -637,48 +732,84 @@
             let currentT = 0;
             const advanceT = (distance) => distance / curveLength;
 
-            let houseCounter = 1;
+            let globalHouseCounter = 1;
 
             blockCounts.forEach((count, blockIndex) => {
+                const zoneName = zoneNames[blockIndex];
                 const pairs = Math.ceil(count / 2); // Houses per side for this block
+                let zoneHouseCounter = 1;
 
                 for (let i = 0; i < pairs; i++) {
-                    if (currentT >= 1) break; // formatting safety
+                    if (currentT >= 1) break; // safety
 
                     const point = residentialCurve.getPoint(currentT);
                     const tangent = residentialCurve.getTangent(currentT).normalize();
                     const normal = new THREE.Vector3(-tangent.z, 0, tangent.x);
 
-                    // --- 1. Inner Strip ---
-                    const innerOffset = normal.clone().multiplyScalar(-stripSeparation / 2);
-                    const innerPosition = point.clone().add(innerOffset);
+                    // Determine if this is odd or even position
+                    const isOdd = (i % 2 === 0);
 
-                    const id1 = `RiverHouse-${houseCounter.toString().padStart(2, '0')}`;
-                    const house1 = createHouseModel(HOUSE_WIDTH, HOUSE_LENGTH, id1);
-                    house1.userData.type = 'houseNearRiver'; // Update identity
-                    houseCounter++;
+                    // --- 1. Inner Strip (Odd houses) ---
+                    if (zoneHouseCounter <= count) {
+                        const innerOffset = normal.clone().multiplyScalar(-stripSeparation / 2);
+                        const innerPosition = point.clone().add(innerOffset);
 
-                    house1.rotation.y = Math.atan2(normal.x, normal.z);
-                    house1.position.copy(innerPosition);
-                    mapGroup.add(house1);
+                        const houseNum = zoneHouseCounter;
+                        const id1 = `CHL-Zone${zoneName}-${houseNum}`;
+                        const house1 = createHouseModel(HOUSE_WIDTH / 2 - 2, HOUSE_LENGTH, id1);
+                        house1.userData.type = 'CHL';
+                        house1.userData.zone = zoneName;
 
-                    // Place second house of pair only if count isn't odd (checked naturally by total count loop if we did it that way, but here we do pairs)
-                    // If total count is odd, the last pair might just have one house?
-                    // Let's assume full pairs for simplicity or handle the remainder.
-                    // The user gave even numbers mostly (20, 26, 36, 12, 30), so pairs are fine.
+                        house1.rotation.y = Math.atan2(normal.x, normal.z);
+                        house1.position.copy(innerPosition);
+                        mapGroup.add(house1);
 
-                    // --- 2. Outer Strip ---
-                    const outerOffset = normal.clone().multiplyScalar(stripSeparation / 2);
-                    const outerPosition = point.clone().add(outerOffset);
+                        // Add border around house
+                        const borderGeo = new THREE.BoxGeometry(HOUSE_WIDTH / 2 + 4, 0.1, HOUSE_LENGTH + 4);
+                        const borderMat = new THREE.MeshLambertMaterial({
+                            color: 0x8B4513,
+                            transparent: true,
+                            opacity: 0.3
+                        });
+                        const border1 = new THREE.Mesh(borderGeo, borderMat);
+                        border1.position.copy(innerPosition);
+                        border1.position.y = 0.05;
+                        border1.rotation.y = house1.rotation.y;
+                        mapGroup.add(border1);
 
-                    const id2 = `RiverHouse-${houseCounter.toString().padStart(2, '0')}`;
-                    const house2 = createHouseModel(HOUSE_WIDTH, HOUSE_LENGTH, id2);
-                    house2.userData.type = 'houseNearRiver'; // Update identity
-                    houseCounter++;
+                        zoneHouseCounter++;
+                    }
 
-                    house2.rotation.y = Math.atan2(normal.x, normal.z);
-                    house2.position.copy(outerPosition);
-                    mapGroup.add(house2);
+                    // --- 2. Outer Strip (Even houses) ---
+                    if (zoneHouseCounter <= count) {
+                        const outerOffset = normal.clone().multiplyScalar(stripSeparation / 2);
+                        const outerPosition = point.clone().add(outerOffset);
+
+                        const houseNum = zoneHouseCounter;
+                        const id2 = `CHL-Zone${zoneName}-${houseNum}`;
+                        const house2 = createHouseModel(HOUSE_WIDTH / 2 - 2, HOUSE_LENGTH, id2);
+                        house2.userData.type = 'CHL';
+                        house2.userData.zone = zoneName;
+
+                        house2.rotation.y = Math.atan2(normal.x, normal.z);
+                        house2.position.copy(outerPosition);
+                        mapGroup.add(house2);
+
+                        // Add border around house
+                        const borderGeo = new THREE.BoxGeometry(HOUSE_WIDTH / 2 + 4, 0.1, HOUSE_LENGTH + 4);
+                        const borderMat = new THREE.MeshLambertMaterial({
+                            color: 0x8B4513,
+                            transparent: true,
+                            opacity: 0.3
+                        });
+                        const border2 = new THREE.Mesh(borderGeo, borderMat);
+                        border2.position.copy(outerPosition);
+                        border2.position.y = 0.05;
+                        border2.rotation.y = house2.rotation.y;
+                        mapGroup.add(border2);
+
+                        zoneHouseCounter++;
+                    }
 
                     // --- 3. Green Land Spine ---
                     const spineWidth = stripSeparation * 1.1;
@@ -771,14 +902,11 @@
         // }
 
         function createGridRoads() {
-            // Define a single material for ALL roads (straight and curved).
-            // This material uses the dark grey color (0x212121) and reacts to lighting.
+            // Define a single material for ALL roads
             const roadMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
 
-            const CURVE_START_Z = MAP_LENGTH * 0.8;
-
-            // --- Longitudinal Roads (Vertical - X=constant, Z=variable) ---
-            const longRoads = 5;
+            // --- Longitudinal Roads (Vertical dividers) ---
+            const longRoads = 3;
             const longSpacing = MAP_WIDTH / (longRoads + 1);
             longitudinalX = [];
 
@@ -786,71 +914,63 @@
                 const x = longSpacing * i;
                 longitudinalX.push(x);
 
-                let road;
-
-                if (i === 1) { // Apply the curve to the FIRST longitudinal road (i=1)
-                    // Define points for the smooth curved path
-                    const straightEnd = CURVE_START_Z;
-
-                    const curvePoints = [
-                        new THREE.Vector3(x, 0.1, 0),                        // Start
-                        new THREE.Vector3(x, 0.1, straightEnd - 260),        // Control Point 1 (Straight run)
-                        new THREE.Vector3(x, 0.1, straightEnd),              // Start of Curve
-                        new THREE.Vector3(x + 100, 0.1, straightEnd + 20),  // Mid-Curve Control Point
-                        new THREE.Vector3(x + 200, 0.1, straightEnd + 80)   // End Point (the 100 degree turn)
-                    ];
-
-                    const curve = new THREE.CatmullRomCurve3(curvePoints);
-
-                    // Generate TubeGeometry along the curve
-                    const roadGeometry = new THREE.TubeGeometry(
-                        curve,                 // path
-                        250,                   // segments (smoothness)
-                        ROAD_WIDTH / -2,        // radius
-                        60,                     // radial segments
-                        false                  // not closed
-                    );
-
-                    // defined specific green material for curve road
-                    const curvedRoadMaterial = new THREE.MeshLambertMaterial({ color: 0x848484 });
-
-                    // Use the specific material
-                    road = new THREE.Mesh(roadGeometry, curvedRoadMaterial);
-                    road.receiveShadow = true; // Let the curved road receive shadows too
-                    // Flatten the tube to look like a road, not a pipe
-                    road.scale.set(1, 0.05, 1);
-
-                } else {
-
-
-                    // All other longitudinal roads remain straight boxes
-                    const roadGeometry = new THREE.BoxGeometry(ROAD_WIDTH, 0.1, MAP_LENGTH);
-                    // Use the single, shared roadMaterial
-                    road = new THREE.Mesh(roadGeometry, roadMaterial);
-                    road.position.set(x, 0.1, MAP_LENGTH / 2);
-                    road.receiveShadow = true;
-                }
-
+                // Standard straight road
+                const roadGeometry = new THREE.BoxGeometry(ROAD_WIDTH, 0.1, MAP_LENGTH);
+                const road = new THREE.Mesh(roadGeometry, roadMaterial);
+                road.position.set(x, 0.1, MAP_LENGTH / 2);
+                road.receiveShadow = true;
                 mapGroup.add(road);
             }
 
-            // --- Transverse Roads (Horizontal - Z=constant, X=variable) ---
-            const transRoads = 6;
+            // --- Transverse Roads (Horizontal - Segmented by Column) ---
+            const transRoads = 4; // 10 rows
             const Z_START = 500;
-            const Z_END = MAP_LENGTH * 0.6;
+            const Z_END = 3500;
             const transLength = Z_END - Z_START;
             const transSpacing = transLength / (transRoads + 1);
-            transverseZ = [];
 
-            for (let i = 1; i <= transRoads; i++) {
-                const z = Z_START + transSpacing * i;
+            transverseZ = []; // Store Z coords for grid population
+
+            // Populate transverseZ array first
+            for (let j = 1; j <= transRoads; j++) {
+                const z = Z_START + transSpacing * j;
                 transverseZ.push(z);
-                const roadGeometry = new THREE.BoxGeometry(MAP_WIDTH, 0.1, ROAD_WIDTH);
-                // Use the single, shared roadMaterial
-                const road = new THREE.Mesh(roadGeometry, roadMaterial);
-                road.position.set(MAP_WIDTH / 2, 0.1, z);
-                road.receiveShadow = false;
-                mapGroup.add(road);
+            }
+
+            // Create Segmented Roads
+            const numCols = longRoads + 1; // 4 columns
+            const colWidth = MAP_WIDTH / numCols;
+
+            for (let j = 0; j < transverseZ.length; j++) {
+                const z = transverseZ[j];
+                const rowIndex = j; // 0 to 8
+
+                for (let col = 0; col < numCols; col++) {
+                    const i = col;
+
+                    // --- Visibility Logic (Same as Rows) ---
+                    // col=0 (Left): Land 4 (CHL) -> Hide Roads
+                    if (i === 0) continue;
+
+                    // col=1: Land 3 -> Show Rows 0-7. Hide >7.
+                    if (i === 1 && rowIndex > 7) continue;
+
+                    // col=2: Land 2 -> Show Rows 0-6. Hide >6.
+                    if (i === 2 && rowIndex > 6) continue;
+
+                    // col=3 (Right): Land 1 -> Show Rows 7-9. Hide <7.
+                    if (i === 3 && rowIndex < 7) continue;
+
+                    // Create Road Segment
+                    const roadSegGeo = new THREE.BoxGeometry(colWidth, 0.1, ROAD_WIDTH);
+                    const roadSeg = new THREE.Mesh(roadSegGeo, roadMaterial);
+
+                    // Position X at center of column
+                    const centerX = (col * colWidth) + (colWidth / 2);
+                    roadSeg.position.set(centerX, 0.1, z);
+                    roadSeg.receiveShadow = false;
+                    mapGroup.add(roadSeg);
+                }
             }
         }
 
@@ -1022,115 +1142,561 @@
          * Houses are placed in blocks between Z=50 (above highway) and Z=2000 (below residential spine).
          * Areas reserved for amenities are skipped.
          */
-        function populateGridBlocks() {
-            const HOUSE_WIDTH = 30;
-            const HOUSE_LENGTH = 50;
-            // Increased spacing for larger land area
-            const HOUSE_X_SPACING = HOUSE_WIDTH + 30; // Was +10
-            const HOUSE_Z_SPACING = HOUSE_LENGTH + 40; // Was +20
-
+        /**
+         * Helper to calculate grid coordinates for house placement.
+         */
+        function calculateGridCoordinates() {
             // Define X boundaries: map edges and longitudinal roads
             const allXPositions = [0, ...longitudinalX, MAP_WIDTH];
 
-            // Define Z boundaries: (Start of land) to (just below residential strip)
+            // Define Z boundaries
             const Z_MIN_LAND = 50;
-            const Z_AMENITY_CUTOFF = 500; // Boundary for the low-Z amenity zone
-            const Z_MAX_GRID_FILL = 2000; // Below the curved residential strip (Z=2100)
+            const Z_AMENITY_CUTOFF = 500;
+            const Z_MAX_GRID_FILL = 2000;
 
-            // Filter transverseZ to only include roads below the curved residential strip
+            // Filter transverseZ
             const filteredTransverseZ = transverseZ.filter(z => z < Z_MAX_GRID_FILL && z > Z_MIN_LAND);
 
             // Rebuild allZPositions to ensure proper block segmentation
             let allZPositions = [Z_MIN_LAND, ...filteredTransverseZ, Z_MAX_GRID_FILL];
-            // Add Z_AMENITY_CUTOFF if it's not already covered by transverse roads
             if (!filteredTransverseZ.some(z => Math.abs(z - Z_AMENITY_CUTOFF) < 5)) {
                 allZPositions.push(Z_AMENITY_CUTOFF);
             }
             allZPositions.sort((a, b) => a - b);
 
-            // X position of the longitudinal roads
-            const longRoads = 5;
-            const longSpacing = MAP_WIDTH / (longRoads + 1);
+            return { allXPositions, allZPositions, filteredTransverseZ, Z_MIN_LAND, Z_AMENITY_CUTOFF, Z_MAX_GRID_FILL };
+        }
 
-            // Loop through the X segments (blocks)
-            // let houseCounter = 1; // Counter logic moved inside the block loop to reset per cluster
+        /**
+         * Create Line 1 (Right-most Strip) - CLUSTER BLOCK
+         * Configured for "Cluster 8-10" logic (Rows 7+)
+         */
+        /**
+         * Create Line 1 (Right-most Strip) - CUSTOM LOGIC
+         * - Block C (Bottom): 40 houses + 12 houses (Red Road)
+         * - Cluster 8: 15 pairs
+         * - Cluster 9: 16 pairs
+         * - Cluster 10: 16 pairs
+         */
+        /**
+         * Create Line 1 (Right-most Strip) - CUSTOM LOGIC
+         * - Block C (Bottom): 40 houses + 12 houses (Red Road)
+         * - Cluster 8: 15 pairs
+         * - Cluster 9: 16 pairs
+         * - Cluster 10: 16 pairs
+         * 
+         * Layout optimization: 
+        /**
+         * Total pairs = 20 (C) + 15 (8) + 16 (9) + 16 (10) = 67 pairs.
+         * To fit in ~2400 Z-space (150 to 2550), Pitch must be < 35.
+         * Using Width=28 (Along Road), Gap=4 -> Pitch=32.
+         * Total Z = 67 * 32 = 2144 + Gaps for roads. Fits well.
+         */
+        /**
+         * Create Line 1 (Right-most Strip) - CUSTOM DUPLEX LOGIC
+         * - Layout from Image: Two columns (Odd Block Left, Even Block Right).
+         * - Each Block has 2 Houses (A and B).
+         * - Block C: 20 Blocks (40 houses).
+         * - Cluster 8: 15 Blocks (30 houses).
+         * - Cluster 9: 16 Blocks (32 houses).
+         * - Cluster 10: 16 Blocks (32 houses).
+         */
+        /**
+         * Create Line 1 (Right-most Strip) - HORIZONTAL CLUSTER LOGIC
+         * - Based on Image: Clusters 8, 9, 10 are Horizontal Blocks stacked vertically.
+         * - Each Cluster has 2 Rows of Units (Odd Top, Even Bottom).
+         * - Houses face OUTWARDS towards the horizontal roads (P1B, P2B, P3B).
+         * - Sequence (Bottom to Top Z): Block C -> 10 -> 9 -> 8.
+         */
+        /**
+         * Create Line 1 (Right-most Strip) - TOP-DOWN Layout
+         * - Starts from Gate Side (Top/Low Z) and builds Down (High Z).
+         * - Sequence: Cluster 10 -> P1B -> Cluster 9 -> P2B -> Cluster 8 -> P3B -> Block C.
+         * - Horizontal Rows. Odd/Even logic preserved.
+         */
+        /**
+         * Create Line 1 (Right-most Strip) - TOP-DOWN Layout
+         * - Starts from Gate Side (Top/Low Z) and builds Down (High Z).
+         * - Sequence: Cluster 10 -> P1B -> Cluster 9 -> P2B -> Cluster 8 -> P3B -> Block C.
+         */
+        /**
+         * Create Line 1 (Right-most Strip) - FINAL ADJUSTMENTS
+         * - Spacing increased to prevent 1A-2A overlap.
+         * - Left Side Road explicitly drawn/connected.
+         * - Cluster Roads extend to left boundary.
+         */
+        /**
+         * Create Line 1 (Right-most Strip) - BOUNDARY ROADS & CONNECTIONS
+         * - Spacing increased to prevent 1A-2A overlap.
+         * - Left Side Road (Divider with Line 2).
+         * - Right Side Road (Map Edge).
+         * - Cluster Roads connect Left to Right.
+         */
+        /**
+         * Create Line 1 (Right-most Strip) - WIDER LAND & SHORTER ROADS
+         * - Line 1 Width increased (starts earlier).
+         * - Longitudinal Roads cut to half length.
+         * - Clusters re-centered in wider space.
+         */
+        /**
+         * Create Line 1 (Right-most Strip) - AUTO WIDTH & REALISTIC JOIN
+         * - Auto Calculate Line 1 Width based on house total width.
+         * - Horizontal Roads join Line 2's Left Road (approx 1250) to Line 1's Right Road (Map Edge).
+         */
+        function createLine1_Cluster() {
+            // CONSTANTS from User Edits
+            const HOUSE_WIDTH = 64;
+            const HOUSE_DEPTH = 68;
+            const UNIT_GAP = 66;
+            const UNIT_WIDTH = (HOUSE_WIDTH * 2) + UNIT_GAP;
+            const UNIT_X_SPACING = UNIT_WIDTH - 70;
 
-            for (let i = 0; i < allXPositions.length - 1; i++) {
-                // Calculate effective block boundaries, accounting for road width
-                const xStartRaw = allXPositions[i];
-                const xEndRaw = allXPositions[i + 1];
+            // AUTO WIDTH CALCULATION
+            // Cluster is 8 units wide.
+            const CLUSTER_HOUSES_TOTAL_WIDTH = 8 * UNIT_X_SPACING;
+            // Add some buffer for the road/edge
+            const LINE1_TOTAL_WIDTH = CLUSTER_HOUSES_TOTAL_WIDTH + 100;
 
-                let xStart = xStartRaw + (i > 0 ? ROAD_WIDTH / 2 : 0);
-                let xEnd = xEndRaw - (i < allXPositions.length - 2 ? ROAD_WIDTH / 2 : 0);
+            // Calculate Start X relative to Map Edge
+            // Line 1 ends at MAP_WIDTH. So it starts at MAP_WIDTH - TOTAL_WIDTH.
+            const X_MAX_LINE1 = MAP_WIDTH;
+            const X_MIN_LINE1 = X_MAX_LINE1 - LINE1_TOTAL_WIDTH;
 
-                // Handle edge case where the end is MAP_WIDTH and i is the last index (5)
-                if (i === allXPositions.length - 2 && xEndRaw === MAP_WIDTH) {
-                    xEnd = MAP_WIDTH;
+            const X_CENTER = X_MIN_LINE1 + (LINE1_TOTAL_WIDTH / 2);
+
+            // Road Constants
+            const HALF_LENGTH = MAP_LENGTH / 2;
+            const LONG_ROAD_WIDTH = 25;
+            const ROAD_COLOR = 0x333333;
+
+            // 1. Right Side Road (Map Edge)
+            const rightRoad = new THREE.Mesh(
+                new THREE.BoxGeometry(LONG_ROAD_WIDTH, 0.12, HALF_LENGTH),
+                new THREE.MeshLambertMaterial({ color: ROAD_COLOR })
+            );
+            rightRoad.position.set(X_MAX_LINE1 - LONG_ROAD_WIDTH / 2, 0.12, HALF_LENGTH / 2);
+            mapGroup.add(rightRoad);
+
+            // 2. Connecting Logic
+            // User: "cluster road will be joint in line 1 and line 2 road"
+            // We assume Line 2 is immediately to the LEFT of Line 1.
+            // Let's connect from X_MIN_LINE1 (Line 1 Left / Line 2 Right boundary) to X_MAX_LINE1.
+            // Wait, user previously said "join at line 2 left side road".
+            // Line 2 Left likely sits around MAP_WIDTH / 4 * 2 (1250 in old scale, but MAP_WIDTH is big now).
+            // Let's rely on a fixed "Line 2 Left" anchor or just extend leftwards significantly.
+            // Given "auto width", effectively Line 2 ends where Line 1 begins.
+            // We will draw the horizontal road from [Line 2 Left Road] to [Line 1 Right Road].
+            // Assume Line 2 is roughly same width? Or just use a fixed "Center-Left" point.
+            // Old "Line 2 Left" was colWidth * 2. 
+            // new MAP_WIDTH = 4500. colWidth = 1125. colWidth * 2 = 2250.
+            const X_LINE2_LEFT = (MAP_WIDTH / 8) * 6;
+
+            const CLUSTER_ROAD_GAP = 180;
+            const CLUSTER_INTERNAL_GAP = 60;
+            const BLOCK_HEIGHT = (HOUSE_DEPTH * 1.2) + CLUSTER_INTERNAL_GAP;
+
+            // Start Z position (Gate Side / Top)
+            let currentZ = 250;
+
+            // --- 1. CLUSTER 10 ---
+            // Centered in the specific Line 1 Zone
+            const c10Width = 8 * UNIT_X_SPACING;
+            const xStart10 = X_CENTER - c10Width / 2;
+
+            createHorizontalRow(xStart10, currentZ, 8, "10", 1, 2, "North");
+            createHorizontalRow(xStart10, currentZ + HOUSE_DEPTH + CLUSTER_INTERNAL_GAP, 8, "10", 2, 2, "South");
+
+            currentZ += BLOCK_HEIGHT;
+
+            // ROAD P1B
+            // Connects Line 2 Left (2250) -> Line 1 Right (4500 approx)
+            createConnectingRoad(X_LINE2_LEFT, X_MAX_LINE1, currentZ + CLUSTER_ROAD_GAP / 2);
+            currentZ += CLUSTER_ROAD_GAP;
+
+            // --- 2. CLUSTER 9 ---
+            const c9Width = 8 * UNIT_X_SPACING;
+            const xStart9 = X_CENTER - c9Width / 2;
+
+            createHorizontalRow(xStart9, currentZ, 8, "9", 1, 2, "North");
+            createHorizontalRow(xStart9, currentZ + HOUSE_DEPTH + CLUSTER_INTERNAL_GAP, 8, "9", 2, 2, "South");
+
+            currentZ += BLOCK_HEIGHT;
+
+            // ROAD P2B
+            createConnectingRoad(X_LINE2_LEFT, X_MAX_LINE1, currentZ + CLUSTER_ROAD_GAP / 2);
+            currentZ += CLUSTER_ROAD_GAP;
+
+            // --- 3. CLUSTER 8 ---
+            const c8Width = 8 * UNIT_X_SPACING;
+            const xStart8 = X_CENTER - c8Width / 2;
+
+            createHorizontalRow(xStart8, currentZ, 8, "8", 1, 2, "North");
+            createHorizontalRow(xStart8, currentZ + HOUSE_DEPTH + CLUSTER_INTERNAL_GAP, 7, "8", 2, 2, "South");
+
+            // ROAD P3B (Bottom)
+            // Added explicit road for consistency if desired, or skip if only separator needed.
+            // Logic usually puts road *between* clusters. 
+            // Previous code had P3B after Cluster 8.
+            currentZ += BLOCK_HEIGHT;
+            createConnectingRoad(X_LINE2_LEFT, X_MAX_LINE1, currentZ + CLUSTER_ROAD_GAP / 2);
+
+
+            // --- Helpers ---
+            function createHorizontalRow(startX, z, count, cluster, startIdx, step, facing) {
+                const rotY = facing === "South" ? 0 : Math.PI;
+                for (let i = 0; i < count; i++) {
+                    const unitIdx = startIdx + (i * step);
+                    const x = startX + i * UNIT_X_SPACING;
+                    // A
+                    const hA = createHouseModel(HOUSE_WIDTH / 2 - 2, HOUSE_DEPTH, `${cluster}-${unitIdx}A`);
+                    hA.position.set(x, 0, z);
+                    hA.rotation.y = rotY;
+                    mapGroup.add(hA);
+                    // B
+                    const hB = createHouseModel(HOUSE_WIDTH / 2 - 2, HOUSE_DEPTH, `${cluster}-${unitIdx}B`);
+                    hB.position.set(x + HOUSE_WIDTH / 2 + UNIT_GAP / 2 + 2, 0, z);
+                    hB.rotation.y = rotY;
+                    mapGroup.add(hB);
                 }
+            }
 
-                const blockWidth = xEnd - xStart;
-                if (blockWidth <= HOUSE_WIDTH) continue;
+            function createConnectingRoad(xStart, xEnd, z) {
+                const width = xEnd - xStart;
+                const centerX = xStart + width / 2;
+                const road = new THREE.Mesh(
+                    new THREE.BoxGeometry(width, 0.12, 40),
+                    new THREE.MeshLambertMaterial({ color: 0x333333 })
+                );
+                road.position.set(centerX, 0.12, z);
+                mapGroup.add(road);
+            }
+        }
+
+        /**
+         * Create Line 2 (Center-Right Strip) - CLUSTER BLOCK
+         * Configured for "Cluster 1-7" logic (Rows 0-6)
+         * NOTE: Contains Field 2 (Block 2)
+         */
+        /**
+         * Create Line 2 (Center-Right Strip) - CLUSTERS 1-7
+         * - Matches Line 1 Style (Auto Width, House Size, Roads).
+         * - Sequence: Cluster 7 (Top) -> ... -> Cluster 1 (Bottom).
+         */
+        function createLine2_Cluster() {
+            // CONSTANTS (MATCHING LINE 1)
+            const HOUSE_WIDTH = 64;
+            const HOUSE_DEPTH = 68;
+            const UNIT_GAP = 66;
+            const UNIT_WIDTH = (HOUSE_WIDTH * 2) + UNIT_GAP;
+            const UNIT_X_SPACING = UNIT_WIDTH - 70;
+
+            // AUTO WIDTH CALCULATION
+            const CLUSTER_HOUSES_TOTAL_WIDTH = 8 * UNIT_X_SPACING;
+            const LINE_TOTAL_WIDTH = CLUSTER_HOUSES_TOTAL_WIDTH + 100;
+
+            // X Positioning
+            // Line 1 Start was: MAP_WIDTH - LINE1_WIDTH.
+            // Line 2 ends where Line 1 starts.
+            const X_MAX_LINE2 = MAP_WIDTH - LINE_TOTAL_WIDTH;
+            const X_MIN_LINE2 = X_MAX_LINE2 - LINE_TOTAL_WIDTH;
+            const X_CENTER = X_MIN_LINE2 + (LINE_TOTAL_WIDTH / 2);
+
+            // Connects Line 3 Left (approx) to Line 2 Right (Line 1 Left).
+            // Line 3 Left roughly at MAP_WIDTH/8 * 2 ?
+            // Let's us a dynamic calc:
+            const X_LINE3_LEFT = (MAP_WIDTH / 8) * 2;
+
+            const CLUSTER_ROAD_GAP = 180;
+            const CLUSTER_INTERNAL_GAP = 60;
+            const BLOCK_HEIGHT = (HOUSE_DEPTH * 1.2) + CLUSTER_INTERNAL_GAP;
+
+            // Road Constants
+            const LONG_ROAD_WIDTH = 25;
+            const ROAD_COLOR = 0x333333;
+
+            // Right Side Road (Line 2 Right Boundary) - Full Length
+            const rightRoad = new THREE.Mesh(
+                new THREE.BoxGeometry(LONG_ROAD_WIDTH, 0.12, MAP_LENGTH),
+                new THREE.MeshLambertMaterial({ color: ROAD_COLOR })
+            );
+            rightRoad.position.set(X_MAX_LINE2 - LONG_ROAD_WIDTH / 2, 0.12, MAP_LENGTH / 2);
+            mapGroup.add(rightRoad);
+
+            // Start Z position (Gate Side / Top) - Match Line 1
+            let currentZ = 250;
+
+            // Loop 7 -> 1 (Top -> Bottom)
+            const clusters = ["7", "6", "5", "4", "3", "2", "1"];
+
+            clusters.forEach((clusterNum, index) => {
+                // Determine Units count.
+                // Line 1 clusters were 8 (16 houses).
+                // "cluster will be 1-7". Assume standard 8-unit clusters.
+                const unitsCount = 8;
+
+                const cWidth = unitsCount * UNIT_X_SPACING;
+                const xStart = X_CENTER - cWidth / 2;
+
+                // Houses
+                createHorizontalRow(xStart, currentZ, unitsCount, clusterNum, 1, 2, "North");
+                createHorizontalRow(xStart, currentZ + HOUSE_DEPTH + CLUSTER_INTERNAL_GAP, unitsCount, clusterNum, 2, 2, "South");
+
+                currentZ += BLOCK_HEIGHT;
+
+                // Road (Bottom of cluster)
+                // Road starts from right side of Line 2 and fits cluster width
+                createConnectingRoad(X_MAX_LINE2, cWidth, currentZ + CLUSTER_ROAD_GAP / 2);
+                currentZ += CLUSTER_ROAD_GAP;
+            });
 
 
-                // Loop through the Z segments (blocks)
-                for (let j = 0; j < allZPositions.length - 1; j++) {
-                    const zStartRaw = allZPositions[j];
-                    const zEndRaw = allZPositions[j + 1];
+            // --- Helpers ---
+            function createHorizontalRow(startX, z, count, cluster, startIdx, step, facing) {
+                const rotY = facing === "South" ? 0 : Math.PI;
+                for (let i = 0; i < count; i++) {
+                    const unitIdx = startIdx + (i * step);
+                    const x = startX + i * UNIT_X_SPACING;
+                    // A
+                    const hA = createHouseModel(HOUSE_WIDTH / 2 - 2, HOUSE_DEPTH, `${cluster}-${unitIdx}A`);
+                    hA.position.set(x, 0, z);
+                    hA.rotation.y = rotY;
+                    mapGroup.add(hA);
+                    // B
+                    const hB = createHouseModel(HOUSE_WIDTH / 2 - 2, HOUSE_DEPTH, `${cluster}-${unitIdx}B`);
+                    hB.position.set(x + HOUSE_WIDTH / 2 + UNIT_GAP / 2 + 2, 0, z);
+                    hB.rotation.y = rotY;
+                    mapGroup.add(hB);
+                }
+            }
 
-                    // Calculate effective block boundaries, accounting for road width
-                    // Z_MIN_LAND (50) and Z_MAX_GRID_FILL (2000) are assumed to be edges, not roads.
-                    // The transverse roads are inside `filteredTransverseZ` which are the ones that require ROAD_WIDTH/2 offset.
-                    let zStart = zStartRaw + (filteredTransverseZ.includes(zStartRaw) ? ROAD_WIDTH / 2 : 0);
-                    let zEnd = zEndRaw - (filteredTransverseZ.includes(zEndRaw) ? ROAD_WIDTH / 2 : 0);
+            function createConnectingRoad(xRightEdge, clusterWidth, z) {
+                // Road starts from right edge and extends left by cluster width
+                const roadStartX = xRightEdge - clusterWidth;
+                const centerX = roadStartX + clusterWidth / 2;
+                const road = new THREE.Mesh(
+                    new THREE.BoxGeometry(clusterWidth + 140, 0.12, 40),
+                    new THREE.MeshLambertMaterial({ color: 0x333333 })
+                );
+                road.position.set(centerX - 70, 0.12, z);
+                mapGroup.add(road);
+            }
+        }
 
-                    const blockLength = zEnd - zStart;
-                    if (blockLength <= HOUSE_LENGTH) continue;
+        /**
+         * Create Line 3 (Center-Left Strip) - BUNCHES 1-6
+         * - Matches Line 1 & 2 Style (Auto Width, House Size, Roads).
+         * - Sequence: Bunch 6 (Top) -> ... -> Bunch 1 (Bottom).
+         * - House counts: Bunch 1=36, Bunch 2=28, Bunch 3=28, Bunch 4=24, Bunch 5=28, Bunch 6=30
+         */
+        function createLine3_Bunch() {
+            // CONSTANTS (MATCHING LINE 1 & 2)
+            const HOUSE_WIDTH = 64;
+            const HOUSE_DEPTH = 68;
+            const UNIT_GAP = 66;
+            const UNIT_WIDTH = (HOUSE_WIDTH * 2) + UNIT_GAP;
+            const UNIT_X_SPACING = UNIT_WIDTH - 70;
 
-                    // --- Amenity Exclusion Logic ---
-                    const isAmenityZone = zStartRaw >= Z_MIN_LAND && zEndRaw <= Z_AMENITY_CUTOFF;
-                    // X blocks are 0, 1, 2, 3, 4, 5. Field 1 is in block 0. Field 2 is in block 2.
-                    const isField1Block = i === 0;
-                    const isField2Block = i === 2;
+            // Bunch specifications (houses per bunch)
+            const bunchSpecs = [
+                { name: "6", houses: 30, road: "P6A" },
+                { name: "5", houses: 28, road: "P5A" },
+                { name: "4", houses: 24, road: "P4A" },
+                { name: "3", houses: 28, road: "P3A" },
+                { name: "2", houses: 28, road: "P2A" },
+                { name: "1", houses: 36, road: "P1A" }
+            ];
 
-                    if (isAmenityZone && (isField1Block || isField2Block)) {
-                        continue; // Skip blocks used by amenities
-                    }
+            // Calculate max width needed (Bunch 1 has 36 houses = 18 units)
+            const MAX_UNITS = 18; // 36 houses / 2
+            const CLUSTER_HOUSES_TOTAL_WIDTH = MAX_UNITS * UNIT_X_SPACING;
+            const LINE_TOTAL_WIDTH = CLUSTER_HOUSES_TOTAL_WIDTH + 100;
 
-                    // Also skip the curved residential zone area buffer
-                    if (zStartRaw >= Z_MAX_GRID_FILL - 100) {
-                        continue;
-                    }
+            // X Positioning
+            // Line 3 ends where Line 2 starts (no gap)
+            // Line 2 ends at: X_MIN_LINE2 = (MAP_WIDTH - LINE_TOTAL_WIDTH) - LINE_TOTAL_WIDTH
+            const LINE2_WIDTH = -120; // Line 2's width (8 units)
+            const X_MAX_LINE3 = MAP_WIDTH - LINE2_WIDTH - LINE_TOTAL_WIDTH;
+            const X_MIN_LINE3 = X_MAX_LINE3 - LINE_TOTAL_WIDTH;
+            const X_CENTER = X_MIN_LINE3 + (LINE_TOTAL_WIDTH / 2);
 
-                    // --- House Placement Logic ---
-                    const housesX = Math.floor(blockWidth / HOUSE_X_SPACING);
-                    const housesZ = Math.floor(blockLength / HOUSE_Z_SPACING);
+            // Connects Line 4 Left to Line 3 Right
+            const X_LINE4_LEFT = 0; // Map edge
 
-                    // Skip if no room
-                    if (housesX < 1 || housesZ < 1) continue;
+            const CLUSTER_ROAD_GAP = 180;
+            const CLUSTER_INTERNAL_GAP = 60;
+            const BLOCK_HEIGHT = (HOUSE_DEPTH * 1.2) + CLUSTER_INTERNAL_GAP;
 
-                    // Calculate center point of the current block
-                    const blockCenterX = (xStart + xEnd) / 2;
-                    const blockCenterZ = (zStart + zEnd) / 2;
+            // Road Constants
+            const LONG_ROAD_WIDTH = 45;
+            const ROAD_COLOR = 0x333333;
 
-                    // Calculate starting offset to center the houses within the block
-                    const startOffsetX = -((housesX - 1) * HOUSE_X_SPACING) / 2;
-                    const startOffsetZ = -((housesZ - 1) * HOUSE_Z_SPACING) / 2;
+            // Right Side Road (Line 3 Right Boundary) - Full Length
+            const rightRoad = new THREE.Mesh(
+                new THREE.BoxGeometry(LONG_ROAD_WIDTH, 0.012, MAP_LENGTH),
+                new THREE.MeshLambertMaterial({ color: ROAD_COLOR })
+            );
+            rightRoad.position.set(X_MAX_LINE3 - LONG_ROAD_WIDTH / 2, 0.012, MAP_LENGTH / 2);
+            mapGroup.add(rightRoad);
 
-                    // Reset counter for each cluster (Grid Block)
-                    let houseCounter = 1;
+            // Start Z position (Gate Side / Top)
+            let currentZ = 250;
 
-                    for (let x = 0; x < housesX; x++) {
-                        for (let z = 0; z < housesZ; z++) {
-                            const houseID = `H-${houseCounter.toString().padStart(2, '0')}`;
-                            const house = createHouseModel(HOUSE_WIDTH, HOUSE_LENGTH, houseID);
-                            houseCounter++;
+            // Collect road endpoints for curved left road
+            const roadEndpoints = [];
 
-                            const houseX = blockCenterX + startOffsetX + x * HOUSE_X_SPACING;
-                            const houseZ = blockCenterZ + startOffsetZ + z * HOUSE_Z_SPACING;
+            // Loop through bunches (Top -> Bottom)
+            bunchSpecs.forEach((bunch) => {
+                const totalHouses = bunch.houses;
+                const unitsCount = totalHouses / 2; // Each unit has 2 houses (A and B)
 
-                            house.position.set(houseX, 0, houseZ);
-                            mapGroup.add(house);
-                        }
+                const cWidth = unitsCount * UNIT_X_SPACING;
+                // Position houses from right side (X_MAX_LINE3) extending left
+                const xStart = X_MAX_LINE3 - cWidth;
+
+                // Houses
+                createHorizontalRow(xStart, currentZ, unitsCount, bunch.name, 1, 2, "North");
+                createHorizontalRow(xStart, currentZ + HOUSE_DEPTH + CLUSTER_INTERNAL_GAP, unitsCount, bunch.name, 2, 2, "South");
+
+                currentZ += BLOCK_HEIGHT;
+
+                // Road (Bottom of bunch)
+                const roadZ = currentZ + CLUSTER_ROAD_GAP / 2;
+                createConnectingRoad(X_MAX_LINE3, cWidth, roadZ);
+
+                // Store left endpoint for curved road
+                const leftEndX = X_MAX_LINE3 - cWidth - 140; // Account for road extension
+                roadEndpoints.push({ x: leftEndX, z: roadZ });
+
+                currentZ += CLUSTER_ROAD_GAP;
+            });
+
+            // Create curved left road connecting all endpoints and extending to CHL end point
+            if (roadEndpoints.length > 0) {
+                // CHL end point coordinates (from createResidentialBlocks)
+                const CHL_END_X = MAP_WIDTH - 100;
+                const CHL_END_Z = MAP_LENGTH * 0.85;
+
+                // Add start and end points for full coverage
+                const curvePoints = [
+                    new THREE.Vector3(roadEndpoints[0].x, 0.012, 0), // Start from top
+                    ...roadEndpoints.map(ep => new THREE.Vector3(ep.x, 0.012, ep.z)),
+                    new THREE.Vector3(roadEndpoints[roadEndpoints.length - 1].x, 0.012, roadEndpoints[roadEndpoints.length - 1].z + 200), // Transition point
+                    new THREE.Vector3(CHL_END_X, 0.012, CHL_END_Z) // Connect to CHL end point
+                ];
+
+                // Create smooth curve through all points
+                const curve = new THREE.CatmullRomCurve3(curvePoints);
+
+                // Generate tube geometry along the curve
+                const tubeGeometry = new THREE.TubeGeometry(
+                    curve,
+                    500, // segments for smoothness
+                    LONG_ROAD_WIDTH / 2, // radius
+                    108, // radial segments
+                    false // not closed
+                );
+
+                const curvedRoad = new THREE.Mesh(
+                    tubeGeometry,
+                    new THREE.MeshBasicMaterial({ color: 0x515151 })
+                );
+                mapGroup.add(curvedRoad);
+            }
+
+
+            // --- Helpers ---
+            function createHorizontalRow(startX, z, count, bunch, startIdx, step, facing) {
+                const rotY = facing === "South" ? 0 : Math.PI;
+                for (let i = 0; i < count; i++) {
+                    const unitIdx = startIdx + (i * step);
+                    const x = startX + i * UNIT_X_SPACING;
+                    // A
+                    const hA = createHouseModel(HOUSE_WIDTH / 2 - 2, HOUSE_DEPTH, `${bunch}-${unitIdx}A`);
+                    hA.position.set(x, 0, z);
+                    hA.rotation.y = rotY;
+                    mapGroup.add(hA);
+                    // B
+                    const hB = createHouseModel(HOUSE_WIDTH / 2 - 2, HOUSE_DEPTH, `${bunch}-${unitIdx}B`);
+                    hB.position.set(x + HOUSE_WIDTH / 2 + UNIT_GAP / 2 + 2, 0, z);
+                    hB.rotation.y = rotY;
+                    mapGroup.add(hB);
+                }
+            }
+
+            function createConnectingRoad(xRightEdge, bunchWidth, z) {
+                // Road starts from right edge and extends left by bunch width + extension
+                const roadStartX = xRightEdge - bunchWidth;
+                const centerX = roadStartX + bunchWidth / 2;
+                const road = new THREE.Mesh(
+                    new THREE.BoxGeometry(bunchWidth + 140, 0.12, 40),
+                    new THREE.MeshLambertMaterial({ color: 0x333333 })
+                );
+                road.position.set(centerX - 70, 0.12, z);
+                mapGroup.add(road);
+            }
+        }
+
+        /**
+         * Create Line 4 (Left-most Strip) - EMPTY BLOCK
+         * Configured to be empty by default (House count override 0 or just logic disabled)
+         */
+        function createLine4_Empty() {
+            const { allXPositions, allZPositions, filteredTransverseZ, Z_MIN_LAND, Z_AMENITY_CUTOFF, Z_MAX_GRID_FILL } = calculateGridCoordinates();
+            const i = 0; // Left-most column index
+
+            // Config - user wants this empty, but wants logic present to "set own amount".
+            // We'll proceed with placing houses but set a "limit" or "enable" flag logic.
+            // USER REQUEST: "line 4 will be empty"
+            const ENABLE_LINE_4 = false; // Set to true to modify amount
+
+            if (!ENABLE_LINE_4) return;
+
+            // Config
+            const HOUSE_WIDTH = 30;
+            const HOUSE_LENGTH = 50;
+            const HOUSE_X_SPACING = HOUSE_WIDTH + 30;
+            const HOUSE_Z_SPACING = HOUSE_LENGTH + 40;
+
+            const xStartRaw = allXPositions[i];
+            const xEndRaw = allXPositions[i + 1];
+            let xStart = xStartRaw + (i > 0 ? ROAD_WIDTH / 2 : 0);
+            let xEnd = xEndRaw - (i < allXPositions.length - 2 ? ROAD_WIDTH / 2 : 0);
+
+            if ((xEnd - xStart) <= HOUSE_WIDTH) return;
+
+            for (let j = 0; j < allZPositions.length - 1; j++) {
+                const zStartRaw = allZPositions[j];
+                const zEndRaw = allZPositions[j + 1];
+
+                // AMENITY EXCLUSION: Field 1 is here
+                if (zStartRaw >= Z_MIN_LAND && zEndRaw <= Z_AMENITY_CUTOFF) continue;
+
+                let zStart = zStartRaw + (filteredTransverseZ.includes(zStartRaw) ? ROAD_WIDTH / 2 : 0);
+                let zEnd = zEndRaw - (filteredTransverseZ.includes(zEndRaw) ? ROAD_WIDTH / 2 : 0);
+
+                if ((zEnd - zStart) <= HOUSE_LENGTH) continue;
+                if (zStartRaw >= Z_MAX_GRID_FILL - 100) continue;
+
+                // Place Houses
+                const housesX = Math.floor((xEnd - xStart) / HOUSE_X_SPACING);
+                const housesZ = Math.floor((zEnd - zStart) / HOUSE_Z_SPACING);
+
+                if (housesX < 1 || housesZ < 1) continue;
+
+                const blockCenterX = (xStart + xEnd) / 2;
+                const blockCenterZ = (zStart + zEnd) / 2;
+                const startOffsetX = -((housesX - 1) * HOUSE_X_SPACING) / 2;
+                const startOffsetZ = -((housesZ - 1) * HOUSE_Z_SPACING) / 2;
+
+                let houseCounter = 1;
+                for (let x = 0; x < housesX; x++) {
+                    for (let z = 0; z < housesZ; z++) {
+                        const houseID = `L4-C${j}-${houseCounter++}`;
+                        const house = createHouseModel(HOUSE_WIDTH, HOUSE_LENGTH, houseID);
+                        const hX = blockCenterX + startOffsetX + x * HOUSE_X_SPACING;
+                        const hZ = blockCenterZ + startOffsetZ + z * HOUSE_Z_SPACING;
+                        house.position.set(hX, 0, hZ);
+                        mapGroup.add(house);
                     }
                 }
             }
