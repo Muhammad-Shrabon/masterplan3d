@@ -250,12 +250,33 @@
         }
 
         /**
-         * Creates the main ground plane (green area) and a base boundary.
+         * Creates the main ground plane (green area) and a base boundary. 0x558B2F
          */
         function createGroundAndBoundary() {
+            const textureLoader = new THREE.TextureLoader();
+
+            const grassTexture = textureLoader.load('./assets/images/grass2.png');
+            grassTexture.wrapS = grassTexture.wrapT = THREE.RepeatWrapping;
+            grassTexture.repeat.set(10, 10); // subtle, not obvious
+            // grassTexture.rotation = Math.random() * Math.PI * 2;
+            grassTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+
             // Base plane (Main Green Area - now much larger)
-            const groundGeometry = new THREE.PlaneGeometry(MAP_WIDTH + 600, MAP_LENGTH + 600);
-            const groundMaterial = new THREE.MeshLambertMaterial({ color: 0x558B2F }); // Darker green for vegetation
+            const groundGeometry = new THREE.PlaneGeometry(MAP_WIDTH + 2600, MAP_LENGTH + 600);
+            // const groundMaterial = new THREE.MeshLambertMaterial({ color: 0x558B2F }); // Darker green for vegetation
+//             const groundMaterial = new THREE.MeshBasicMaterial({
+//     color: 0x558B2F,
+//     polygonOffset: true,
+//     polygonOffsetFactor: -1,
+//     polygonOffsetUnits: -1
+// }); 
+
+const groundMaterial = new THREE.MeshBasicMaterial({
+    map: grassTexture,
+    polygonOffset: true,
+    polygonOffsetFactor: 1,   // ground goes BACK
+    polygonOffsetUnits: 1
+});
             const ground = new THREE.Mesh(groundGeometry, groundMaterial);
             ground.rotation.x = -Math.PI / 2; // Rotate to lie flat
             ground.position.set(MAP_WIDTH / 2, -1, MAP_LENGTH / 2);
@@ -263,8 +284,10 @@
             mapGroup.add(ground);
 
             // Central Development Land (lighter green - also larger)
-            const landGeometry = new THREE.PlaneGeometry(MAP_WIDTH + 200, MAP_LENGTH + 200);
+
+            const landGeometry = new THREE.PlaneGeometry(MAP_WIDTH + 2200, MAP_LENGTH + 200);
             const landMaterial = new THREE.MeshLambertMaterial({ color: 0x8BC34A }); // Lighter green for development land
+ 
             const land = new THREE.Mesh(landGeometry, landMaterial);
             land.rotation.x = -Math.PI / 2;
             land.position.set(MAP_WIDTH / 2, 0, MAP_LENGTH / 2);
@@ -562,7 +585,7 @@
             const greenCentralMaterial = new THREE.MeshLambertMaterial({ color: 0x8BC34A }); // Same as development land
             // Material for the Road Divider
             const roadDividerMaterial = new THREE.MeshBasicMaterial({
-                color: 0x74f7e3,
+                color: 0x515151,
                 polygonOffset: true,
                 polygonOffsetFactor: -1,
                 polygonOffsetUnits: -1
