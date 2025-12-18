@@ -561,7 +561,12 @@
             // Updated Material for the "Green Spine" (previously road)
             const greenCentralMaterial = new THREE.MeshLambertMaterial({ color: 0x8BC34A }); // Same as development land
             // Material for the Road Divider
-            const roadDividerMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
+            const roadDividerMaterial = new THREE.MeshBasicMaterial({
+                color: 0x74f7e3,
+                polygonOffset: true,
+                polygonOffsetFactor: -1,
+                polygonOffsetUnits: -1
+            });
 
             const HOUSE_WIDTH = 64; // Match Line 1/2/3 style
             const HOUSE_LENGTH = 68; // Match Line 1/2/3 style
@@ -684,7 +689,10 @@
             const centerRoadGeometry = new THREE.TubeGeometry(centerRoadCurve, 250, 25, 8, false); // Width 25 (Radius 25)
 
             const centerRoadMaterial = new THREE.MeshBasicMaterial({
-                color: 0x515151, // Dark grey road
+                color: 0x515151,
+                polygonOffset: true,
+                polygonOffsetFactor: -1,
+                polygonOffsetUnits: -1
             });
 
             const centerRoadMesh = new THREE.Mesh(centerRoadGeometry, centerRoadMaterial);
@@ -716,7 +724,10 @@
 
             // "Road Style": Grey color, flat appearance
             const parallelRoadMaterial = new THREE.MeshBasicMaterial({
-                color: 0x74f7e3, // Grey road
+                color: 0x74f7e3,
+                polygonOffset: true,
+                polygonOffsetFactor: -1,
+                polygonOffsetUnits: -1
             });
 
             const parallelRoadMesh = new THREE.Mesh(parallelRoadGeometry, parallelRoadMaterial);
@@ -903,7 +914,12 @@
 
         function createGridRoads() {
             // Define a single material for ALL roads
-            const roadMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
+            const roadMaterial = new THREE.MeshBasicMaterial({
+                color: 0x74f7e3,
+                polygonOffset: true,
+                polygonOffsetFactor: -1,
+                polygonOffsetUnits: -1
+            });
 
             // --- Longitudinal Roads (Vertical dividers) ---
             const longRoads = 3;
@@ -1267,12 +1283,18 @@
             // Road Constants
             const HALF_LENGTH = MAP_LENGTH / 2;
             const LONG_ROAD_WIDTH = 25;
-            const ROAD_COLOR = 0x333333;
+            const ROAD_COLOR = 0x515151;
 
             // 1. Right Side Road (Map Edge)
             const rightRoad = new THREE.Mesh(
                 new THREE.BoxGeometry(LONG_ROAD_WIDTH, 0.12, HALF_LENGTH),
-                new THREE.MeshLambertMaterial({ color: ROAD_COLOR })
+                // new THREE.MeshLambertMaterial({ color: ROAD_COLOR })
+                new THREE.MeshBasicMaterial({
+                    color: ROAD_COLOR,
+                    polygonOffset: true,
+                    polygonOffsetFactor: -1,
+                    polygonOffsetUnits: -1
+                })
             );
             rightRoad.position.set(X_MAX_LINE1 - LONG_ROAD_WIDTH / 2, 0.12, HALF_LENGTH / 2);
             mapGroup.add(rightRoad);
@@ -1365,7 +1387,12 @@
                 const centerX = xStart + width / 2;
                 const road = new THREE.Mesh(
                     new THREE.BoxGeometry(width, 0.12, 40),
-                    new THREE.MeshLambertMaterial({ color: 0x333333 })
+                    new THREE.MeshBasicMaterial({
+                        color: 0x515151,
+                        polygonOffset: true,
+                        polygonOffsetFactor: -1,
+                        polygonOffsetUnits: -1
+                    })
                 );
                 road.position.set(centerX, 0.12, z);
                 mapGroup.add(road);
@@ -1475,7 +1502,12 @@
                 const centerX = roadStartX + clusterWidth / 2;
                 const road = new THREE.Mesh(
                     new THREE.BoxGeometry(clusterWidth + 140, 0.12, 40),
-                    new THREE.MeshLambertMaterial({ color: 0x333333 })
+                    new THREE.MeshBasicMaterial({
+                        color: 0x515151,
+                        polygonOffset: true,
+                        polygonOffsetFactor: -1,
+                        polygonOffsetUnits: -1
+                    })
                 );
                 road.position.set(centerX - 70, 0.12, z);
                 mapGroup.add(road);
@@ -1533,7 +1565,12 @@
             // Right Side Road (Line 3 Right Boundary) - Full Length
             const rightRoad = new THREE.Mesh(
                 new THREE.BoxGeometry(LONG_ROAD_WIDTH, 0.012, MAP_LENGTH),
-                new THREE.MeshLambertMaterial({ color: ROAD_COLOR })
+                new THREE.MeshBasicMaterial({
+                    color: 0x515151,
+                    polygonOffset: true,
+                    polygonOffsetFactor: -1,
+                    polygonOffsetUnits: -1
+                })
             );
             rightRoad.position.set(X_MAX_LINE3 - LONG_ROAD_WIDTH / 2, 0.012, MAP_LENGTH / 2);
             mapGroup.add(rightRoad);
@@ -1598,7 +1635,9 @@
 
                 const curvedRoad = new THREE.Mesh(
                     tubeGeometry,
-                    new THREE.MeshBasicMaterial({ color: 0x515151 })
+                    new THREE.MeshBasicMaterial({ color: 0x515151, polygonOffset: true,
+                    polygonOffsetFactor: -1,
+                    polygonOffsetUnits: -1 })
                 );
                 mapGroup.add(curvedRoad);
             }
@@ -1629,7 +1668,12 @@
                 const centerX = roadStartX + bunchWidth / 2;
                 const road = new THREE.Mesh(
                     new THREE.BoxGeometry(bunchWidth + 140, 0.12, 40),
-                    new THREE.MeshLambertMaterial({ color: 0x333333 })
+                  new THREE.MeshBasicMaterial({
+                color: 0x515151,
+                polygonOffset: true,
+                polygonOffsetFactor: -1,
+                polygonOffsetUnits: -1
+            })
                 );
                 road.position.set(centerX - 70, 0.12, z);
                 mapGroup.add(road);
