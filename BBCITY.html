@@ -116,6 +116,25 @@
             // --- Parent Block Area for Smooth Maintenance ---
             const cityBlocks = new THREE.Group();
             scene.add(cityBlocks);
+            
+// Parent land (main ground for the city)
+const cityLandGeometry = new THREE.PlaneGeometry(300, 300);
+const cityLandMaterial = new THREE.MeshBasicMaterial({
+                color: 0xc1d86c,
+                polygonOffset: true,
+                polygonOffsetFactor: -1,
+                polygonOffsetUnits: -1
+            });
+
+const cityLand = new THREE.Mesh(cityLandGeometry, cityLandMaterial);
+cityLand.rotation.x = -Math.PI / 2;
+cityLand.position.y = 0;
+cityLand.position.x = 110;
+cityLand.position.z = 100;
+
+// IMPORTANT: add to cityBlocks (parent)
+cityBlocks.add(cityLand);
+
 
             // Sub Green Land Areas (Containers for bunches)
             const subGreenLand1 = new THREE.Group();
@@ -123,19 +142,84 @@
             cityBlocks.add(subGreenLand1);
 
             const subGreenLand2 = new THREE.Group();
-            subGreenLand2.position.set(10, 0, 5);
+            subGreenLand2.position.set(-20, 0, 5);
             cityBlocks.add(subGreenLand2);
+
+            const subGreenLand3 = new THREE.Group();
+            subGreenLand3.position.set(-20, 0, 5);
+            cityBlocks.add(subGreenLand3);
+
+            const subGreenLand4 = new THREE.Group();
+            subGreenLand4.position.set(-20, 0, 5);
+            cityBlocks.add(subGreenLand4);
+            const subGreenLand5 = new THREE.Group();
+            subGreenLand5.position.set(-20, 0, 5);
+            cityBlocks.add(subGreenLand5);
+
+            const subGreenLand6 = new THREE.Group();
+            subGreenLand6.position.set(-20, 0, 5);
+            cityBlocks.add(subGreenLand6);
 
             // Multiple Bunch Calls with refined serial pairing
             createHouseBunch(subGreenLand1, {
-                serialCount: 30, // Numbers 1 to 20, each with A/B
+                serialCount: 36, // Numbers 1 to 20, each with A/B
                 startX: 0,
                 startZ: 0,
                 unitSpacing: 16,
                 houseGap: 280,
-                rowSpacing: 20,
+                rowSpacing: 15,
                 startId: 1,
-                clusterName: "CLUSTER-6"
+                clusterName: "BUNCH-1"
+            });
+            createHouseBunch(subGreenLand2, {
+                serialCount: 28, // Numbers 1 to 20, each with A/B
+                startX: 0,
+                startZ: 40,
+                unitSpacing: 16,
+                houseGap: 280,
+                rowSpacing: 15,
+                startId: 2,
+                clusterName: "BUNCH-2"
+            });
+            createHouseBunch(subGreenLand3, {
+                serialCount: 28, // Numbers 1 to 20, each with A/B
+                startX: 0,
+                startZ: 80,
+                unitSpacing: 16,
+                houseGap: 280,
+                rowSpacing: 15,
+                startId: 2,
+                clusterName: "BUNCH-3"
+            });
+            createHouseBunch(subGreenLand4, {
+                serialCount: 24, // Numbers 1 to 20, each with A/B
+                startX: 0,
+                startZ: 120,
+                unitSpacing: 16,
+                houseGap: 280,
+                rowSpacing: 15,
+                startId: 2,
+                clusterName: "BUNCH-4"
+            });
+            createHouseBunch(subGreenLand5, {
+                serialCount: 28, // Numbers 1 to 20, each with A/B
+                startX: 0,
+                startZ: 160,
+                unitSpacing: 16,
+                houseGap: 280,
+                rowSpacing: 15,
+                startId: 2,
+                clusterName: "BUNCH-5"
+            });
+            createHouseBunch(subGreenLand6, {
+                serialCount: 30, // Numbers 1 to 20, each with A/B
+                startX: 0,
+                startZ: 200,
+                unitSpacing: 16,
+                houseGap: 280,
+                rowSpacing: 15,
+                startId: 2,
+                clusterName: "BUNCH-6"
             });
 
             // createHouseBunch(subGreenLand2, {
