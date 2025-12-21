@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+</head>
+
+<body>
+
+
+
+
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Load OrbitControls (Requires THREE global object) -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script>
+        let scene, camera, renderer, controls, flagObj;
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x1c96c5);
+            flagObj = createFlag(scene, { x: 10, y: 0, z: -5 });
+            // scene.fog = new THREE.Fog( 0xcccccc, 10, 15 );
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 14000);
+
+            camera.position.z = 18;
+            camera.position.y = 8;
+            camera.lookAt(0, 0, 0);
+
+            scene.add(camera)
+
+            // Lighting for MeshStandardMaterial
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(50, 150, 50);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.bias = -0.0005; // Reduces shadow acne (blinking shadows)
+            directionalLight.shadow.normalBias = 0.05; // Helps with shadow artifacts on surfaces
+            directionalLight.shadow.mapSize.width = 2048;
+            directionalLight.shadow.mapSize.height = 2048;
+            scene.add(directionalLight);
+
+
+            renderer = new THREE.WebGLRenderer({
+                antialias: true,
+                logarithmicDepthBuffer: true // Prevents flickering at far distances/large scales
+            });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.shadowMap.enabled = true; // Enable shadows
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Smoother shadows
+            // Removed ACESFilmicToneMapping and sRGBEncoding to restore original color vibrancy
+            document.body.appendChild(renderer.domElement)
+
+            // Grid Helper
+            const grid = new THREE.GridHelper(1510, 80, 0x697565, 0x697565);
+            scene.add(grid);
+
+            // Orbit Controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.minDistance = 0.1;
+            controls.maxDistance = 3000; // Increased for "100% zoom out"
+            controls.maxPolarAngle = Math.PI / 2.1;
+            controls.screenSpacePanning = true; // Better for moving across the city
+
+            // Ground Land
+            const ground = new THREE.PlaneGeometry(14000, 14000);
+            const groundMaterial = new THREE.MeshBasicMaterial({
+                color: 0x008000,
+                side: THREE.DoubleSide,
+                polygonOffset: true,
+                polygonOffsetFactor: 4,
+                polygonOffsetUnits: 4
+            });
+            const groundMesh = new THREE.Mesh(ground, groundMaterial);
+            groundMesh.rotation.x = -Math.PI / 2;
+            groundMesh.position.y = -0.1;
+            scene.add(groundMesh);
+
+            // Dynamic Road Examples
+            // 1. Straight Road with Depth
+            // createCustomRoad(scene, {
+            //     points: [new THREE.Vector3(-20, 0, -10), new THREE.Vector3(20, 0, -10)],
+            //     width: 4,
+            //     thickness: 0.5,
+            //     style: 'dashed'
+            // });
+
+            // 2. Curved Road with Depth
+            // createCustomRoad(scene, {
+            //     points: [
+            //         new THREE.Vector3(-30, 0, 10),
+            //         new THREE.Vector3(-10, 0, 15),
+            //         new THREE.Vector3(10, 0, 5),
+            //         new THREE.Vector3(30, 0, 12),
+            //         new THREE.Vector3(30, 0, 12),
+            //     ],
+            //     width: 3,
+            //     thickness: 0.3,
+            //     style: 'double'
+            // });
+
+            sceneRender();
+
+            // --- Parent Block Area for Smooth Maintenance ---
+            const cityBlocks = new THREE.Group();
+            scene.add(cityBlocks);
+
+            // Sub Green Land Areas (Containers for bunches)
+            const subGreenLand1 = new THREE.Group();
+            subGreenLand1.position.set(-20, 0, 5);
+            cityBlocks.add(subGreenLand1);
+
+            const subGreenLand2 = new THREE.Group();
+            subGreenLand2.position.set(10, 0, 5);
+            cityBlocks.add(subGreenLand2);
+
+            // Multiple Bunch Calls with refined serial pairing
+            createHouseBunch(subGreenLand1, {
+                serialCount: 30, // Numbers 1 to 20, each with A/B
+                startX: 0,
+                startZ: 0,
+                unitSpacing: 16,
+                houseGap: 280,
+                rowSpacing: 20,
+                startId: 1,
+                clusterName: "CLUSTER-6"
+            });
+
+            // createHouseBunch(subGreenLand2, {
+            //     serialCount: 10, // Numbers 101 to 110, each with A/B
+            //     startX: 0,
+            //     startZ: 0,
+            //     unitSpacing: 7,
+            //     houseGap: 3,
+            //     rowSpacing: 12,
+            //     startId: 101,
+            //     clusterName: "CLUSTER-7"
+            // });
+        }
+
+        /**
+         * Creates a custom road with 3D thickness using THREE.BufferGeometry
+         * @param {THREE.Scene} scene - The scene to add the road to
+         * @param {Object} options - { points: [], width: 4, thickness: 0.5, segments: 128, style: 'dashed' }
+         */
+        function createCustomRoad(scene, options) {
+            const {
+                points = [],
+                width = 4,
+                thickness = 0.5,
+                segments = 128,
+                style = 'dashed'
+            } = options;
+
+            if (points.length < 2) return null;
+
+            const curve = new THREE.CatmullRomCurve3(points);
+            const curvePoints = curve.getPoints(segments);
+            const tangent = new THREE.Vector3();
+
+            const vertices = [];
+            const indices = [];
+            const uvs = [];
+
+            for (let i = 0; i <= segments; i++) {
+                const t = i / segments;
+                const p = curvePoints[i];
+
+                curve.getTangentAt(t, tangent);
+                const normal = new THREE.Vector3(0, 1, 0);
+                const binormal = new THREE.Vector3().crossVectors(tangent, normal).normalize();
+
+                // Calculate 4 vertices per segment (Top-Left, Top-Right, Bottom-Left, Bottom-Right)
+                const pTL = p.clone().add(binormal.clone().multiplyScalar(width / 2)).add(new THREE.Vector3(0, thickness, 0));
+                const pTR = p.clone().add(binormal.clone().multiplyScalar(-width / 2)).add(new THREE.Vector3(0, thickness, 0));
+                const pBL = p.clone().add(binormal.clone().multiplyScalar(width / 2));
+                const pBR = p.clone().add(binormal.clone().multiplyScalar(-width / 2));
+
+                // Push vertices: Top Face (0, 1), Left Side (2, 3), Right Side (4, 5)
+                // We duplicate vertices to have sharp edges (different normals/UVs)
+
+                // Top vertices
+                vertices.push(pTL.x, pTL.y, pTL.z); // 0
+                vertices.push(pTR.x, pTR.y, pTR.z); // 1
+                uvs.push(0, t * (curve.getLength() / width));
+                uvs.push(1, t * (curve.getLength() / width));
+
+                // Left side vertices
+                vertices.push(pTL.x, pTL.y, pTL.z); // 2
+                vertices.push(pBL.x, pBL.y, pBL.z); // 3
+                uvs.push(0, t * (curve.getLength() / thickness));
+                uvs.push(0.1, t * (curve.getLength() / thickness)); // Using tiny bit of texture space for sides
+
+                // Right side vertices
+                vertices.push(pTR.x, pTR.y, pTR.z); // 4
+                vertices.push(pBR.x, pBR.y, pBR.z); // 5
+                uvs.push(0, t * (curve.getLength() / thickness));
+                uvs.push(0.1, t * (curve.getLength() / thickness));
+
+                if (i < segments) {
+                    const base = i * 6;
+                    // Top Face
+                    indices.push(base, base + 6, base + 1);
+                    indices.push(base + 1, base + 6, base + 7);
+                    // Left Wall
+                    indices.push(base + 2, base + 3, base + 8);
+                    indices.push(base + 3, base + 9, base + 8);
+                    // Right Wall
+                    indices.push(base + 4, base + 10, base + 5);
+                    indices.push(base + 5, base + 10, base + 11);
+                }
+            }
+
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+            geometry.setIndex(indices);
+            geometry.computeVertexNormals();
+
+            const canvas = document.createElement('canvas');
+            canvas.width = 128;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+
+            // Asphalt Base
+            ctx.fillStyle = '#222222';
+            ctx.fillRect(0, 0, 128, 512);
+
+            // Sidebar color for side walls (using a small strip of the texture)
+            // We'll use the first 10 pixels for side walls
+            ctx.fillStyle = '#444444';
+            ctx.fillRect(0, 0, 15, 512);
+
+            // Noise/Grit for road
+            for (let i = 0; i < 2000; i++) {
+                const x = 15 + Math.random() * 113;
+                const y = Math.random() * 512;
+                const gray = 20 + Math.random() * 30;
+                ctx.fillStyle = `rgb(${gray},${gray},${gray})`;
+                ctx.fillRect(x, y, 1, 1);
+            }
+
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 4;
+            if (style === 'dashed') {
+                ctx.setLineDash([40, 40]);
+                ctx.beginPath(); ctx.moveTo(71, 0); ctx.lineTo(71, 512); ctx.stroke();
+            } else if (style === 'double') {
+                ctx.beginPath();
+                ctx.moveTo(67, 0); ctx.lineTo(67, 512);
+                ctx.moveTo(75, 0); ctx.lineTo(75, 512);
+                ctx.stroke();
+            } else if (style === 'solid') {
+                ctx.setLineDash([]);
+                ctx.beginPath(); ctx.moveTo(71, 0); ctx.lineTo(71, 512); ctx.stroke();
+            }
+
+            // Side Lines
+            ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+            ctx.setLineDash([]);
+            ctx.strokeRect(17, -10, 2, 532);
+            ctx.strokeRect(124, -10, 2, 532);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+
+            const material = new THREE.MeshBasicMaterial({
+                map: texture,
+                side: THREE.DoubleSide
+            });
+
+            const roadMesh = new THREE.Mesh(geometry, material);
+            scene.add(roadMesh);
+            return roadMesh;
+        }
+
+        function sceneRender(time) {
+            requestAnimationFrame(sceneRender);
+            controls.update();
+            flagObj.animateFlag(time);
+            renderer.render(scene, camera)
+        }
+
+
+        // function createSquareGrid(size = 120, divisions = 80) {
+        //     const vertices = [];
+        //     const step = size / divisions;
+        //     const half = size / 2;
+
+        //     for (let i = 0; i <= divisions; i++) {
+        //         const k = -half + i * step;
+
+        //         // Vertical line
+        //         vertices.push(-half, 0, k, half, 0, k);
+        //         // Horizontal line
+        //         vertices.push(k, 0, -half, k, 0, half);
+        //     }
+
+        //     const geometry = new THREE.BufferGeometry();
+        //     geometry.setAttribute(
+        //         'position',
+        //         new THREE.Float32BufferAttribute(vertices, 3)
+        //     );
+
+        //     const material = new THREE.LineBasicMaterial({ color: 0x697565 });
+        //     return new THREE.LineSegments(geometry, material);
+        // }
+
+
+
+        // Center Flag
+        function createFlag(scene, position = { x: 0, y: 0, z: 0 }) {
+            const group = new THREE.Group();
+
+            /* =========================
+               Flag Pole
+            ========================= */
+            const poleGeometry = new THREE.CylinderGeometry(0.1, 0.1, 10, 16);
+            const poleMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            const pole = new THREE.Mesh(poleGeometry, poleMaterial);
+
+            pole.position.set(0, 5, 0);
+            group.add(pole);
+
+            /* =========================
+               Create Text Canvas
+            ========================= */
+            const canvas = document.createElement("canvas");
+            canvas.width = 1024;
+            canvas.height = 512;
+
+            const ctx = canvas.getContext("2d");
+
+            // Background
+            ctx.fillStyle = "#ffffff"; // Bangladesh green
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Text
+            ctx.font = "bold 80px Arial";
+            ctx.fillStyle = "#ffffff";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText("Bangla Bosoti Square", canvas.width / 2, canvas.height / 2);
+
+            const flagTexture = new THREE.CanvasTexture(canvas);
+
+            /* =========================
+               Flag Cloth
+            ========================= */
+            const flagGeometry = new THREE.PlaneGeometry(6, 3, 20, 10);
+            const flagMaterial = new THREE.MeshBasicMaterial({
+                map: flagTexture,
+                side: THREE.DoubleSide
+            });
+
+            const flag = new THREE.Mesh(flagGeometry, flagMaterial);
+            flag.position.set(3, 7.5, 0);
+            group.add(flag);
+
+            /* =========================
+               Position Group
+            ========================= */
+            group.position.set(position.x, position.y, position.z);
+            scene.add(group);
+
+            /* =========================
+               Wave Animation
+            ========================= */
+            function animateFlag(time) {
+                const pos = flag.geometry.attributes.position;
+
+                for (let i = 0; i < pos.count; i++) {
+                    const x = pos.getX(i);
+                    pos.setZ(i, Math.sin(x * 2 + time * 0.005) * 0.2);
+                }
+
+                pos.needsUpdate = true;
+            }
+
+            return { group, animateFlag };
+        }
+
+        /**
+         * Creates a simple low-poly tree.
+         */
+        function createTree() {
+            const treeGroup = new THREE.Group();
+
+            // Trunk
+            const trunkGeometry = new THREE.CylinderGeometry(0.08, 0.08, 0.5, 6);
+            const trunkMaterial = new THREE.MeshBasicMaterial({ color: 0x8D6E63 });
+            const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+            trunk.position.y = 0.25;
+            treeGroup.add(trunk);
+
+            // Foliage
+            const leavesMaterial = new THREE.MeshBasicMaterial({ color: 0x388E3C });
+            const lowerCone = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.6, 8), leavesMaterial);
+            lowerCone.position.y = 0.6;
+            treeGroup.add(lowerCone);
+
+            const upperCone = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.5, 8), leavesMaterial);
+            upperCone.position.y = 0.9;
+            treeGroup.add(upperCone);
+
+            return treeGroup;
+        }
+
+        /**
+         * Creates the new L-Wing house model from the provided CONFIG and logic.
+         * Scaled down to fit the city proportions.
+         */
+        /**
+         * Creates the new L-Wing house model including a stylish boundary wall and gate.
+         */
+        function createHouse(id, plotW = 500, plotD = 600, skipWall = null) {
+            const CONFIG = {
+                houseWidth: 220,
+                houseDepth: 280,
+                wingLen: 260,
+                floorH: 100,
+                wingW: 100,
+                roofH: 80
+            };
+
+            const house = new THREE.Group();
+
+            // Materials
+            const bodyMat = new THREE.MeshStandardMaterial({ color: 0xe8e4d9 });
+            const roofMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+            const winMat = new THREE.MeshStandardMaterial({ color: 0xadd8e6, emissive: 0x111111 });
+            const woodMat = new THREE.MeshStandardMaterial({ color: 0x8b4513 });
+            const beamMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+            const baseMat = new THREE.MeshStandardMaterial({ color: 0x555555 });
+            const wallMat = new THREE.MeshBasicMaterial({ color: 0xeeeeee });
+            const gateMat = new THREE.MeshBasicMaterial({ color: 0x222222 }); // Dark stylish gate
+            const glassMat = new THREE.MeshStandardMaterial({ color: 0x88ccff, transparent: true, opacity: 0.5 }); // New Glass Material
+
+            const { houseWidth, houseDepth, wingLen, floorH, wingW, roofH } = CONFIG;
+
+            // --- Full Land Boundary Wall & Stylish Gate ---
+            const wallH = 30;
+            const wallT = 8;
+            const gateW = 100;
+
+            // Back Wall
+            const backWall = new THREE.Mesh(new THREE.BoxGeometry(plotW, wallH, wallT), wallMat);
+            backWall.position.set(0, wallH / 2, plotD / 2 - wallT / 2);
+            house.add(backWall);
+
+            // Left Wall (Skip if requested to avoid "double wall")
+            if (skipWall !== 'left') {
+                const leftWall = new THREE.Mesh(new THREE.BoxGeometry(wallT, wallH, plotD), wallMat);
+                leftWall.position.set(-plotW / 2 + wallT / 2, wallH / 2, 0);
+                house.add(leftWall);
+            }
+
+            // Right Wall (Skip if requested to avoid "double wall")
+            if (skipWall !== 'right') {
+                const rightWall = new THREE.Mesh(new THREE.BoxGeometry(wallT, wallH, plotD), wallMat);
+                rightWall.position.set(plotW / 2 - wallT / 2, wallH / 2, 0);
+                house.add(rightWall);
+            }
+
+            // Front Wall with Stylish Gate
+            const frontSegW = (plotW - gateW) / 2;
+            const frontWallL = new THREE.Mesh(new THREE.BoxGeometry(frontSegW, wallH, wallT), wallMat);
+            frontWallL.position.set(-plotW / 2 + frontSegW / 2, wallH / 2, -plotD / 2 + wallT / 2);
+            house.add(frontWallL);
+
+            const frontWallR = new THREE.Mesh(new THREE.BoxGeometry(frontSegW, wallH, wallT), wallMat);
+            frontWallR.position.set(plotW / 2 - frontSegW / 2, wallH / 2, -plotD / 2 + wallT / 2);
+            house.add(frontWallR);
+
+            // --- Stylish Gate Pillars ---
+            const pillarGeo = new THREE.BoxGeometry(15, wallH + 15, 15);
+            const pLeft = new THREE.Mesh(pillarGeo, gateMat);
+            pLeft.position.set(-gateW / 2, (wallH + 15) / 2, -plotD / 2 + wallT / 2);
+            house.add(pLeft);
+
+            const pRight = new THREE.Mesh(pillarGeo, gateMat);
+            pRight.position.set(gateW / 2, (wallH + 15) / 2, -plotD / 2 + wallT / 2);
+            house.add(pRight);
+
+            // --- Gate Bars ---
+            for (let i = 0; i < 5; i++) {
+                const bar = new THREE.Mesh(new THREE.BoxGeometry(gateW, 3, 3), gateMat);
+                bar.position.set(0, 5 + (i * 10), -plotD / 2 + wallT / 2);
+                house.add(bar);
+            }
+
+            // --- Building Group for easy shifting ---
+            const building = new THREE.Group();
+            building.position.x = 200; // Move right side total 300px (100 + 200)
+            house.add(building);
+
+            // --- Building Components (Main Body, Wing, Roof, door, etc.) shifted back for front space ---
+            const buildingOffsetZ = 120;
+
+            // Main Structure
+            const mainBody = new THREE.Mesh(new THREE.BoxGeometry(houseWidth, floorH * 2, houseDepth), bodyMat);
+            mainBody.position.set(0, floorH, buildingOffsetZ);
+            mainBody.castShadow = true;
+            building.add(mainBody);
+
+            // L-Wing Extension
+            const wingBody = new THREE.Mesh(new THREE.BoxGeometry(wingLen, floorH * 2, wingW), bodyMat);
+            wingBody.position.set(-(houseWidth / 2 + wingLen / 2), floorH, houseDepth / 2 - wingW / 2 + buildingOffsetZ);
+            wingBody.castShadow = true;
+            building.add(wingBody);
+
+            // DOORS with IDs
+            const doorCanvas = document.createElement('canvas');
+            doorCanvas.width = 64; doorCanvas.height = 128;
+            const dctx = doorCanvas.getContext('2d');
+            dctx.fillStyle = '#8b4513'; dctx.fillRect(0, 0, 64, 128);
+            dctx.fillStyle = '#FFFFFF'; dctx.font = 'bold 30px Arial';
+            dctx.textAlign = 'center'; dctx.textBaseline = 'middle';
+            dctx.fillText(id, 32, 40);
+            const doorTex = new THREE.CanvasTexture(doorCanvas);
+
+            const door = new THREE.Mesh(new THREE.BoxGeometry(45, 75, 5), new THREE.MeshStandardMaterial({ map: doorTex }));
+            door.position.set(0, 37.5, -(houseDepth / 2 + 2) + buildingOffsetZ);
+            building.add(door);
+
+            // Balcony Doors
+            const bDoor1 = door.clone(); bDoor1.position.set(-60, floorH + 37.5, -(houseDepth / 2 + 2) + buildingOffsetZ);
+            const bDoor2 = door.clone(); bDoor2.position.set(60, floorH + 37.5, -(houseDepth / 2 + 2) + buildingOffsetZ);
+            building.add(bDoor1); building.add(bDoor2);
+
+            // Windows
+            const winGeo = new THREE.PlaneGeometry(40, 50);
+            [-(houseWidth / 2 + 80), -(houseWidth / 2 + 220)].forEach(x => {
+                const w1 = new THREE.Mesh(winGeo, winMat);
+                w1.position.set(x, 45, houseDepth / 2 - wingW - 1.5 + buildingOffsetZ);
+                w1.rotation.y = Math.PI;
+                building.add(w1);
+                const w2 = w1.clone(); w2.position.y = floorH + 45;
+                building.add(w2);
+            });
+
+            // --- PORCHES & BALCONIES ---
+            // Main Porch (Ground)
+            const porch = new THREE.Mesh(new THREE.BoxGeometry(houseWidth - 20, 10, 80), new THREE.MeshStandardMaterial({ color: 0xcccccc }));
+            porch.position.set(0, 5, -(houseDepth / 2 + 40) + buildingOffsetZ);
+            building.add(porch);
+
+            // Main Balcony (1st Floor)
+            const balcony = porch.clone(); balcony.position.y = floorH + 5;
+            building.add(balcony);
+
+            // Glass Railing for Main Balcony
+            const railH = 35;
+            const glassRail = new THREE.Mesh(new THREE.BoxGeometry(houseWidth - 20, railH, 2), glassMat);
+            glassRail.position.set(0, floorH + 5 + railH / 2 + 5, -(houseDepth / 2 + 80) + buildingOffsetZ);
+            building.add(glassRail);
+
+            // Side glass railings for Main Balcony
+            const mRailSideL = new THREE.Mesh(new THREE.BoxGeometry(2, railH, 80), glassMat);
+            mRailSideL.position.set(-(houseWidth - 20) / 2, floorH + 5 + railH / 2 + 5, -(houseDepth / 2 + 40) + buildingOffsetZ);
+            building.add(mRailSideL);
+
+            const mRailSideR = new THREE.Mesh(new THREE.BoxGeometry(2, railH, 80), glassMat);
+            mRailSideR.position.set((houseWidth - 20) / 2, floorH + 5 + railH / 2 + 5, -(houseDepth / 2 + 40) + buildingOffsetZ);
+            building.add(mRailSideR);
+
+            // Wing Balcony (1st Floor)
+            const wingBalcony = new THREE.Mesh(new THREE.BoxGeometry(wingLen - 40, 10, 60), new THREE.MeshStandardMaterial({ color: 0xcccccc }));
+            wingBalcony.position.set(-(houseWidth / 2 + wingLen / 2), floorH + 5, houseDepth / 2 - wingW - 30 + buildingOffsetZ);
+            building.add(wingBalcony);
+
+            // Glass Railing for Wing Balcony
+            const wGlassRail = new THREE.Mesh(new THREE.BoxGeometry(wingLen - 40, railH, 2), glassMat);
+            wGlassRail.position.set(-(houseWidth / 2 + wingLen / 2), floorH + 5 + railH / 2 + 5, houseDepth / 2 - wingW - 60 + buildingOffsetZ);
+            building.add(wGlassRail);
+
+            // Side glass railings for Wing Balcony
+            const wRailSideL = new THREE.Mesh(new THREE.BoxGeometry(2, railH, 60), glassMat);
+            wRailSideL.position.set(-(houseWidth / 2 + wingLen / 2) - (wingLen - 40) / 2, floorH + 5 + railH / 2 + 5, houseDepth / 2 - wingW - 30 + buildingOffsetZ);
+            building.add(wRailSideL);
+
+            const wRailSideR = new THREE.Mesh(new THREE.BoxGeometry(2, railH, 60), glassMat);
+            wRailSideR.position.set(-(houseWidth / 2 + wingLen / 2) + (wingLen - 40) / 2, floorH + 5 + railH / 2 + 5, houseDepth / 2 - wingW - 30 + buildingOffsetZ);
+            building.add(wRailSideR);
+
+            // Wing Doors (1st & 2nd Level Access)
+            const wDoor1 = door.clone();
+            wDoor1.position.set(-(houseWidth / 2 + 80), floorH + 37.5, houseDepth / 2 - wingW - 2 + buildingOffsetZ);
+            wDoor1.rotation.y = Math.PI;
+            building.add(wDoor1);
+
+            const wDoor2 = door.clone();
+            wDoor2.position.set(-(houseWidth / 2 + 180), floorH + 37.5, houseDepth / 2 - wingW - 2 + buildingOffsetZ);
+            wDoor2.rotation.y = Math.PI;
+            building.add(wDoor2);
+
+            // Roofs
+            const mRoofS = new THREE.Shape();
+            mRoofS.moveTo(-houseWidth / 2 - 20, 0); mRoofS.lineTo(0, roofH); mRoofS.lineTo(houseWidth / 2 + 20, 0);
+            const mRoof = new THREE.Mesh(new THREE.ExtrudeGeometry(mRoofS, { depth: houseDepth + 40, bevelEnabled: false }), roofMat);
+            mRoof.position.set(0, floorH * 2, -houseDepth / 2 - 20 + buildingOffsetZ);
+            building.add(mRoof);
+
+            const wRoofS = new THREE.Shape();
+            wRoofS.moveTo(-wingW / 2 - 20, 0); wRoofS.lineTo(0, roofH); wRoofS.lineTo(wingW / 2 + 20, 0);
+            const wRoof = new THREE.Mesh(new THREE.ExtrudeGeometry(wRoofS, { depth: wingLen + 130, bevelEnabled: false }), roofMat);
+            wRoof.rotation.y = -Math.PI / 2;
+            // Align precisely with the wing body center and move it further INTO the main body to fill the gap
+            const wingCenterZ = houseDepth / 2 - wingW / 2 + buildingOffsetZ;
+            wRoof.position.set(-(houseWidth / 2 - 112), floorH * 2, wingCenterZ);
+            building.add(wRoof);
+
+            // Beams
+            const beamGeo = new THREE.CylinderGeometry(5, 5, floorH);
+            const b1 = new THREE.Mesh(beamGeo, beamMat);
+            b1.position.set(-(houseWidth / 2 - 30), floorH / 2, -(houseDepth / 2 + 60) + buildingOffsetZ);
+            building.add(b1);
+            const b2 = b1.clone(); b2.position.x = houseWidth / 2 - 30;
+            building.add(b2);
+
+            const scale = 0.015;
+            house.scale.set(scale, scale, scale);
+
+            return house;
+        }
+
+        /**
+         * Creates a bunch of houses organized in two serial blocks (Odd & Even).
+         * Each serial comes in a pair (A & B).
+         */
+        function createHouseBunch(parent, options) {
+            const houseScale = 0.015;
+            const {
+                serialCount = 10,
+                startX = 0,
+                startZ = 0,
+                plotWidth = 900, // Pre-scaled dimension
+                plotDepth = 600, // Pre-scaled dimension
+                unitSpacing = (plotWidth * houseScale),
+                rowSpacing = plotDepth * houseScale,
+                houseGap = unitSpacing * 0.35,
+                // New Padding and Thickness defaults
+                paddingLeft = 2,
+                paddingRight = 2,
+                paddingTop = 2,
+                paddingBottom = 2,
+                landThickness = 1.5,
+                startId = 1,
+                clusterName = "CLUSTER-6"
+            } = options;
+
+            const bunchGroup = new THREE.Group();
+            bunchGroup.position.set(startX, 0, startZ);
+            parent.add(bunchGroup);
+
+            // Calculate Bunch Land Size including padding
+            const totalUnits = Math.ceil(serialCount / 2);
+            const landWidth = totalUnits * unitSpacing + paddingLeft + paddingRight;
+            const landDepth = (2 * rowSpacing) + paddingTop + paddingBottom;
+
+            // Create Bunch Land Area as a 3D Box
+            const landGeo = new THREE.BoxGeometry(landWidth, landThickness, landDepth);
+            const landMat = new THREE.MeshBasicMaterial({
+                color: 0xc1d86c,
+                polygonOffset: true,
+                polygonOffsetFactor: -1,
+                polygonOffsetUnits: -1
+            });
+            const landMesh = new THREE.Mesh(landGeo, landMat);
+
+            // Positioning the land box
+            const centerX = ((totalUnits - 1) * unitSpacing) / 2 + (paddingRight - paddingLeft) / 2;
+            const centerZ = (rowSpacing / 2) + (paddingBottom - paddingTop) / 2;
+            landMesh.position.set(centerX, -landThickness / 2 + 0.01, centerZ);
+            bunchGroup.add(landMesh);
+
+            const oddRow = new THREE.Group();
+            const evenRow = new THREE.Group();
+            evenRow.position.z = rowSpacing;
+
+            bunchGroup.add(oddRow);
+            bunchGroup.add(evenRow);
+
+            // Add Cluster Label in the middle
+            if (clusterName) {
+                const labelCanvas = document.createElement('canvas');
+                labelCanvas.width = 512; labelCanvas.height = 128;
+                const lctx = labelCanvas.getContext('2d');
+                lctx.fillStyle = 'rgba(255, 255, 0, 0.8)'; // Yellow background
+                lctx.fillRect(0, 0, 512, 128);
+                lctx.fillStyle = '#000000';
+                lctx.font = 'bold 80px Arial';
+                lctx.textAlign = 'center'; lctx.textBaseline = 'middle';
+                lctx.fillText(clusterName, 256, 64);
+
+                const labelTex = new THREE.CanvasTexture(labelCanvas);
+                const labelGeo = new THREE.PlaneGeometry(6, 1.5);
+                const labelMat = new THREE.MeshBasicMaterial({ map: labelTex, transparent: true });
+                const label = new THREE.Mesh(labelGeo, labelMat);
+                label.rotation.x = -Math.PI / 2;
+                label.position.set(((totalUnits - 1) * unitSpacing) / 2, 0.05, rowSpacing / 2);
+                bunchGroup.add(label);
+            }
+
+            for (let i = 0; i < serialCount; i++) {
+                const serialNum = startId + i;
+                const formattedId = "H-" + serialNum.toString().padStart(2, '0');
+                const unitGroup = new THREE.Group();
+
+                // Position the unit in two rows (Odd/Even)
+                const localIdx = Math.floor(i / 2);
+                unitGroup.position.x = localIdx * unitSpacing;
+
+                // Create Single House
+                const house = createHouse(formattedId, plotWidth, plotDepth);
+                unitGroup.add(house);
+
+                if (serialNum % 2 !== 0) {
+                    unitGroup.rotation.y = Math.PI; // Face the opposite direction
+                    oddRow.add(unitGroup);
+                } else {
+                    evenRow.add(unitGroup);
+                }
+
+                // Add tree at the front side of the house area
+                const tree = createTree();
+                // Front side of row. 
+                const treeZ = (serialNum % 2 !== 0) ? -rowSpacing * 0.4 : rowSpacing + rowSpacing * 0.4;
+                tree.position.set(unitGroup.position.x + 2.5, 0, treeZ);
+                bunchGroup.add(tree);
+            }
+
+            return bunchGroup;
+        }
+
+        window.onload = init
+    </script>
+
+
+</body>
+
+</html>

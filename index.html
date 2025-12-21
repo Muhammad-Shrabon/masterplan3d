@@ -156,7 +156,7 @@
                     50000
                 );
                 // Position the camera high up, looking down onto the new center of the map
-                camera.position.set(MAP_WIDTH / 2, 1200, MAP_LENGTH / 2);
+                camera.position.set(MAP_WIDTH / 2, 4000, -1500);
                 camera.lookAt(MAP_WIDTH / 2, 0, MAP_LENGTH / 2);
 
                 // 3. Renderer Setup
@@ -177,7 +177,7 @@
                 }
                 controls = new THREE.OrbitControls(camera, renderer.domElement);
                 controls.target.set(MAP_WIDTH / 2, 0, MAP_LENGTH / 2); // Center controls on the map
-                controls.maxPolarAngle = Math.PI / 2.5; // Prevent camera from going under the ground
+                controls.maxPolarAngle = Math.PI / 4.2; // Prevent camera from going under the ground
                 controls.enableDamping = true; // For a smoother feel
                 controls.dampingFactor = 0.05;
 
@@ -253,30 +253,14 @@
          * Creates the main ground plane (green area) and a base boundary. 0x558B2F
          */
         function createGroundAndBoundary() {
-            const textureLoader = new THREE.TextureLoader();
-
-            const grassTexture = textureLoader.load('./assets/images/grass2.png');
-            grassTexture.wrapS = grassTexture.wrapT = THREE.RepeatWrapping;
-            grassTexture.repeat.set(10, 10); // subtle, not obvious
-            // grassTexture.rotation = Math.random() * Math.PI * 2;
-            grassTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-
             // Base plane (Main Green Area - now much larger)
             const groundGeometry = new THREE.PlaneGeometry(MAP_WIDTH + 2600, MAP_LENGTH + 600);
-            // const groundMaterial = new THREE.MeshLambertMaterial({ color: 0x558B2F }); // Darker green for vegetation
-//             const groundMaterial = new THREE.MeshBasicMaterial({
-//     color: 0x558B2F,
-//     polygonOffset: true,
-//     polygonOffsetFactor: -1,
-//     polygonOffsetUnits: -1
-// }); 
-
-const groundMaterial = new THREE.MeshBasicMaterial({
-    map: grassTexture,
-    polygonOffset: true,
-    polygonOffsetFactor: 1,   // ground goes BACK
-    polygonOffsetUnits: 1
-});
+            const groundMaterial = new THREE.MeshBasicMaterial({
+                color: 0x62bf41,
+                polygonOffset: true,
+                polygonOffsetFactor: 1,   // ground goes BACK
+                polygonOffsetUnits: 1
+            });
             const ground = new THREE.Mesh(groundGeometry, groundMaterial);
             ground.rotation.x = -Math.PI / 2; // Rotate to lie flat
             ground.position.set(MAP_WIDTH / 2, -1, MAP_LENGTH / 2);
@@ -286,8 +270,13 @@ const groundMaterial = new THREE.MeshBasicMaterial({
             // Central Development Land (lighter green - also larger)
 
             const landGeometry = new THREE.PlaneGeometry(MAP_WIDTH + 2200, MAP_LENGTH + 200);
-            const landMaterial = new THREE.MeshLambertMaterial({ color: 0x8BC34A }); // Lighter green for development land
- 
+            const landMaterial = new THREE.MeshBasicMaterial({
+                color: 0xe6ff82,
+                polygonOffset: true,
+                polygonOffsetFactor: 1,   // ground goes BACK
+                polygonOffsetUnits: 1
+            }); // Lighter green for development land
+
             const land = new THREE.Mesh(landGeometry, landMaterial);
             land.rotation.x = -Math.PI / 2;
             land.position.set(MAP_WIDTH / 2, 0, MAP_LENGTH / 2);
@@ -591,16 +580,36 @@ const groundMaterial = new THREE.MeshBasicMaterial({
                 polygonOffsetUnits: -1
             });
 
-            const HOUSE_WIDTH = 64; // Match Line 1/2/3 style
-            const HOUSE_LENGTH = 68; // Match Line 1/2/3 style
+            const HOUSE_WIDTH = 82; // Match Line 1/2/3 style
+            const HOUSE_LENGTH = 92; // Match Line 1/2/3 style
             // HOUSE_SPACING is now calculated automatically
 
             // Block Configuration: 4 Zones with specified house counts
             const blockCounts = [17, 56, 29, 17]; // Zone A, B, C, D
             const zoneNames = ['A', 'B', 'C', 'D'];
             const totalHousesInBlocks = blockCounts.reduce((a, b) => a + b, 0);
-            // Separation between the two house strips
-            const stripSeparation = HOUSE_LENGTH * 1.5;
+            // Separation between the two house strips - now dynamic
+            const STRIP_START_SEPARATION = HOUSE_LENGTH * 1.5;
+            const STRIP_END_SEPARATION = HOUSE_LENGTH * 4.0; // Widen significantly at the end
+
+            const getStripSeparation = (t) => {
+                return STRIP_START_SEPARATION + (STRIP_END_SEPARATION - STRIP_START_SEPARATION) * t;
+            };
+
+            // Helper to create tapered geometry
+            const createTaperedGeometry = (widthStart, widthEnd, length, height) => {
+                const shape = new THREE.Shape();
+                shape.moveTo(-widthStart / 2, -length / 2);
+                shape.lineTo(widthStart / 2, -length / 2);
+                shape.lineTo(widthEnd / 2, length / 2);
+                shape.lineTo(-widthEnd / 2, length / 2);
+                shape.lineTo(-widthStart / 2, -length / 2);
+
+                const extrudeSettings = { depth: height, bevelEnabled: false };
+                const geometry = new THREE.ExtrudeBufferGeometry(shape, extrudeSettings);
+                geometry.rotateX(Math.PI / 2);
+                return geometry;
+            };
 
             // --- Curve Definition - Following Line 3 Left Road Path ---
             // CHL now follows the same curve as Line 3's left road
@@ -646,7 +655,7 @@ const groundMaterial = new THREE.MeshBasicMaterial({
                 const cWidth = unitsCount * UNIT_X_SPACING_L3;
                 currentZ_CHL += BLOCK_HEIGHT_L3;
                 const roadZ = currentZ_CHL + CLUSTER_ROAD_GAP_L3 / 2;
-                const leftEndX = X_MAX_LINE3 - cWidth - 140; // Same as Line 3 road
+                const leftEndX = X_MAX_LINE3 - cWidth - 140;
 
                 chlCurvePoints.push(new THREE.Vector3(leftEndX - CHL_SPACING_OFFSET, 0, roadZ));
                 currentZ_CHL += CLUSTER_ROAD_GAP_L3;
@@ -654,8 +663,9 @@ const groundMaterial = new THREE.MeshBasicMaterial({
 
             // Add transition and end point
             const lastPoint = chlCurvePoints[chlCurvePoints.length - 1];
-            chlCurvePoints.push(new THREE.Vector3(lastPoint.x, 0, lastPoint.z + 200));
-            chlCurvePoints.push(new THREE.Vector3(MAP_WIDTH - 100, 0, MAP_LENGTH * 0.85));
+            chlCurvePoints.push(new THREE.Vector3(lastPoint.x, 0, lastPoint.z + 300));
+            // chlCurvePoints.push(new THREE.Vector3(MAP_WIDTH - 100, 0, MAP_LENGTH * 0.85));
+            chlCurvePoints.push(new THREE.Vector3(MAP_WIDTH - 100, 0, MAP_LENGTH * 0.85 + 600));
 
             const residentialCurve = new THREE.CatmullRomCurve3(
                 chlCurvePoints,
@@ -694,16 +704,14 @@ const groundMaterial = new THREE.MeshBasicMaterial({
             // --- Create Center Divider Road (between house area and river) ---
             const centerRoadPoints = [];
             const centerDivisions = 350;
-            // Position road between outer house strip and parallel road
-            const centerRoadOffset = stripSeparation / 2 + 50; // Halfway between outer houses and river
-
             for (let i = 0; i <= centerDivisions; i++) {
                 const t = i / centerDivisions;
                 const point = residentialCurve.getPoint(t);
                 const tangent = residentialCurve.getTangent(t).normalize();
                 const normal = new THREE.Vector3(-tangent.z, 0, tangent.x);
 
-                // Offset to position between house area and river
+                // Offset to position between house area and river - now dynamic
+                const centerRoadOffset = getStripSeparation(t) / 2 + 50;
                 const roadPos = point.clone().add(normal.clone().multiplyScalar(centerRoadOffset));
                 centerRoadPoints.push(roadPos);
             }
@@ -728,16 +736,15 @@ const groundMaterial = new THREE.MeshBasicMaterial({
 
             // --- Create Parallel Road (formerly River) ---
             const parallelRoadPoints = [];
-            const roadOffsetDistance = stripSeparation + 100; // Distance from center spine to parallel road
             const divisions = 350;
-
             for (let i = 0; i <= divisions; i++) {
                 const t = i / divisions;
                 const point = residentialCurve.getPoint(t);
                 const tangent = residentialCurve.getTangent(t).normalize();
                 const normal = new THREE.Vector3(-tangent.z, 0, tangent.x);
 
-                // Offset to "Outer" side relative to the curve direction
+                // Offset to "Outer" side relative to the curve direction - now dynamic
+                const roadOffsetDistance = getStripSeparation(t) + 100;
                 const roadPos = point.clone().add(normal.clone().multiplyScalar(roadOffsetDistance));
                 parallelRoadPoints.push(roadPos);
             }
@@ -762,34 +769,46 @@ const groundMaterial = new THREE.MeshBasicMaterial({
 
 
             // --- Place Houses in Blocks ---
+            const zoneLengths = [2000, 5000, 5000, 2000];
+            const zoneSpacings = [350, 450, 550, 650]; // Custom spacing per zone A, B, C, D
+            const roadGap = 10;
+            const roadGapT = roadGap / curveLength;
+            const zoneCount = blockCounts.length;
 
-            let currentT = 0;
-            const advanceT = (distance) => distance / curveLength;
-
-            let globalHouseCounter = 1;
+            let runningT = 0;
 
             blockCounts.forEach((count, blockIndex) => {
                 const zoneName = zoneNames[blockIndex];
-                const pairs = Math.ceil(count / 2); // Houses per side for this block
-                let zoneHouseCounter = 1;
+                const segmentLength = zoneLengths[blockIndex];
+                const segmentT = segmentLength / curveLength;
+                const endT = runningT + segmentT;
 
+                const pairs = Math.ceil(count / 2);
+                const currentSpacing = zoneSpacings[blockIndex];
+                const spacingT = currentSpacing / curveLength;
+
+                let zoneHouseCounter = 1;
+                let localT = runningT;
+
+                // 1. Place Houses for this segment
+                // We use count to stay within user's intended house numbers,
+                // but we also stop if we exceed the physical segment length.
                 for (let i = 0; i < pairs; i++) {
-                    if (currentT >= 1) break; // safety
+                    const currentT = localT;
+                    if (currentT >= endT || currentT >= 1) break;
 
                     const point = residentialCurve.getPoint(currentT);
                     const tangent = residentialCurve.getTangent(currentT).normalize();
                     const normal = new THREE.Vector3(-tangent.z, 0, tangent.x);
 
-                    // Determine if this is odd or even position
-                    const isOdd = (i % 2 === 0);
+                    const currentStripSeparation = getStripSeparation(currentT);
 
-                    // --- 1. Inner Strip (Odd houses) ---
+                    // --- Inner Strip (Odd houses) ---
                     if (zoneHouseCounter <= count) {
-                        const innerOffset = normal.clone().multiplyScalar(-stripSeparation / 2);
+                        const innerOffset = normal.clone().multiplyScalar(-currentStripSeparation / 2);
                         const innerPosition = point.clone().add(innerOffset);
 
-                        const houseNum = zoneHouseCounter;
-                        const id1 = `CHL-Zone${zoneName}-${houseNum}`;
+                        const id1 = `CHL-Zone${zoneName}-${zoneHouseCounter}`;
                         const house1 = createHouseModel(HOUSE_WIDTH / 2 - 2, HOUSE_LENGTH, id1);
                         house1.userData.type = 'CHL';
                         house1.userData.zone = zoneName;
@@ -798,13 +817,9 @@ const groundMaterial = new THREE.MeshBasicMaterial({
                         house1.position.copy(innerPosition);
                         mapGroup.add(house1);
 
-                        // Add border around house
+                        // Add border
                         const borderGeo = new THREE.BoxGeometry(HOUSE_WIDTH / 2 + 4, 0.1, HOUSE_LENGTH + 4);
-                        const borderMat = new THREE.MeshLambertMaterial({
-                            color: 0x8B4513,
-                            transparent: true,
-                            opacity: 0.3
-                        });
+                        const borderMat = new THREE.MeshLambertMaterial({ color: 0x8B4513, transparent: true, opacity: 0.3 });
                         const border1 = new THREE.Mesh(borderGeo, borderMat);
                         border1.position.copy(innerPosition);
                         border1.position.y = 0.05;
@@ -814,13 +829,12 @@ const groundMaterial = new THREE.MeshBasicMaterial({
                         zoneHouseCounter++;
                     }
 
-                    // --- 2. Outer Strip (Even houses) ---
+                    // --- Outer Strip (Even houses) ---
                     if (zoneHouseCounter <= count) {
-                        const outerOffset = normal.clone().multiplyScalar(stripSeparation / 2);
+                        const outerOffset = normal.clone().multiplyScalar(currentStripSeparation / 2);
                         const outerPosition = point.clone().add(outerOffset);
 
-                        const houseNum = zoneHouseCounter;
-                        const id2 = `CHL-Zone${zoneName}-${houseNum}`;
+                        const id2 = `CHL-Zone${zoneName}-${zoneHouseCounter}`;
                         const house2 = createHouseModel(HOUSE_WIDTH / 2 - 2, HOUSE_LENGTH, id2);
                         house2.userData.type = 'CHL';
                         house2.userData.zone = zoneName;
@@ -829,14 +843,9 @@ const groundMaterial = new THREE.MeshBasicMaterial({
                         house2.position.copy(outerPosition);
                         mapGroup.add(house2);
 
-                        // Add border around house
-                        const borderGeo = new THREE.BoxGeometry(HOUSE_WIDTH / 2 + 4, 0.1, HOUSE_LENGTH + 4);
-                        const borderMat = new THREE.MeshLambertMaterial({
-                            color: 0x8B4513,
-                            transparent: true,
-                            opacity: 0.3
-                        });
-                        const border2 = new THREE.Mesh(borderGeo, borderMat);
+                        // Add border
+                        const border2 = new THREE.Mesh(new THREE.BoxGeometry(HOUSE_WIDTH / 2 + 4, 0.1, HOUSE_LENGTH + 4),
+                            new THREE.MeshLambertMaterial({ color: 0x8B4513, transparent: true, opacity: 0.3 }));
                         border2.position.copy(outerPosition);
                         border2.position.y = 0.05;
                         border2.rotation.y = house2.rotation.y;
@@ -845,54 +854,46 @@ const groundMaterial = new THREE.MeshBasicMaterial({
                         zoneHouseCounter++;
                     }
 
-                    // --- 3. Green Land Spine ---
-                    const spineWidth = stripSeparation * 1.1;
-                    const spineLength = HOUSE_SPACING * 1.05; // Slightly overlap
+                    // --- Green Land Spine (Tapered) ---
+                    const midT = currentT + (spacingT / 2);
+                    if (midT < endT && midT < 1) {
+                        const widthStart = getStripSeparation(currentT) * 1.1;
+                        const widthEnd = getStripSeparation(currentT + spacingT) * 1.1;
+                        const spineLength = currentSpacing * 1.1;
 
-                    const spineGeo = new THREE.BoxGeometry(spineWidth, 0.5, spineLength);
-                    const spine = new THREE.Mesh(spineGeo, greenCentralMaterial);
+                        const spineGeo = createTaperedGeometry(widthStart, widthEnd, spineLength, 0.5);
+                        const spine = new THREE.Mesh(spineGeo, greenCentralMaterial);
 
-                    spine.position.copy(point);
-                    spine.position.y = 0.1;
-                    spine.rotation.y = Math.atan2(tangent.x, tangent.z);
-
-                    mapGroup.add(spine);
-
-                    // Advance T for next house
-                    currentT += advanceT(HOUSE_SPACING);
-                }
-
-                // --- Add Road Divider after the block ---
-                // Only if it's not the very last block
-                if (blockIndex < blockCounts.length - 1) {
-                    // Gap for the road
-                    currentT += advanceT(HOUSE_SPACING * (gapSizeMultiplier * 0.2));
-
-                    if (currentT < 1) {
-                        const point = residentialCurve.getPoint(currentT);
-                        const tangent = residentialCurve.getTangent(currentT).normalize();
-
-                        // Create a road segment crossing the path
-                        // Width should be enough to look like a road (approx 30-40)
-                        // Length (across the path) should cover the strips + river separation roughly?
-                        // User said "divided with road in 5 block". Usually means a cross street.
-
-                        const roadWidth = 40;
-                        const roadLengthAcross = stripSeparation * 2.5;
-
-                        const dividerGeo = new THREE.BoxGeometry(roadLengthAcross, 0.2, roadWidth);
-                        const divider = new THREE.Mesh(dividerGeo, roadDividerMaterial);
-
-                        divider.position.copy(point);
-                        divider.position.y = 0.15; // Slightly higher to be visible over grass
-                        divider.rotation.y = Math.atan2(tangent.x, tangent.z);
-
-                        mapGroup.add(divider);
+                        const midPoint = residentialCurve.getPoint(midT);
+                        const midTangent = residentialCurve.getTangent(midT).normalize();
+                        spine.position.copy(midPoint);
+                        spine.position.y = 0.1;
+                        spine.rotation.y = Math.atan2(midTangent.x, midTangent.z);
+                        mapGroup.add(spine);
                     }
 
-                    // Remaining Gap
-                    currentT += advanceT(HOUSE_SPACING * (gapSizeMultiplier * 0.8));
+                    localT += spacingT;
                 }
+
+                // 2. Add Road Divider after the segment
+                if (blockIndex < zoneCount - 1) {
+                    const dividerT = endT + (roadGapT / 2);
+                    if (dividerT < 1) {
+                        const point = residentialCurve.getPoint(dividerT);
+                        const tangent = residentialCurve.getTangent(dividerT).normalize();
+
+                        const roadWidth = 40;
+                        const dividerWidth = getStripSeparation(dividerT) * 2.5;
+
+                        const divider = new THREE.Mesh(new THREE.BoxGeometry(dividerWidth, 0.2, roadWidth), roadDividerMaterial);
+                        divider.position.copy(point);
+                        divider.position.y = 0.15;
+                        divider.rotation.y = Math.atan2(tangent.x, tangent.z);
+                        mapGroup.add(divider);
+                    }
+                }
+
+                runningT = endT + roadGapT;
             });
         }
 
@@ -1641,7 +1642,7 @@ const groundMaterial = new THREE.MeshBasicMaterial({
                     new THREE.Vector3(roadEndpoints[0].x, 0.012, 0), // Start from top
                     ...roadEndpoints.map(ep => new THREE.Vector3(ep.x, 0.012, ep.z)),
                     new THREE.Vector3(roadEndpoints[roadEndpoints.length - 1].x, 0.012, roadEndpoints[roadEndpoints.length - 1].z + 200), // Transition point
-                    new THREE.Vector3(CHL_END_X, 0.012, CHL_END_Z) // Connect to CHL end point
+                    new THREE.Vector3(CHL_END_X, 0.012, CHL_END_Z + 350) // Connect to CHL end point
                 ];
 
                 // Create smooth curve through all points
@@ -1658,9 +1659,11 @@ const groundMaterial = new THREE.MeshBasicMaterial({
 
                 const curvedRoad = new THREE.Mesh(
                     tubeGeometry,
-                    new THREE.MeshBasicMaterial({ color: 0x515151, polygonOffset: true,
-                    polygonOffsetFactor: -1,
-                    polygonOffsetUnits: -1 })
+                    new THREE.MeshBasicMaterial({
+                        color: 0x515151, polygonOffset: true,
+                        polygonOffsetFactor: -1,
+                        polygonOffsetUnits: -1
+                    })
                 );
                 mapGroup.add(curvedRoad);
             }
@@ -1691,12 +1694,12 @@ const groundMaterial = new THREE.MeshBasicMaterial({
                 const centerX = roadStartX + bunchWidth / 2;
                 const road = new THREE.Mesh(
                     new THREE.BoxGeometry(bunchWidth + 140, 0.12, 40),
-                  new THREE.MeshBasicMaterial({
-                color: 0x515151,
-                polygonOffset: true,
-                polygonOffsetFactor: -1,
-                polygonOffsetUnits: -1
-            })
+                    new THREE.MeshBasicMaterial({
+                        color: 0x515151,
+                        polygonOffset: true,
+                        polygonOffsetFactor: -1,
+                        polygonOffsetUnits: -1
+                    })
                 );
                 road.position.set(centerX - 70, 0.12, z);
                 mapGroup.add(road);
