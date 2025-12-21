@@ -69,10 +69,13 @@
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
+            controls.rotateSpeed = 0.08; // Less rotation speed
+            controls.zoomSpeed = 0.8;   // Less zoom speed
+            controls.panSpeed = 0.4;    // Less panning speed
             controls.minDistance = 0.1;
-            controls.maxDistance = 3000; // Increased for "100% zoom out"
+            controls.maxDistance = 3000;
             controls.maxPolarAngle = Math.PI / 2.1;
-            controls.screenSpacePanning = true; // Better for moving across the city
+            controls.screenSpacePanning = true;
 
             // Ground Land
             const ground = new THREE.PlaneGeometry(14000, 14000);
@@ -90,11 +93,85 @@
 
             // Dynamic Road Examples
             // 1. Straight Road with Depth
+            createCustomRoad(scene, {
+                points: [new THREE.Vector3(-35, 0, -10),
+                new THREE.Vector3(260, 0, -10),
+                ],
+                width: 4,
+                thickness: .1,
+                style: 'dashed',
+                position: { x: 0, y: 0, z: 5 },
+                rotation: { x: 0, y: 0, z: 0 },
+            });
+            createCustomRoad(scene, {
+                points: [new THREE.Vector3(-35, 0, -10),
+                new THREE.Vector3(260, 0, -10),
+                ],
+                width: 4,
+                thickness: .1,
+                style: 'dashed',
+                position: { x: 0, y: 0, z: 40 },
+                rotation: { x: 0, y: 0, z: 0 },
+            });
+            createCustomRoad(scene, {
+                points: [new THREE.Vector3(-35, 0, -10),
+                new THREE.Vector3(260, 0, -10),
+                ],
+                width: 4,
+                thickness: .1,
+                style: 'dashed',
+                position: { x: 0, y: 0, z: 75 },
+                rotation: { x: 0, y: 0, z: 0 },
+            });
+            createCustomRoad(scene, {
+                points: [new THREE.Vector3(-35, 0, -10),
+                new THREE.Vector3(260, 0, -10),
+                ],
+                width: 4,
+                thickness: .1,
+                style: 'dashed',
+                position: { x: 0, y: 0, z: 110 },
+                rotation: { x: 0, y: 0, z: 0 },
+            });
+            createCustomRoad(scene, {
+                points: [new THREE.Vector3(-35, 0, -10),
+                new THREE.Vector3(260, 0, -10),
+                ],
+                width: 4,
+                thickness: .1,
+                style: 'dashed',
+                position: { x: 0, y: 0, z: 145 },
+                rotation: { x: 0, y: 0, z: 0 },
+            });
+            createCustomRoad(scene, {
+                points: [new THREE.Vector3(-35, 0, -10),
+                new THREE.Vector3(260, 0, -10),
+                ],
+                width: 4,
+                thickness: .1,
+                style: 'dashed',
+                position: { x: 0, y: 0, z: 180 },
+                rotation: { x: 0, y: 0, z: 0 },
+            });
+            createCustomRoad(scene, {
+                points: [new THREE.Vector3(-35, 0, -10),
+                new THREE.Vector3(260, 0, -10),
+                ],
+                width: 4,
+                thickness: .1,
+                style: 'dashed',
+                position: { x: 0, y: 0, z: 215 },
+                rotation: { x: 0, y: 0, z: 0 },
+            });
             // createCustomRoad(scene, {
-            //     points: [new THREE.Vector3(-20, 0, -10), new THREE.Vector3(20, 0, -10)],
+            //     points: [new THREE.Vector3(-35, 0, -10),
+            //     new THREE.Vector3(260, 0, -10),
+            //     ],
             //     width: 4,
-            //     thickness: 0.5,
-            //     style: 'dashed'
+            //     thickness: .1,
+            //     style: 'dashed',
+            //     position: { x: 0, y: 0, z: 250 },
+            //     rotation: { x: 0, y: 0, z: 0 },
             // });
 
             // 2. Curved Road with Depth
@@ -116,24 +193,24 @@
             // --- Parent Block Area for Smooth Maintenance ---
             const cityBlocks = new THREE.Group();
             scene.add(cityBlocks);
-            
-// Parent land (main ground for the city)
-const cityLandGeometry = new THREE.PlaneGeometry(300, 300);
-const cityLandMaterial = new THREE.MeshBasicMaterial({
+
+            // Parent land (main ground for the city)
+            const cityLandGeometry = new THREE.PlaneGeometry(300, 300);
+            const cityLandMaterial = new THREE.MeshBasicMaterial({
                 color: 0xc1d86c,
                 polygonOffset: true,
                 polygonOffsetFactor: -1,
                 polygonOffsetUnits: -1
             });
 
-const cityLand = new THREE.Mesh(cityLandGeometry, cityLandMaterial);
-cityLand.rotation.x = -Math.PI / 2;
-cityLand.position.y = 0;
-cityLand.position.x = 110;
-cityLand.position.z = 100;
+            const cityLand = new THREE.Mesh(cityLandGeometry, cityLandMaterial);
+            cityLand.rotation.x = -Math.PI / 2;
+            cityLand.position.y = 0;
+            cityLand.position.x = 110;
+            cityLand.position.z = 100;
 
-// IMPORTANT: add to cityBlocks (parent)
-cityBlocks.add(cityLand);
+            // IMPORTANT: add to cityBlocks (parent)
+            cityBlocks.add(cityLand);
 
 
             // Sub Green Land Areas (Containers for bunches)
@@ -174,7 +251,7 @@ cityBlocks.add(cityLand);
             createHouseBunch(subGreenLand2, {
                 serialCount: 28, // Numbers 1 to 20, each with A/B
                 startX: 0,
-                startZ: 40,
+                startZ: 35,
                 unitSpacing: 16,
                 houseGap: 280,
                 rowSpacing: 15,
@@ -184,7 +261,7 @@ cityBlocks.add(cityLand);
             createHouseBunch(subGreenLand3, {
                 serialCount: 28, // Numbers 1 to 20, each with A/B
                 startX: 0,
-                startZ: 80,
+                startZ: 70,
                 unitSpacing: 16,
                 houseGap: 280,
                 rowSpacing: 15,
@@ -194,7 +271,7 @@ cityBlocks.add(cityLand);
             createHouseBunch(subGreenLand4, {
                 serialCount: 24, // Numbers 1 to 20, each with A/B
                 startX: 0,
-                startZ: 120,
+                startZ: 105,
                 unitSpacing: 16,
                 houseGap: 280,
                 rowSpacing: 15,
@@ -204,7 +281,7 @@ cityBlocks.add(cityLand);
             createHouseBunch(subGreenLand5, {
                 serialCount: 28, // Numbers 1 to 20, each with A/B
                 startX: 0,
-                startZ: 160,
+                startZ: 140,
                 unitSpacing: 16,
                 houseGap: 280,
                 rowSpacing: 15,
@@ -214,7 +291,7 @@ cityBlocks.add(cityLand);
             createHouseBunch(subGreenLand6, {
                 serialCount: 30, // Numbers 1 to 20, each with A/B
                 startX: 0,
-                startZ: 200,
+                startZ: 175,
                 unitSpacing: 16,
                 houseGap: 280,
                 rowSpacing: 15,
@@ -243,9 +320,11 @@ cityBlocks.add(cityLand);
             const {
                 points = [],
                 width = 4,
-                thickness = 0.5,
+                thickness = 0.1,
                 segments = 128,
-                style = 'dashed'
+                style = 'dashed',
+                position = { x: 0, y: 0, z: 0 },
+                rotation = { x: 0, y: 0, z: 0 }
             } = options;
 
             if (points.length < 2) return null;
@@ -366,6 +445,17 @@ cityBlocks.add(cityLand);
             });
 
             const roadMesh = new THREE.Mesh(geometry, material);
+
+            // Apply Position
+            if (position) {
+                roadMesh.position.set(position.x || 0, position.y || 0, position.z || 0);
+            }
+
+            // Apply Rotation
+            if (rotation) {
+                roadMesh.rotation.set(rotation.x || 0, rotation.y || 0, rotation.z || 0);
+            }
+
             scene.add(roadMesh);
             return roadMesh;
         }
@@ -740,7 +830,7 @@ cityBlocks.add(cityLand);
                 paddingRight = 2,
                 paddingTop = 2,
                 paddingBottom = 2,
-                landThickness = 1.5,
+                landThickness = 3.5,
                 startId = 1,
                 clusterName = "CLUSTER-6"
             } = options;
@@ -757,7 +847,8 @@ cityBlocks.add(cityLand);
             // Create Bunch Land Area as a 3D Box
             const landGeo = new THREE.BoxGeometry(landWidth, landThickness, landDepth);
             const landMat = new THREE.MeshBasicMaterial({
-                color: 0xc1d86c,
+                color: 0xA9DA3F,
+                // color: 0xc1d86c,
                 polygonOffset: true,
                 polygonOffsetFactor: -1,
                 polygonOffsetUnits: -1
