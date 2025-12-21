@@ -70,8 +70,8 @@
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
             controls.rotateSpeed = 0.08; // Less rotation speed
-            controls.zoomSpeed = 0.8;   // Less zoom speed
-            controls.panSpeed = 0.4;    // Less panning speed
+            controls.zoomSpeed = 1.8;   // Less zoom speed
+            controls.panSpeed = 0.8;    // Less panning speed
             controls.minDistance = 0.1;
             controls.maxDistance = 3000;
             controls.maxPolarAngle = Math.PI / 2.1;
@@ -93,6 +93,17 @@
 
             // Dynamic Road Examples
             // 1. Straight Road with Depth
+            // Bunch Left Road
+            createCustomRoad(scene, {
+                points: [new THREE.Vector3(12, 0, -10),
+                new THREE.Vector3(-202, 0, -10),
+                ],
+                width: 6,
+                thickness: .2,
+                style: 'dashed',
+                position: { x: -22, y: 0, z: 5 },
+                rotation: { x: 0, y: -11, z: 0 },
+            });
             createCustomRoad(scene, {
                 points: [new THREE.Vector3(-35, 0, -10),
                 new THREE.Vector3(260, 0, -10),
@@ -115,7 +126,7 @@
             });
             createCustomRoad(scene, {
                 points: [new THREE.Vector3(-35, 0, -10),
-                new THREE.Vector3(260, 0, -10),
+                new THREE.Vector3(199, 0, -10),
                 ],
                 width: 4,
                 thickness: .1,
@@ -125,7 +136,7 @@
             });
             createCustomRoad(scene, {
                 points: [new THREE.Vector3(-35, 0, -10),
-                new THREE.Vector3(260, 0, -10),
+                new THREE.Vector3(199, 0, -10),
                 ],
                 width: 4,
                 thickness: .1,
@@ -135,7 +146,7 @@
             });
             createCustomRoad(scene, {
                 points: [new THREE.Vector3(-35, 0, -10),
-                new THREE.Vector3(260, 0, -10),
+                new THREE.Vector3(170, 0, -10),
                 ],
                 width: 4,
                 thickness: .1,
@@ -145,7 +156,7 @@
             });
             createCustomRoad(scene, {
                 points: [new THREE.Vector3(-35, 0, -10),
-                new THREE.Vector3(260, 0, -10),
+                new THREE.Vector3(200, 0, -10),
                 ],
                 width: 4,
                 thickness: .1,
@@ -154,15 +165,17 @@
                 rotation: { x: 0, y: 0, z: 0 },
             });
             createCustomRoad(scene, {
-                points: [new THREE.Vector3(-35, 0, -10),
-                new THREE.Vector3(260, 0, -10),
-                ],
-                width: 4,
-                thickness: .1,
-                style: 'dashed',
-                position: { x: 0, y: 0, z: 215 },
-                rotation: { x: 0, y: 0, z: 0 },
+            points: [
+                new THREE.Vector3(-35, 0, -10),
+                new THREE.Vector3(215, 0, -10), // straight
+            ],
+            width: 4,
+            thickness: 0.1,
+            style: 'dashed',
+            position: { x: 0, y: 0, z: 215 },
+            rotation: { x: 0, y: 0, z: 0 },
             });
+            
             // createCustomRoad(scene, {
             //     points: [new THREE.Vector3(-35, 0, -10),
             //     new THREE.Vector3(260, 0, -10),
@@ -175,18 +188,20 @@
             // });
 
             // 2. Curved Road with Depth
-            // createCustomRoad(scene, {
-            //     points: [
-            //         new THREE.Vector3(-30, 0, 10),
-            //         new THREE.Vector3(-10, 0, 15),
-            //         new THREE.Vector3(10, 0, 5),
-            //         new THREE.Vector3(30, 0, 12),
-            //         new THREE.Vector3(30, 0, 12),
-            //     ],
-            //     width: 3,
-            //     thickness: 0.3,
-            //     style: 'double'
-            // });
+            createCustomRoad(scene, {
+                points: [
+                    new THREE.Vector3(-12, 0, 10),
+                    new THREE.Vector3(-12, 0, 10),
+                    new THREE.Vector3(10, 0, 5),
+                    new THREE.Vector3(30, 0, 12),
+                    new THREE.Vector3(202, 0, 10),
+                ],
+                width: 3,
+                thickness: 0.3,
+                style: 'double',
+                position: { x: 200, y: 0, z: 200 },
+                rotation: { x: 0, y: -11, z: 0 },
+            });
 
             sceneRender();
 
