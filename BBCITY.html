@@ -20,7 +20,7 @@
     <!-- Load OrbitControls (Requires THREE global object) -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script>
-        let scene, camera, renderer, controls, flagObj;
+        let scene, camera, renderer, controls, flagObj, lakeObj, river;
 
         function init() {
             scene = new THREE.Scene();
@@ -30,9 +30,10 @@
 
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 14000);
 
-            camera.position.z = 18;
-            camera.position.y = 8;
-            camera.lookAt(0, 0, 0);
+            camera.position.z = 318;
+            camera.position.y = 198;
+            camera.position.x = 58;
+            camera.lookAt(100, 1000, 100);
 
             scene.add(camera)
 
@@ -98,7 +99,7 @@
                 points: [new THREE.Vector3(12, 0, -10),
                 new THREE.Vector3(-202, 0, -10),
                 ],
-                width: 6,
+                width: 10,
                 thickness: .2,
                 style: 'dashed',
                 position: { x: -22, y: 0, z: 5 },
@@ -106,7 +107,7 @@
             });
             createCustomRoad(scene, {
                 points: [new THREE.Vector3(-35, 0, -10),
-                new THREE.Vector3(260, 0, -10),
+                new THREE.Vector3(220, 0, -10),
                 ],
                 width: 4,
                 thickness: .1,
@@ -116,7 +117,7 @@
             });
             createCustomRoad(scene, {
                 points: [new THREE.Vector3(-35, 0, -10),
-                new THREE.Vector3(260, 0, -10),
+                new THREE.Vector3(215, 0, -10),
                 ],
                 width: 4,
                 thickness: .1,
@@ -126,7 +127,7 @@
             });
             createCustomRoad(scene, {
                 points: [new THREE.Vector3(-35, 0, -10),
-                new THREE.Vector3(199, 0, -10),
+                new THREE.Vector3(205, 0, -10),
                 ],
                 width: 4,
                 thickness: .1,
@@ -136,7 +137,7 @@
             });
             createCustomRoad(scene, {
                 points: [new THREE.Vector3(-35, 0, -10),
-                new THREE.Vector3(199, 0, -10),
+                new THREE.Vector3(197, 0, -10),
                 ],
                 width: 4,
                 thickness: .1,
@@ -146,7 +147,7 @@
             });
             createCustomRoad(scene, {
                 points: [new THREE.Vector3(-35, 0, -10),
-                new THREE.Vector3(170, 0, -10),
+                new THREE.Vector3(210, 0, -10),
                 ],
                 width: 4,
                 thickness: .1,
@@ -156,7 +157,7 @@
             });
             createCustomRoad(scene, {
                 points: [new THREE.Vector3(-35, 0, -10),
-                new THREE.Vector3(200, 0, -10),
+                new THREE.Vector3(264, 0, -10),
                 ],
                 width: 4,
                 thickness: .1,
@@ -165,52 +166,232 @@
                 rotation: { x: 0, y: 0, z: 0 },
             });
             createCustomRoad(scene, {
-            points: [
-                new THREE.Vector3(-35, 0, -10),
-                new THREE.Vector3(215, 0, -10), // straight
-            ],
-            width: 4,
-            thickness: 0.1,
-            style: 'dashed',
-            position: { x: 0, y: 0, z: 215 },
-            rotation: { x: 0, y: 0, z: 0 },
+                points: [
+                    new THREE.Vector3(-35, 0, -10),
+                    new THREE.Vector3(265, 0, -10), // straight
+                ],
+                width: 4,
+                thickness: 0.1,
+                style: 'dashed',
+                position: { x: 0, y: 0, z: 215 },
+                rotation: { x: 0, y: 0, z: 0 },
             });
-            
-            // createCustomRoad(scene, {
-            //     points: [new THREE.Vector3(-35, 0, -10),
-            //     new THREE.Vector3(260, 0, -10),
-            //     ],
-            //     width: 4,
-            //     thickness: .1,
-            //     style: 'dashed',
-            //     position: { x: 0, y: 0, z: 250 },
+            // CLUSTER ROAD START
+            createCustomRoad(scene, {
+                points: [new THREE.Vector3(12, 0, -10),
+                new THREE.Vector3(-202, 0, -10),
+                ],
+                width: 10,
+                thickness: .2,
+                style: 'dashed',
+                position: { x: -325, y: 0, z: 5 },
+                rotation: { x: 0, y: -11, z: 0 },
+            });
+            createCustomRoad(scene, {
+                points: [new THREE.Vector3(-35, 0, -10),
+                new THREE.Vector3(264, 0, -10),
+                ],
+                width: 4,
+                thickness: .1,
+                style: 'dashed',
+                position: { x: -300, y: 0, z: 5 },
+                rotation: { x: 0, y: 0, z: 0 },
+            });
+            createCustomRoad(scene, {
+                points: [new THREE.Vector3(-35, 0, -10),
+                new THREE.Vector3(264, 0, -10),
+                ],
+                width: 4,
+                thickness: .1,
+                style: 'dashed',
+                position: { x: -300, y: 0, z: 40 },
+                rotation: { x: 0, y: 0, z: 0 },
+            });
+            createCustomRoad(scene, {
+                points: [new THREE.Vector3(-35, 0, -10),
+                new THREE.Vector3(264, 0, -10),
+                ],
+                width: 4,
+                thickness: .1,
+                style: 'dashed',
+                position: { x: -300, y: 0, z: 75 },
+                rotation: { x: 0, y: 0, z: 0 },
+            });
+            createCustomRoad(scene, {
+                points: [new THREE.Vector3(-35, 0, -10),
+                new THREE.Vector3(264, 0, -10),
+                ],
+                width: 4,
+                thickness: .1,
+                style: 'dashed',
+                position: { x: -300, y: 0, z: 110 },
+                rotation: { x: 0, y: 0, z: 0 },
+            });
+            createCustomRoad(scene, {
+                points: [new THREE.Vector3(-35, 0, -10),
+                new THREE.Vector3(264, 0, -10),
+                ],
+                width: 4,
+                thickness: .1,
+                style: 'dashed',
+                position: { x: -300, y: 0, z: 145 },
+                rotation: { x: 0, y: 0, z: 0 },
+            });
+            createCustomRoad(scene, {
+                points: [new THREE.Vector3(-35, 0, -10),
+                new THREE.Vector3(264, 0, -10),
+                ],
+                width: 4,
+                thickness: .1,
+                style: 'dashed',
+                position: { x: -300, y: 0, z: 180 },
+                rotation: { x: 0, y: 0, z: 0 },
+            });
+            createCustomRoad(scene, {
+                points: [
+                    new THREE.Vector3(-35, 0, -10),
+                    new THREE.Vector3(264, 0, -10), // straight
+                ],
+                width: 4,
+                thickness: 0.1,
+                style: 'dashed',
+                position: { x: -300, y: 0, z: 215 },
+                rotation: { x: 0, y: 0, z: 0 },
+            });
+            // Left Side Cluster 7-10
+            createCustomRoad(scene, {
+                points: [new THREE.Vector3(-12, 0, -10),
+                new THREE.Vector3(170, 0, -10),
+                ],
+                width: 10,
+                thickness: .2,
+                style: 'dashed',
+                position: { x: -625, y: 0, z: 195 },
+                rotation: { x: 0, y: -11, z: 0 },
+            });
+            createCustomRoad(scene, {
+                points: [new THREE.Vector3(-35, 0, -10),
+                new THREE.Vector3(264, 0, -10),
+                ],
+                width: 4,
+                thickness: .1,
+                style: 'dashed',
+                position: { x: -600, y: 0, z: 110 },
+                rotation: { x: 0, y: 0, z: 0 },
+            });
+            createCustomRoad(scene, {
+                points: [new THREE.Vector3(-35, 0, -10),
+                new THREE.Vector3(264, 0, -10),
+                ],
+                width: 4,
+                thickness: .1,
+                style: 'dashed',
+                position: { x: -600, y: 0, z: 145 },
+                rotation: { x: 0, y: 0, z: 0 },
+            });
+            createCustomRoad(scene, {
+                points: [new THREE.Vector3(-35, 0, -10),
+                new THREE.Vector3(264, 0, -10),
+                ],
+                width: 4,
+                thickness: .1,
+                style: 'dashed',
+                position: { x: -600, y: 0, z: 180 },
+                rotation: { x: 0, y: 0, z: 0 },
+            });
+            createCustomRoad(scene, {
+                points: [
+                    new THREE.Vector3(-35, 0, -10),
+                    new THREE.Vector3(264, 0, -10), // straight
+                ],
+                width: 4,
+                thickness: 0.1,
+                style: 'dashed',
+                position: { x: -600, y: 0, z: 215 },
+                rotation: { x: 0, y: 0, z: 0 },
+            });
+
+            // lakeObj = createCustomRoad(scene, {
+            //     points: [
+            //     new THREE.Vector3(-200, 0, 200),
+            //     new THREE.Vector3(0, 0, 200),
+
+            //     // ---- helper points for smooth turn ----
+            //     new THREE.Vector3(20, 0, 180),
+            //     new THREE.Vector3(40, 0, 120),
+            //     new THREE.Vector3(0, 0, 20),
+
+            //     // ---- second turn (already good, just soften it) ----
+            //     new THREE.Vector3(300, 0, 22),
+            //     new THREE.Vector3(650, 0, 25),
+            //     new THREE.Vector3(650, 0, -225),
+            // ],
+            //     width: 20,
+            //     thickness: 0.8,
+            //     style: 'lake',
+            //     position: { x: -450, y: 10.1, z: -160 },
             //     rotation: { x: 0, y: 0, z: 0 },
             // });
 
-            // 2. Curved Road with Depth
+
+
+            // LAKE START FROM HERE
+            // INITIALIZE THE RIVER CLASS WITH CUSTOM PARAMETERS
+            // RIVER SYSTEM - A large flowing river at the edge of the city
+            // RIVER SYSTEM - Centered at the Flag (10, 0, -5) with a high-quality "Z" curve
+            const riverPathPoints = [
+                new THREE.Vector3(-600, 0, 150),
+                new THREE.Vector3(-150, 0, 150),
+                new THREE.Vector3(150, 0, -150),
+                new THREE.Vector3(600, 0, -150)
+            ];
+
+            river = new RiverSystem(scene, riverPathPoints, {
+                color: 0x00ccff,
+                width: 40,
+                thickness: 0.05, // Very flat to match the land surface
+                position: { x: 10, y: 0.4, z: -5 }, // Centered exactly at the Flag
+                rotation: { x: 0, y: 0, z: 0 }
+            });
+
+
+
+            // 2. Snake Shape Curved Road with Depth
+            // Curve ROAD START
             createCustomRoad(scene, {
                 points: [
-                    new THREE.Vector3(-12, 0, 10),
-                    new THREE.Vector3(-12, 0, 10),
-                    new THREE.Vector3(10, 0, 5),
-                    new THREE.Vector3(30, 0, 12),
-                    new THREE.Vector3(202, 0, 10),
+                    new THREE.Vector3(-12, 0, -10),     // Junction (start)
+                    new THREE.Vector3(28, 0, -10),     // Straighten out at end
+                    // new THREE.Vector3(28, 0, -12),     // Straighten out at end
+                    new THREE.Vector3(64, 0, -70),
+                    new THREE.Vector3(104, 0, -82),
+                    new THREE.Vector3(154, 0, -60),
+                    // new THREE.Vector3(184, 0, -72), 
+                    new THREE.Vector3(224, 0, -62),
+                    new THREE.Vector3(294, 0, -52),
+                    // new THREE.Vector3(304, 0, -72), 
+                    new THREE.Vector3(344, 0, -48),
+                    new THREE.Vector3(484, 0, -112),
+                    // new THREE.Vector3(144, 0, -112),     // Straighten out at end
+                    // new THREE.Vector3(124, 0, -122),     // Straighten out at end
                 ],
-                width: 3,
-                thickness: 0.3,
-                style: 'double',
-                position: { x: 200, y: 0, z: 200 },
+                width: 10,
+                thickness: 0.21, // Matches previous road
+                style: 'dashed',
+                position: { x: 276, y: 0, z: 195 },
                 rotation: { x: 0, y: -11, z: 0 },
             });
 
-            sceneRender();
+
+
+            requestAnimationFrame(sceneRender);
 
             // --- Parent Block Area for Smooth Maintenance ---
             const cityBlocks = new THREE.Group();
             scene.add(cityBlocks);
 
             // Parent land (main ground for the city)
-            const cityLandGeometry = new THREE.PlaneGeometry(300, 300);
+            const cityLandGeometry = new THREE.PlaneGeometry(1400, 400);
             const cityLandMaterial = new THREE.MeshBasicMaterial({
                 color: 0xc1d86c,
                 polygonOffset: true,
@@ -221,7 +402,7 @@
             const cityLand = new THREE.Mesh(cityLandGeometry, cityLandMaterial);
             cityLand.rotation.x = -Math.PI / 2;
             cityLand.position.y = 0;
-            cityLand.position.x = 110;
+            cityLand.position.x = -50;
             cityLand.position.z = 100;
 
             // IMPORTANT: add to cityBlocks (parent)
@@ -244,6 +425,7 @@
             const subGreenLand4 = new THREE.Group();
             subGreenLand4.position.set(-20, 0, 5);
             cityBlocks.add(subGreenLand4);
+
             const subGreenLand5 = new THREE.Group();
             subGreenLand5.position.set(-20, 0, 5);
             cityBlocks.add(subGreenLand5);
@@ -252,18 +434,45 @@
             subGreenLand6.position.set(-20, 0, 5);
             cityBlocks.add(subGreenLand6);
 
+
+            // Cluster 1
+            const subGreenLandCL1 = new THREE.Group();
+            subGreenLandCL1.position.set(-320, 0, -30);
+            cityBlocks.add(subGreenLandCL1);
+            // Cluster 2
+            const subGreenLandCL2 = new THREE.Group();
+            subGreenLandCL2.position.set(-320, 0, -65);
+            cityBlocks.add(subGreenLandCL2);
+            // Cluster 3
+            const subGreenLandCL3 = new THREE.Group();
+            subGreenLandCL3.position.set(-320, 0, -100);
+            cityBlocks.add(subGreenLandCL3);
+            // Cluster 4
+            const subGreenLandCL4 = new THREE.Group();
+            subGreenLandCL4.position.set(-320, 0, -135);
+            cityBlocks.add(subGreenLandCL4);
+            // Cluster 5
+            const subGreenLandCL5 = new THREE.Group();
+            subGreenLandCL5.position.set(-320, 0, -170);
+            cityBlocks.add(subGreenLandCL5);
+            // Cluster 6
+            const subGreenLandCL6 = new THREE.Group();
+            subGreenLandCL6.position.set(-320, 0, -205);
+            cityBlocks.add(subGreenLandCL6);
+
+
             // Multiple Bunch Calls with refined serial pairing
-            createHouseBunch(subGreenLand1, {
-                serialCount: 36, // Numbers 1 to 20, each with A/B
+            createHouseBunch(subGreenLand6, {
+                serialCount: 30, // Numbers 1 to 20, each with A/B
                 startX: 0,
                 startZ: 0,
                 unitSpacing: 16,
                 houseGap: 280,
                 rowSpacing: 15,
                 startId: 1,
-                clusterName: "BUNCH-1"
+                clusterName: "BUNCH-6"
             });
-            createHouseBunch(subGreenLand2, {
+            createHouseBunch(subGreenLand5, {
                 serialCount: 28, // Numbers 1 to 20, each with A/B
                 startX: 0,
                 startZ: 35,
@@ -271,29 +480,29 @@
                 houseGap: 280,
                 rowSpacing: 15,
                 startId: 2,
-                clusterName: "BUNCH-2"
+                clusterName: "BUNCH-5"
             });
-            createHouseBunch(subGreenLand3, {
-                serialCount: 28, // Numbers 1 to 20, each with A/B
+            createHouseBunch(subGreenLand4, {
+                serialCount: 24, // Numbers 1 to 20, each with A/B
                 startX: 0,
                 startZ: 70,
                 unitSpacing: 16,
                 houseGap: 280,
                 rowSpacing: 15,
                 startId: 2,
-                clusterName: "BUNCH-3"
+                clusterName: "BUNCH-4"
             });
-            createHouseBunch(subGreenLand4, {
-                serialCount: 24, // Numbers 1 to 20, each with A/B
+            createHouseBunch(subGreenLand3, {
+                serialCount: 27, // Numbers 1 to 20, each with A/B
                 startX: 0,
                 startZ: 105,
                 unitSpacing: 16,
                 houseGap: 280,
                 rowSpacing: 15,
                 startId: 2,
-                clusterName: "BUNCH-4"
+                clusterName: "BUNCH-3"
             });
-            createHouseBunch(subGreenLand5, {
+            createHouseBunch(subGreenLand2, {
                 serialCount: 28, // Numbers 1 to 20, each with A/B
                 startX: 0,
                 startZ: 140,
@@ -301,17 +510,84 @@
                 houseGap: 280,
                 rowSpacing: 15,
                 startId: 2,
-                clusterName: "BUNCH-5"
+                clusterName: "BUNCH-2"
             });
             createHouseBunch(subGreenLand6, {
-                serialCount: 30, // Numbers 1 to 20, each with A/B
+                serialCount: 36,
                 startX: 0,
                 startZ: 175,
                 unitSpacing: 16,
                 houseGap: 280,
                 rowSpacing: 15,
                 startId: 2,
-                clusterName: "BUNCH-6"
+                clusterName: "BUNCH-1"
+            });
+
+            // CLUSTER 1
+            createHouseCluster(subGreenLandCL1, {
+                serialCount: 36,
+                startX: 0,
+                startZ: 210,
+                unitSpacing: 16,
+                houseGap: 280,
+                rowSpacing: 15,
+                startId: 2,
+                clusterName: "CLUSTER-1"
+            });
+            // CLUSTER 2
+            createHouseCluster(subGreenLandCL2, {
+                serialCount: 36,
+                startX: 0,
+                startZ: 210,
+                unitSpacing: 16,
+                houseGap: 280,
+                rowSpacing: 15,
+                startId: 2,
+                clusterName: "CLUSTER-2"
+            });
+            // CLUSTER 3
+            createHouseCluster(subGreenLandCL3, {
+                serialCount: 36,
+                startX: 0,
+                startZ: 210,
+                unitSpacing: 16,
+                houseGap: 280,
+                rowSpacing: 15,
+                startId: 2,
+                clusterName: "CLUSTER-3"
+            });
+            // CLUSTER 4
+            createHouseCluster(subGreenLandCL4, {
+                serialCount: 36,
+                startX: 0,
+                startZ: 210,
+                unitSpacing: 16,
+                houseGap: 280,
+                rowSpacing: 15,
+                startId: 2,
+                clusterName: "CLUSTER-4"
+            });
+            // CLUSTER 5
+            createHouseCluster(subGreenLandCL5, {
+                serialCount: 36,
+                startX: 0,
+                startZ: 210,
+                unitSpacing: 16,
+                houseGap: 280,
+                rowSpacing: 15,
+                startId: 2,
+                clusterName: "CLUSTER-5"
+            });
+            // CLUSTER 6
+            createHouseCluster(subGreenLandCL6, {
+                serialCount: 36,
+                startX: 0,
+                startZ: 210,
+                unitSpacing: 16,
+                houseGap: 280,
+                rowSpacing: 15,
+                startId: 2,
+                clusterName: "CLUSTER-6"
             });
 
             // createHouseBunch(subGreenLand2, {
@@ -331,6 +607,8 @@
          * @param {THREE.Scene} scene - The scene to add the road to
          * @param {Object} options - { points: [], width: 4, thickness: 0.5, segments: 128, style: 'dashed' }
          */
+
+        // Create strait road with depth
         function createCustomRoad(scene, options) {
             const {
                 points = [],
@@ -339,7 +617,8 @@
                 segments = 128,
                 style = 'dashed',
                 position = { x: 0, y: 0, z: 0 },
-                rotation = { x: 0, y: 0, z: 0 }
+                rotation = { x: 0, y: 0, z: 0 },
+                color = null // Custom base color
             } = options;
 
             if (points.length < 2) return null;
@@ -412,52 +691,85 @@
             canvas.height = 512;
             const ctx = canvas.getContext('2d');
 
-            // Asphalt Base
-            ctx.fillStyle = '#222222';
-            ctx.fillRect(0, 0, 128, 512);
+            if (style === 'lake') {
+                // Water Base - Deep Ocean Blue
+                const grad = ctx.createLinearGradient(0, 0, 0, 512);
+                grad.addColorStop(0, '#002b4d');
+                grad.addColorStop(0.5, '#005b96');
+                grad.addColorStop(1, '#002b4d');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, 128, 512);
 
-            // Sidebar color for side walls (using a small strip of the texture)
-            // We'll use the first 10 pixels for side walls
-            ctx.fillStyle = '#444444';
-            ctx.fillRect(0, 0, 15, 512);
+                // Animated ripples/foam look (texture side)
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+                ctx.lineWidth = 1.5;
+                for (let i = 0; i < 60; i++) {
+                    ctx.beginPath();
+                    const x = Math.random() * 128;
+                    const y = Math.random() * 512;
+                    const w = 5 + Math.random() * 20;
+                    ctx.moveTo(x - w, y);
+                    ctx.bezierCurveTo(x - w / 2, y + 5, x + w / 2, y - 5, x + w, y);
+                    ctx.stroke();
+                }
+            } else {
+                // Asphalt Base
+                ctx.fillStyle = color || '#222222';
+                ctx.fillRect(0, 0, 128, 512);
 
-            // Noise/Grit for road
-            for (let i = 0; i < 2000; i++) {
-                const x = 15 + Math.random() * 113;
-                const y = Math.random() * 512;
-                const gray = 20 + Math.random() * 30;
-                ctx.fillStyle = `rgb(${gray},${gray},${gray})`;
-                ctx.fillRect(x, y, 1, 1);
+                // Sidebar color for side walls (using a small strip of the texture)
+                ctx.fillStyle = '#444444';
+                ctx.fillRect(0, 0, 15, 512);
+
+                // Noise/Grit for road
+                for (let i = 0; i < 2000; i++) {
+                    const x = 15 + Math.random() * 113;
+                    const y = Math.random() * 512;
+                    const gray = 20 + Math.random() * 30;
+                    ctx.fillStyle = `rgb(${gray},${gray},${gray})`;
+                    ctx.fillRect(x, y, 1, 1);
+                }
             }
 
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 4;
-            if (style === 'dashed') {
-                ctx.setLineDash([40, 40]);
-                ctx.beginPath(); ctx.moveTo(71, 0); ctx.lineTo(71, 512); ctx.stroke();
-            } else if (style === 'double') {
-                ctx.beginPath();
-                ctx.moveTo(67, 0); ctx.lineTo(67, 512);
-                ctx.moveTo(75, 0); ctx.lineTo(75, 512);
-                ctx.stroke();
-            } else if (style === 'solid') {
+            if (style !== 'lake') {
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 4;
+                if (style === 'dashed') {
+                    ctx.setLineDash([40, 40]);
+                    ctx.beginPath(); ctx.moveTo(71, 0); ctx.lineTo(71, 512); ctx.stroke();
+                } else if (style === 'double') {
+                    ctx.beginPath();
+                    ctx.moveTo(60, 0); ctx.lineTo(60, 512);
+                    ctx.moveTo(68, 0); ctx.lineTo(68, 512);
+                    ctx.stroke();
+                } else if (style === 'solid') {
+                    ctx.setLineDash([]);
+                    ctx.beginPath(); ctx.moveTo(71, 0); ctx.lineTo(71, 512); ctx.stroke();
+                }
+
+                // Side Lines
+                ctx.strokeStyle = 'rgba(255,255,255,0.4)';
                 ctx.setLineDash([]);
-                ctx.beginPath(); ctx.moveTo(71, 0); ctx.lineTo(71, 512); ctx.stroke();
+                ctx.strokeRect(17, -10, 2, 532);
+                ctx.strokeRect(124, -10, 2, 532);
             }
-
-            // Side Lines
-            ctx.strokeStyle = 'rgba(255,255,255,0.4)';
-            ctx.setLineDash([]);
-            ctx.strokeRect(17, -10, 2, 532);
-            ctx.strokeRect(124, -10, 2, 532);
 
             const texture = new THREE.CanvasTexture(canvas);
             texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
 
-            const material = new THREE.MeshBasicMaterial({
-                map: texture,
-                side: THREE.DoubleSide
-            });
+            const material = (style === 'lake') ?
+                new THREE.MeshStandardMaterial({
+                    map: texture,
+                    side: THREE.DoubleSide,
+                    transparent: true,
+                    opacity: 0.8,
+                    roughness: 0.2,
+                    metalness: 0.3
+                }) :
+                new THREE.MeshBasicMaterial({
+                    map: texture,
+                    side: THREE.DoubleSide
+                });
 
             const roadMesh = new THREE.Mesh(geometry, material);
 
@@ -477,8 +789,39 @@
 
         function sceneRender(time) {
             requestAnimationFrame(sceneRender);
+            const t = time * 0.001;
             controls.update();
             flagObj.animateFlag(time);
+            if (river) river.update(t);
+
+            // --- Lake Water Animation ---
+            if (lakeObj) {
+                // 1. Flowing Texture
+                if (lakeObj.material.map) {
+                    lakeObj.material.map.offset.y = -t * 0.08;
+                    lakeObj.material.map.offset.x = Math.sin(t * 0.5) * 0.02;
+                }
+
+                // 2. Vertex Wave Effect
+                const pos = lakeObj.geometry.attributes.position;
+                for (let i = 0; i < pos.count; i++) {
+                    const mod6 = i % 6;
+                    // Indices 0, 1, 2, 4 are top vertices
+                    if (mod6 !== 3 && mod6 !== 5) {
+                        const px = pos.getX(i);
+                        const pz = pos.getZ(i);
+                        // Multi-octave wave simulation
+                        const wave = Math.sin(px * 0.04 + t * 2.0) * 1.5 +
+                            Math.cos(pz * 0.04 + t * 1.5) * 1.5 +
+                            Math.sin((px + pz) * 0.02 + t * 0.8) * 2.0;
+                        pos.setY(i, 0.8 + wave); // 0.8 is baseline thickness
+                    }
+                }
+                pos.needsUpdate = true;
+                // Optional: compute normals for better lighting on waves
+                // lakeObj.geometry.computeVertexNormals(); 
+            }
+
             renderer.render(scene, camera)
         }
 
@@ -825,6 +1168,93 @@
             return house;
         }
 
+        class RiverSystem {
+            constructor(scene, points, options = {}) {
+                this.scene = scene;
+                this.points = points;
+                this.color = new THREE.Color(options.color || 0x0077ff);
+                this.width = options.width || 4.5;
+                this.thickness = options.thickness || 0.1;
+                this.pos = options.position || { x: 0, y: 0, z: 0 };
+                this.rot = options.rotation || { x: 0, y: 0, z: 0 };
+
+                this.shaderMaterial = null;
+                this.mesh = null;
+                this.edgeMesh = null;
+
+                this._init();
+            }
+
+            _init() {
+                // High-quality centripetal curve for smooth turns
+                const curve = new THREE.CatmullRomCurve3(this.points, false, 'centripetal');
+                const tubeGeometry = new THREE.TubeGeometry(curve, 512, this.width, 16, false);
+
+                const vertexShader = `
+                    varying vec2 vUv;
+                    uniform float uTime;
+                    void main() {
+                        vUv = uv;
+                        vec3 pos = position;
+                        // Animated water vertical movement
+                        float wave = sin(pos.x * 0.15 + uTime * 2.5) * 0.4;
+                        pos.y += wave;
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+                    }
+                `;
+
+                const fragmentShader = `
+                    uniform vec3 uColor;
+                    uniform float uTime;
+                    varying vec2 vUv;
+                    void main() {
+                        // High-quality scrolling ripples from the image
+                        float ripple = sin((vUv.x * 20.0) - (uTime * 2.5)) * 0.5 + 0.5;
+                        
+                        // Center-to-edge glow like the reference image
+                        float centerDist = abs(vUv.y - 0.5) * 2.0; 
+                        float highlight = pow(1.0 - centerDist, 4.0);
+                        
+                        vec3 baseColor = mix(uColor * 0.6, uColor + vec3(0.2, 0.4, 0.6), highlight);
+                        baseColor += ripple * 0.15 * highlight; 
+                        
+                        gl_FragColor = vec4(baseColor, 1.0); // Full opacity for city visibility
+                    }
+                `;
+
+                this.shaderMaterial = new THREE.ShaderMaterial({
+                    uniforms: {
+                        uTime: { value: 0 },
+                        uColor: { value: this.color }
+                    },
+                    vertexShader: vertexShader,
+                    fragmentShader: fragmentShader,
+                    transparent: false // Make it solid for better visibility
+                });
+
+                this.mesh = new THREE.Mesh(tubeGeometry, this.shaderMaterial);
+                this.mesh.scale.set(1, this.thickness, 1);
+                this.mesh.position.set(this.pos.x, this.pos.y, this.pos.z);
+                this.mesh.rotation.set(this.rot.x, this.rot.y, this.rot.z);
+
+                this.scene.add(this.mesh);
+            }
+
+            update(time) {
+                if (this.shaderMaterial && this.shaderMaterial.uniforms) {
+                    this.shaderMaterial.uniforms.uTime.value = time;
+                }
+            }
+
+            dispose() {
+                this.scene.remove(this.mesh);
+                if (this.edgeMesh) this.scene.remove(this.edgeMesh);
+                this.mesh.geometry.dispose();
+                this.shaderMaterial.dispose();
+            }
+        }
+
+
         /**
          * Creates a bunch of houses organized in two serial blocks (Odd & Even).
          * Each serial comes in a pair (A & B).
@@ -933,6 +1363,111 @@
             }
 
             return bunchGroup;
+        }
+        function createHouseCluster(parent, options) {
+            const houseScale = 0.015;
+            const {
+                serialCount = 10,
+                startX = 0,
+                startZ = 0,
+                plotWidth = 900, // Pre-scaled dimension
+                plotDepth = 600, // Pre-scaled dimension
+                unitSpacing = (plotWidth * houseScale),
+                rowSpacing = plotDepth * houseScale,
+                houseGap = unitSpacing * 0.35,
+                // New Padding and Thickness defaults
+                paddingLeft = 2,
+                paddingRight = 2,
+                paddingTop = 2,
+                paddingBottom = 2,
+                landThickness = 3.5,
+                startId = 1,
+                clusterName = "CLUSTER-6"
+            } = options;
+
+            const clusterGroup = new THREE.Group();
+            clusterGroup.position.set(startX, 0, startZ);
+            parent.add(clusterGroup);
+
+            // Calculate Bunch Land Size including padding
+            const totalUnits = Math.ceil(serialCount / 2);
+            const landWidth = totalUnits * unitSpacing + paddingLeft + paddingRight;
+            const landDepth = (2 * rowSpacing) + paddingTop + paddingBottom;
+
+            // Create Bunch Land Area as a 3D Box
+            const landGeo = new THREE.BoxGeometry(landWidth, landThickness, landDepth);
+            const landMat = new THREE.MeshBasicMaterial({
+                color: 0xA9DA3F,
+                // color: 0xc1d86c,
+                polygonOffset: true,
+                polygonOffsetFactor: -1,
+                polygonOffsetUnits: -1
+            });
+            const landMesh = new THREE.Mesh(landGeo, landMat);
+
+            // Positioning the land box
+            const centerX = ((totalUnits - 1) * unitSpacing) / 2 + (paddingRight - paddingLeft) / 2;
+            const centerZ = (rowSpacing / 2) + (paddingBottom - paddingTop) / 2;
+            landMesh.position.set(centerX, -landThickness / 2 + 0.01, centerZ);
+            clusterGroup.add(landMesh);
+
+            const oddRow = new THREE.Group();
+            const evenRow = new THREE.Group();
+            evenRow.position.z = rowSpacing;
+
+            clusterGroup.add(oddRow);
+            clusterGroup.add(evenRow);
+
+            // Add Cluster Label in the middle
+            if (clusterName) {
+                const labelCanvas = document.createElement('canvas');
+                labelCanvas.width = 512; labelCanvas.height = 128;
+                const lctx = labelCanvas.getContext('2d');
+                lctx.fillStyle = 'rgba(255, 255, 0, 0.8)'; // Yellow background
+                lctx.fillRect(0, 0, 512, 128);
+                lctx.fillStyle = '#000000';
+                lctx.font = 'bold 80px Arial';
+                lctx.textAlign = 'center'; lctx.textBaseline = 'middle';
+                lctx.fillText(clusterName, 256, 64);
+
+                const labelTex = new THREE.CanvasTexture(labelCanvas);
+                const labelGeo = new THREE.PlaneGeometry(6, 1.5);
+                const labelMat = new THREE.MeshBasicMaterial({ map: labelTex, transparent: true });
+                const label = new THREE.Mesh(labelGeo, labelMat);
+                label.rotation.x = -Math.PI / 2;
+                label.position.set(((totalUnits - 1) * unitSpacing) / 2, 0.05, rowSpacing / 2);
+                clusterGroup.add(label);
+            }
+
+            for (let i = 0; i < serialCount; i++) {
+                const serialNum = startId + i;
+                const formattedId = "H-" + serialNum.toString().padStart(2, '0');
+                const unitGroup = new THREE.Group();
+
+                // Position the unit in two rows (Odd/Even)
+                const localIdx = Math.floor(i / 2);
+                unitGroup.position.x = localIdx * unitSpacing;
+
+                // Create Single House
+                const house = createHouse(formattedId, plotWidth, plotDepth);
+                unitGroup.add(house);
+
+                if (serialNum % 2 !== 0) {
+                    unitGroup.rotation.y = Math.PI; // Face the opposite direction
+                    oddRow.add(unitGroup);
+                } else {
+                    evenRow.add(unitGroup);
+                }
+
+                // Add tree at the front side of the house area
+                const tree = createTree();
+                // Front side of row. 
+                const treeZ = (serialNum % 2 !== 0) ? -rowSpacing * 0.4 : rowSpacing + rowSpacing * 0.4;
+                tree.position.set(unitGroup.position.x + 2.5, 0, treeZ);
+                clusterGroup.add(tree);
+            }
+
+            return clusterGroup;
         }
 
         window.onload = init
