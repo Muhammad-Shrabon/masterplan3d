@@ -162,8 +162,13 @@
                 // 3. Renderer Setup
                 renderer = new THREE.WebGLRenderer({ antialias: true });
                 renderer.setSize(window.innerWidth, window.innerHeight);
-                renderer.setPixelRatio(window.devicePixelRatio);
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
                 renderer.shadowMap.enabled = true; // Enable shadow maps
+                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                renderer.outputEncoding = THREE.sRGBEncoding;
+                renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                renderer.toneMappingExposure = 1.0;
+                renderer.physicallyCorrectLights = true;
                 container.appendChild(renderer.domElement);
 
                 // Add the map group to the scene
@@ -208,7 +213,70 @@
                 });
 
                 // Start the animation loop
+                // If the page is opened with ?house=render we show a single high-quality house render
+                const params = new URLSearchParams(window.location.search);
+                if (params.get('house') === 'render') {
+                    // Clear existing mapGroup children
+                    while (mapGroup.children.length) mapGroup.remove(mapGroup.children[0]);
+
+                    // Create a single higher-detail house and center it
+                    const single = createHouseModel(84, 74, 'A-1');
+                    // place at center of visible area
+                    single.position.set(MAP_WIDTH / 2, 0, MAP_LENGTH / 2);
+                    mapGroup.add(single);
+
+                    // tighter camera for render
+                    camera.position.set(MAP_WIDTH / 2, 60, MAP_LENGTH / 2 + 150);
+                    controls.target.set(MAP_WIDTH / 2, 20, MAP_LENGTH / 2);
+                    controls.update();
+
+                    // increase pixel ratio for better screenshot (clamped above)
+                    renderer.setPixelRatio(Math.min(window.devicePixelRatio * 1.5, 2));
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                }
+
                 animate();
+
+                // If in render mode, add a simple download button to capture a high-res PNG
+                if (params.get('house') === 'render') {
+                    const btn = document.createElement('button');
+                    btn.textContent = 'Download PNG';
+                    btn.style.position = 'fixed';
+                    btn.style.right = '18px';
+                    btn.style.bottom = '18px';
+                    btn.style.zIndex = 60;
+                    btn.style.padding = '10px 14px';
+                    btn.style.borderRadius = '8px';
+                    btn.style.background = '#1f2937';
+                    btn.style.color = 'white';
+                    btn.style.border = 'none';
+                    btn.style.cursor = 'pointer';
+                    document.body.appendChild(btn);
+
+                    async function downloadRender() {
+                        const w = window.innerWidth;
+                        const h = window.innerHeight;
+                        const scale = 2; // 2x for higher quality
+                        renderer.setSize(w * scale, h * scale);
+                        renderer.setPixelRatio(Math.min(window.devicePixelRatio * scale, 2));
+                        // render one frame
+                        renderer.render(scene, camera);
+                        const dataURL = renderer.domElement.toDataURL('image/png');
+                        const a = document.createElement('a');
+                        a.href = dataURL;
+                        a.download = 'house-render.png';
+                        a.click();
+                        // restore
+                        renderer.setSize(w, h);
+                        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                    }
+
+                    btn.addEventListener('click', () => {
+                        btn.disabled = true;
+                        btn.textContent = 'Rendering...';
+                        setTimeout(async () => { await downloadRender(); btn.disabled = false; btn.textContent = 'Download PNG'; }, 50);
+                    });
+                }
 
             } catch (error) {
                 console.error("FATAL ERROR during Three.js initialization:", error);
@@ -226,27 +294,35 @@
          * Adds lighting to the scene.
          */
         function addLighting() {
-            // Ambient light for general scene illumination
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-            scene.add(ambientLight);
+                    // Soft ambient / hemisphere for overall bounce
+                    const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 0.45);
+                    scene.add(hemi);
 
-            // Directional light (Simulating the sun)
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
-            directionalLight.position.set(500, 1500, 500); // Position high and slightly offset
-            directionalLight.castShadow = true;
+                    // Key light (soft directional / simulating main studio light)
+                    const key = new THREE.DirectionalLight(0xffffff, 1.1);
+                    key.position.set(400, 600, 300);
+                    key.castShadow = true;
+                    key.shadow.mapSize.width = 2048;
+                    key.shadow.mapSize.height = 2048;
+                    key.shadow.camera.near = 100;
+                    key.shadow.camera.far = 2000;
+                    scene.add(key);
 
-            // Configure shadow properties
-            directionalLight.shadow.mapSize.width = 2048;
-            directionalLight.shadow.mapSize.height = 2048;
-            const d = 1000;
-            directionalLight.shadow.camera.left = -d;
-            directionalLight.shadow.camera.right = d;
-            directionalLight.shadow.camera.top = d;
-            directionalLight.shadow.camera.bottom = -d;
-            directionalLight.shadow.camera.near = 100;
-            directionalLight.shadow.camera.far = 3000;
+                    // Fill light (soft, opposite side)
+                    const fill = new THREE.DirectionalLight(0xffffff, 0.45);
+                    fill.position.set(-300, 300, -200);
+                    fill.castShadow = false;
+                    scene.add(fill);
 
-            scene.add(directionalLight);
+                    // Rim/back light to create separation
+                    const rim = new THREE.DirectionalLight(0xffffff, 0.25);
+                    rim.position.set(-200, 350, 400);
+                    rim.castShadow = false;
+                    scene.add(rim);
+
+                    // Subtle ambient to raise shadow floor detail
+                    const ambientLow = new THREE.AmbientLight(0xffffff, 0.18);
+                    scene.add(ambientLow);
         }
 
         /**
@@ -376,201 +452,339 @@ const groundMaterial = new THREE.MeshBasicMaterial({
          * Creates a single house model with plot border and tree.
          */
         function createHouseModel(width, length, id) {
-            const houseGroup = new THREE.Group();
-            const bodyHeight = 12;
+                    const houseGroup = new THREE.Group();
 
-            // Generate Random Status
-            // 40% Available, 30% Sold, 20% Reserved, 10% Booked
-            const rand = Math.random();
-            let status = 'Available';
-            let statusColor = 0x4CAF50; // Green
+                    // keep metadata
+                    houseGroup.userData.isHouse = true;
+                    houseGroup.userData.id = id;
 
-            if (rand > 0.9) {
-                status = 'Booked';
-                statusColor = 0x2196F3; // Blue
-            } else if (rand > 0.7) {
-                status = 'Reserved';
-                statusColor = 0xFF9800; // Orange
-            } else if (rand > 0.4) {
-                status = 'Sold';
-                statusColor = 0xF44336; // Red
-            }
+                    // sizes - GREATLY INCREASED for premium large house
+                    const groundFloorHeight = 16;
+                    const firstFloorHeight = 14;
+                    const totalHeight = groundFloorHeight + firstFloorHeight;
 
-            // Store status in user data for selection logic
-            houseGroup.userData.isHouse = true;
-            houseGroup.userData.id = id;
-            houseGroup.userData.status = status;
-            houseGroup.userData.statusColor = statusColor;
+                    const foundationHeight = 2.0;
+                    const foundationMat = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.8 });
 
+                    // --- Main Foundation (larger, prominent) ---
+                    const foundationGeo = new THREE.BoxGeometry(width + 12, foundationHeight, length + 12);
+                    const foundation = new THREE.Mesh(foundationGeo, foundationMat);
+                    foundation.position.y = foundationHeight / 2 - 0.01;
+                    foundation.receiveShadow = true;
+                    houseGroup.add(foundation);
 
+                    // Wing Foundation - HORIZONTAL L-SHAPE (extends right on X-axis)
+                    const wingWidth = width * 0.75;  // Larger width
+                    const wingLength = length * 0.85; // Larger length
+                    const wingFoundGeo = new THREE.BoxGeometry(wingWidth + 6, foundationHeight, wingLength + 6);
+                    const wingFound = new THREE.Mesh(wingFoundGeo, foundationMat);
+                    // Position wing centered on Z, extends right (positive X)
+                    wingFound.position.set(width / 2 + wingWidth / 2 + 3, foundationHeight / 2 - 0.01, 0);
+                    wingFound.receiveShadow = true;
+                    houseGroup.add(wingFound);
 
-            // --- Plot Boundary (Dotted Line) ---
-            // Increased plot buffer for "Larger Land Area"
-            const plotWidth = width + 25;
-            const plotLength = length + 35;
+                    // --- Walls: two stacked boxes (white) with wooden trims ---
+                    const wallMat = new THREE.MeshStandardMaterial({ color: 0xf7f7f7, roughness: 0.6 });
+                    const trimMat = new THREE.MeshStandardMaterial({ color: 0xD7A66A, roughness: 0.6 });
 
-            // Create a rectangle shape for the plot
-            const plotGeometry = new THREE.EdgesGeometry(new THREE.PlaneGeometry(plotWidth, plotLength));
-            const plotMaterial = new THREE.LineDashedMaterial({
-                color: 0xaaaaaa,
-                dashSize: 4,  // Bigger dashes
-                gapSize: 3,
-                opacity: 0.6,
-                transparent: true
-            });
+                    const groundGeo = new THREE.BoxGeometry(width, groundFloorHeight, length);
+                    const groundMesh = new THREE.Mesh(groundGeo, wallMat);
+                    groundMesh.position.y = foundationHeight + groundFloorHeight / 2;
+                    groundMesh.castShadow = true;
+                    groundMesh.receiveShadow = true;
+                    groundMesh.userData.isHousePart = true;
+                    houseGroup.add(groundMesh);
 
-            const plotLines = new THREE.LineSegments(plotGeometry, plotMaterial);
-            plotLines.rotation.x = -Math.PI / 2; // Lie flat on ground
-            plotLines.position.y = 0.2;
-            plotLines.computeLineDistances();
-            houseGroup.add(plotLines);
+                    const firstGeo = new THREE.BoxGeometry(width * 0.97, firstFloorHeight, length * 0.97);
+                    const firstMesh = new THREE.Mesh(firstGeo, wallMat);
+                    firstMesh.position.y = foundationHeight + groundFloorHeight + firstFloorHeight / 2;
+                    firstMesh.castShadow = true;
+                    firstMesh.receiveShadow = true;
+                    firstMesh.userData.isHousePart = true;
+                    houseGroup.add(firstMesh);
 
-            // --- House Body (White/Cream) ---
-            const bodyGeometry = new THREE.BoxGeometry(width, bodyHeight, length);
-            const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0xf5f5f5 });
-            const houseBody = new THREE.Mesh(bodyGeometry, bodyMaterial);
-            houseBody.position.y = bodyHeight / 2;
-            houseBody.castShadow = true;
+                    // Wooden trims: thin boxes around floor separations and window frames
+                    const trimHeight = 0.6;
+                    const floorTrimGeo = new THREE.BoxGeometry(width + 2, trimHeight, 0.6);
+                    const floorTrim = new THREE.Mesh(floorTrimGeo, trimMat);
+                    floorTrim.position.set(0, foundationHeight + groundFloorHeight + 0.2, length / 2 + 0.3);
+                    floorTrim.castShadow = false;
+                    houseGroup.add(floorTrim);
 
-            // Mark as house part and store parent reference if needed
-            houseBody.userData.isHousePart = true;
-            houseBody.userData.originalColor = bodyMaterial.color.getHex();
+                    // --- HORIZONTAL L-Shape Wing Extension (extends right on X-axis) ---
+                    const wingSpacing = 4; // Gap between main and wing on X
+                    const wingGround = new THREE.Mesh(
+                        new THREE.BoxGeometry(wingWidth, groundFloorHeight, wingLength),
+                        wallMat
+                    );
+                    wingGround.position.set(width / 2 + wingSpacing + wingWidth / 2, foundationHeight + groundFloorHeight / 2, 0);
+                    wingGround.castShadow = true;
+                    wingGround.receiveShadow = true;
+                    wingGround.userData.isHousePart = true;
+                    houseGroup.add(wingGround);
 
-            houseGroup.add(houseBody);
-            // --- Pitched Roof (Gable Style) ---
-            const roofHeight = 6;
-            const roofWidth = width * 1.2;
-            const roofLength = length * 1.1;
+                    const wingFirst = new THREE.Mesh(
+                        new THREE.BoxGeometry(wingWidth * 0.97, firstFloorHeight * 0.90, wingLength * 0.97),
+                        wallMat
+                    );
+                    wingFirst.position.set(width / 2 + wingSpacing + wingWidth / 2, foundationHeight + groundFloorHeight + firstFloorHeight * 0.45, 0);
+                    wingFirst.castShadow = true;
+                    wingFirst.receiveShadow = true;
+                    wingFirst.userData.isHousePart = true;
+                    houseGroup.add(wingFirst);
 
-            const shape = new THREE.Shape();
-            shape.moveTo(0, 0);
-            shape.lineTo(roofWidth / 2, roofHeight);
-            shape.lineTo(roofWidth, 0);
-            shape.lineTo(0, 0);
+                    // --- Front balconies on both floors ---
+                    function createBalcony(yPos, depth, balconyWidth) {
+                        const balGroup = new THREE.Group();
 
-            const extrudeSettings = {
-                steps: 1,
-                depth: roofLength,
-                bevelEnabled: false
-            };
+                        // floor
+                        const balFloorGeo = new THREE.BoxGeometry(balconyWidth, 0.4, depth);
+                        const balFloorMat = new THREE.MeshStandardMaterial({ color: 0xC59B6B, roughness: 0.7 });
+                        const balFloor = new THREE.Mesh(balFloorGeo, balFloorMat);
+                        balFloor.position.y = yPos - 0.2;
+                        balFloor.position.z = length / 2 + depth / 2 - 0.1;
+                        balFloor.castShadow = true;
+                        balGroup.add(balFloor);
 
-            const gableGeometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-            gableGeometry.translate(-roofWidth / 2, 0, -roofLength / 2);
+                        // balustrade: repeated cylinders
+                        const balRadius = 0.45;
+                        const balSpacing = 1.6;
+                        const count = Math.floor(balconyWidth / balSpacing) - 1;
+                        const startX = -balconyWidth / 2 + balSpacing;
+                        for (let i = 0; i <= count; i++) {
+                            const cyl = new THREE.Mesh(new THREE.CylinderGeometry(balRadius, balRadius, 2.4, 12), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.7 }));
+                            cyl.position.set(startX + i * balSpacing, yPos + 0.8, length / 2 + depth - 0.2);
+                            balGroup.add(cyl);
+                        }
 
-            const roofMaterial = new THREE.MeshLambertMaterial({ color: 0x8e554a });
-            const gableRoof = new THREE.Mesh(gableGeometry, roofMaterial);
-            gableRoof.position.y = bodyHeight;
-            gableRoof.castShadow = true;
+                        // top rail
+                        const railGeo = new THREE.BoxGeometry(balconyWidth, 0.25, 0.4);
+                        const rail = new THREE.Mesh(railGeo, new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.7 }));
+                        rail.position.set(0, yPos + 1.2, length / 2 + depth - 0.2);
+                        balGroup.add(rail);
 
-            // Interaction Tags
-            gableRoof.userData.isHousePart = true;
-            gableRoof.userData.originalColor = roofMaterial.color.getHex();
+                        return balGroup;
+                    }
 
-            houseGroup.add(gableRoof);
+                    const balconyGround = createBalcony(foundationHeight + 2.8, 4.2, width * 0.6);
+                    balconyGround.position.x = 0;
+                    houseGroup.add(balconyGround);
 
-            // --- Dormer (Small extension) ---
-            const dormerWidth = roofWidth * 0.4;
-            const dormerHeight = roofHeight * 0.6;
-            const dormerLength = roofWidth * 0.4;
+                    const balconyUpper = createBalcony(foundationHeight + groundFloorHeight + firstFloorHeight - 1.6, 4.6, width * 0.6);
+                    balconyUpper.position.x = 0;
+                    houseGroup.add(balconyUpper);
 
-            const dormerShape = new THREE.Shape();
-            dormerShape.moveTo(0, 0);
-            dormerShape.lineTo(dormerWidth / 2, dormerHeight);
-            dormerShape.lineTo(dormerWidth, 0);
-            dormerShape.lineTo(0, 0);
+                    // --- Door Balcony on Wing Extension (horizontal L-shape, on right side) ---
+                    const wingDoorBalconyW = wingWidth * 0.75;
+                    const wingDoorBalconyDepth = 4.0;
+                    const wingBalFloorGeo = new THREE.BoxGeometry(wingDoorBalconyW, 0.4, wingDoorBalconyDepth);
+                    const wingBalFloorMat = new THREE.MeshStandardMaterial({ color: 0xC59B6B, roughness: 0.7 });
+                    const wingBalFloor = new THREE.Mesh(wingBalFloorGeo, wingBalFloorMat);
+                    wingBalFloor.position.set(width / 2 + wingSpacing + wingWidth / 2 + wingDoorBalconyDepth / 2 - 0.1, foundationHeight + groundFloorHeight + 2.6, 0);
+                    wingBalFloor.castShadow = true;
+                    houseGroup.add(wingBalFloor);
 
-            const dormerGeo = new THREE.ExtrudeGeometry(dormerShape, {
-                steps: 1,
-                depth: dormerLength,
-                bevelEnabled: false
-            });
-            dormerGeo.translate(-dormerWidth / 2, 0, 0);
+                    // Wing balcony balustrade
+                    const wingBalRadius = 0.42;
+                    const wingBalSpacing = 1.5;
+                    const wingBalCount = Math.floor(wingDoorBalconyW / wingBalSpacing) - 1;
+                    const wingBalStartZ = -wingDoorBalconyW / 2 + wingBalSpacing;
+                    for (let i = 0; i <= wingBalCount; i++) {
+                        const cyl = new THREE.Mesh(new THREE.CylinderGeometry(wingBalRadius, wingBalRadius, 2.3, 10), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.7 }));
+                        cyl.position.set(width / 2 + wingSpacing + wingWidth / 2 + wingDoorBalconyDepth / 2 - 0.1, foundationHeight + groundFloorHeight + 3.4, wingBalStartZ + i * wingBalSpacing);
+                        houseGroup.add(cyl);
+                    }
 
-            const dormer = new THREE.Mesh(dormerGeo, roofMaterial);
-            dormer.rotation.y = Math.PI / 2;
-            dormer.position.set(roofWidth / 3, bodyHeight + 1.5, 0);
+                    // Wing balcony rail
+                    const wingRailGeo = new THREE.BoxGeometry(wingDoorBalconyW, 0.24, 0.35);
+                    const wingRail = new THREE.Mesh(wingRailGeo, new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.7 }));
+                    wingRail.position.set(width / 2 + wingSpacing + wingWidth / 2 + wingDoorBalconyDepth / 2 - 0.1, foundationHeight + groundFloorHeight + 3.7, 0);
+                    houseGroup.add(wingRail);
 
-            // Interaction Tags
-            dormer.userData.isHousePart = true;
-            dormer.userData.originalColor = roofMaterial.color.getHex();
+                    // Add cylindrical support columns from ground to upper balcony
+                    const colRadius = 0.6;
+                    const colHeight = foundationHeight + groundFloorHeight + 1.2;
+                    const colMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8 });
+                    const colPositions = [-width * 0.25, width * 0.25];
+                    colPositions.forEach(x => {
+                        const col = new THREE.Mesh(new THREE.CylinderGeometry(colRadius, colRadius, colHeight, 12), colMat);
+                        col.position.set(x, colHeight / 2 - 0.3, length / 2 + 1.2);
+                        col.castShadow = true;
+                        houseGroup.add(col);
+                    });
 
-            houseGroup.add(dormer);
+                    // --- Multi-pane windows with wood frames ---
+                    const windowGroup = new THREE.Group();
+                    const frameMat = new THREE.MeshStandardMaterial({ color: 0x8C5A34, roughness: 0.6 });
+                    const glassMat = new THREE.MeshStandardMaterial({ color: 0x8fbfe6, metalness: 0.1, roughness: 0.05, transparent: true, opacity: 0.9 });
 
-            // Window on Dormer
-            const winGeo = new THREE.PlaneGeometry(dormerWidth * 0.4, dormerHeight * 0.4);
-            const winMat = new THREE.MeshLambertMaterial({ color: 0x87CEEB });
-            const windowMesh = new THREE.Mesh(winGeo, winMat);
-            windowMesh.rotation.y = Math.PI / 2;
-            windowMesh.position.set(roofWidth / 3 + dormerLength + 0.1, bodyHeight + 2.5, 0);
-            houseGroup.add(windowMesh);
+                    function addWindow(x, y, w, h) {
+                        const frameThickness = 0.4;
+                        const frameOuter = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.6), frameMat);
+                        frameOuter.position.set(x, y, length / 2 + 0.31);
+                        windowGroup.add(frameOuter);
 
-            // --- Create Door Texture with Number ---
-            // Helper function logic inline or separate? Let's keep it clean.
-            // Since we didn't add the helper function globally yet, let's just generate the canvas here.
+                        // panes: 2x2 grid
+                        const paneW = (w - (frameThickness * 3)) / 2;
+                        const paneH = (h - (frameThickness * 3)) / 2;
+                        const offsetX = - (paneW + frameThickness) / 2 + frameThickness / 2;
+                        const offsetY = (paneH + frameThickness) / 2 - frameThickness / 2;
 
-            const canvas = document.createElement('canvas');
-            canvas.width = 128;
-            canvas.height = 256;
-            const ctx = canvas.getContext('2d');
+                        for (let ix = 0; ix < 2; ix++) {
+                            for (let iy = 0; iy < 2; iy++) {
+                                const px = x + offsetX + ix * (paneW + frameThickness);
+                                const py = y - offsetY + iy * -(paneH + frameThickness);
+                                const pane = new THREE.Mesh(new THREE.PlaneGeometry(paneW, paneH), glassMat);
+                                pane.position.set(px, py, length / 2 + 0.6);
+                                windowGroup.add(pane);
+                            }
+                        }
+                    }
 
-            // Draw Door Background
-            ctx.fillStyle = '#8D6E63'; // Wood color
-            ctx.fillRect(0, 0, 128, 256);
+                    // Add windows evenly spaced on facade
+                    const winW = 6;
+                    const winH = 6;
+                    const spacingX = width / 4;
+                    addWindow(-spacingX, foundationHeight + groundFloorHeight / 2 + 1, winW, winH);
+                    addWindow(spacingX, foundationHeight + groundFloorHeight / 2 + 1, winW, winH);
+                    addWindow(-spacingX, foundationHeight + groundFloorHeight + firstFloorHeight / 2 + 1, winW, winH);
+                    addWindow(spacingX, foundationHeight + groundFloorHeight + firstFloorHeight / 2 + 1, winW, winH);
+                    houseGroup.add(windowGroup);
 
-            // Draw Panel details
-            ctx.strokeStyle = '#5D4037';
-            ctx.lineWidth = 5;
-            ctx.strokeRect(10, 10, 108, 236);
+                    // --- Main entrance door (dark wood) centered under upper balcony ---
+                    const doorW = 7;
+                    const doorH = 10;
+                    const doorCanvas = document.createElement('canvas');
+                    doorCanvas.width = 256; doorCanvas.height = 512;
+                    const dctx = doorCanvas.getContext('2d');
+                    dctx.fillStyle = '#4b2e1a'; dctx.fillRect(0,0,256,512);
+                    dctx.fillStyle = '#2e1b12'; dctx.fillRect(20,20,216,472);
+                    dctx.fillStyle = '#ffffff'; dctx.font = 'bold 80px Arial'; dctx.textAlign='center'; dctx.fillText(id, 128, 120);
+                    const doorTex = new THREE.CanvasTexture(doorCanvas);
+                    const doorMesh = new THREE.Mesh(new THREE.BoxGeometry(doorW, doorH, 0.6), new THREE.MeshStandardMaterial({ map: doorTex }));
+                    doorMesh.position.set(0, foundationHeight + doorH/2, length/2 + 0.3);
+                    doorMesh.castShadow = true;
+                    houseGroup.add(doorMesh);
 
-            // Draw Number
-            ctx.fillStyle = '#FFFFFF';
-            ctx.font = 'bold 60px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(id, 64, 80); // Top half
+                    // --- Roof: blue-gray tiled gable with visible ceramic tile look ---
+                    // Create a canvas texture that tiles to simulate ceramic tiles
+                    // --- Roof with #e25822 color ---
+                    const roofCanvas = document.createElement('canvas');
+                    roofCanvas.width = 128; roofCanvas.height = 64;
+                    const rctx = roofCanvas.getContext('2d');
+                    rctx.fillStyle = '#e25822'; rctx.fillRect(0,0,128,64);
+                    rctx.fillStyle = '#c94618';
+                    for (let y=0; y<64; y+=8) {
+                        for (let x=0; x<128; x+=12) {
+                            rctx.beginPath();
+                            rctx.ellipse(x+6, y+4, 6, 3.5, 0, 0, Math.PI*2);
+                            rctx.fill();
+                        }
+                    }
+                    const roofTex = new THREE.CanvasTexture(roofCanvas);
+                    roofTex.wrapS = roofTex.wrapT = THREE.RepeatWrapping;
+                    roofTex.repeat.set(8, 6);
 
-            const doorTexture = new THREE.CanvasTexture(canvas);
+                    const roofWidth = width * 1.12;
+                    const roofLength = length * 1.0;
+                    const roofHeight = 10.5;
 
-            // Simplified door/window proxies
-            const doorHeight = bodyHeight * 0.9;
-            const doorGeometry = new THREE.BoxGeometry(width * 0.25, doorHeight, 0.1);
-            const doorMaterial = new THREE.MeshLambertMaterial({ map: doorTexture });
-            const door = new THREE.Mesh(doorGeometry, doorMaterial);
-            door.position.set(0, doorHeight / 2, length / 2 + 0.05);
-            houseGroup.add(door);
+                    // Main roof (front section) - gable style
+                    const roofShape = new THREE.Shape();
+                    roofShape.moveTo(-roofWidth/2, 0);
+                    roofShape.lineTo(0, roofHeight);
+                    roofShape.lineTo(roofWidth/2, 0);
+                    const roofExtrude = new THREE.ExtrudeGeometry(roofShape, { depth: roofLength * 0.70, bevelEnabled: false });
+                    roofExtrude.translate(0, 0, -roofLength * 0.70 / 2);
+                    const roofMat = new THREE.MeshStandardMaterial({ map: roofTex, roughness: 0.9 });
+                    const roofMesh = new THREE.Mesh(roofExtrude, roofMat);
+                    roofMesh.position.y = foundationHeight + groundFloorHeight + firstFloorHeight - 0.4;
+                    roofMesh.castShadow = true;
+                    houseGroup.add(roofMesh);
 
-            // --- Add Side Door (Under Dormer) ---
-            // Dormer is at x = roofWidth / 3.
-            // roofWidth = width * 1.2
-            // So dormerX = (width * 1.2) / 3 = width * 0.4
+                    // Wing roof (HORIZONTAL L-shape: extends right on X-axis) - perpendicular gable
+                    const wingRoofWidth = wingWidth * 1.08;
+                    const wingRoofLength = wingLength * 0.98;
+                    const wingRoofHeight = roofHeight * 0.88;
+                    const wingRoofShape = new THREE.Shape();
+                    wingRoofShape.moveTo(-wingRoofWidth/2, 0);
+                    wingRoofShape.lineTo(0, wingRoofHeight);
+                    wingRoofShape.lineTo(wingRoofWidth/2, 0);
+                    const wingRoofExtrude = new THREE.ExtrudeGeometry(wingRoofShape, { depth: wingRoofLength, bevelEnabled: false });
+                    wingRoofExtrude.translate(0, 0, -wingRoofLength / 2);
+                    const wingRoofMesh = new THREE.Mesh(wingRoofExtrude, roofMat);
+                    wingRoofMesh.position.set(width / 2 + wingSpacing + wingWidth / 2, foundationHeight + groundFloorHeight + firstFloorHeight - 0.4, 0);
+                    wingRoofMesh.rotation.z = Math.PI / 2;
+                    wingRoofMesh.castShadow = true;
+                    houseGroup.add(wingRoofMesh);
 
-            // Side Door Geometry (Same as front)
-            const sideDoor = new THREE.Mesh(doorGeometry, doorMaterial);
+                    // Chimney on main roof
+                    const chimney = new THREE.Mesh(new THREE.BoxGeometry(3.0, 7.5, 3.0), new THREE.MeshStandardMaterial({ color: 0x8B3A3A, roughness: 0.9 }));
+                    chimney.position.set(0.8, roofMesh.position.y + 4.0, -3);
+                    chimney.castShadow = true;
+                    houseGroup.add(chimney);
 
-            // Position:
-            // X: width / 2 + 0.05 (Outside the wall)
-            // Y: doorHeight / 2
-            // Z: 0 (Centered, as dormer is centered)
+                    // Chimney on wing roof (right side)
+                    const wingChimney = new THREE.Mesh(new THREE.BoxGeometry(2.6, 6.5, 2.6), new THREE.MeshStandardMaterial({ color: 0x8B3A3A, roughness: 0.9 }));
+                    wingChimney.position.set(width / 2 + wingSpacing + wingWidth / 2 + 5, wingRoofMesh.position.y + 3.2, -4);
+                    wingChimney.castShadow = true;
+                    houseGroup.add(wingChimney);
 
-            sideDoor.position.set(width / 2 + 0.05, doorHeight / 2, 0);
-            sideDoor.rotation.y = Math.PI / 2; // Rotate to face outward (+X)
+                    // --- Subtle beveling: add rounded edge approximations using thin fillets (small chamfer boxes) ---
+                    // (This is a light approximation to avoid sharp edges visually)
+                    const bevelMat = new THREE.MeshStandardMaterial({ color: 0xf5f5f5, roughness: 0.7 });
+                    const bevel = new THREE.Mesh(new THREE.BoxGeometry(width + 1.6, 0.6, length + 0.6), bevelMat);
+                    bevel.position.y = foundationHeight + 0.3;
+                    bevel.receiveShadow = false;
+                    bevel.material.transparent = true;
+                    bevel.material.opacity = 0.99;
+                    houseGroup.add(bevel);
 
-            houseGroup.add(sideDoor);
+                    // --- Plot Boundary (Dotted Line) - GREATLY EXPANDED ---
+                    const plotWidth = width + 50;
+                    const plotLength = length + wingLength + 80;
+                    const plotGeometry = new THREE.EdgesGeometry(new THREE.PlaneGeometry(plotWidth, plotLength));
+                    const plotMaterial = new THREE.LineDashedMaterial({
+                        color: 0x999999,
+                        dashSize: 5,
+                        gapSize: 4,
+                        opacity: 0.7,
+                        transparent: true
+                    });
+                    const plotLines = new THREE.LineSegments(plotGeometry, plotMaterial);
+                    plotLines.rotation.x = -Math.PI / 2;
+                    plotLines.position.y = 0.25;
+                    plotLines.computeLineDistances();
+                    houseGroup.add(plotLines);
 
-            // --- Add Tree ---
-            const tree = createTree();
-            // Position tree in the corner of the plot
-            // Moved to "Opposite" side (Front instead of Back)
-            const cornerX = (plotWidth / 2) - 8;
-            const cornerZ = (plotLength / 2) - 8; // Front corner (Positive Z)
+                    // --- Field Separator Line (solid line between house area and field) ---
+                    const separatorGeo = new THREE.BoxGeometry(plotWidth + 20, 0.08, 0.8);
+                    const separatorMat = new THREE.MeshStandardMaterial({ color: 0x777777, roughness: 0.8 });
+                    const separator = new THREE.Mesh(separatorGeo, separatorMat);
+                    separator.position.set(0, 0.3, plotLength / 2 - 5);
+                    separator.receiveShadow = true;
+                    houseGroup.add(separator);
 
-            // Place on left or right side randomly
-            const side = Math.random() > 0.5 ? 1 : -1;
-            tree.position.set(side * cornerX, 0, cornerZ);
+                    // --- Extended Field/Border Area with subtle texture ---
+                    const borderFieldGeo = new THREE.BoxGeometry(plotWidth + 30, 0.05, 15);
+                    const borderFieldMat = new THREE.MeshStandardMaterial({ color: 0xAEC2A0, roughness: 0.95 });
+                    const borderField = new THREE.Mesh(borderFieldGeo, borderFieldMat);
+                    borderField.position.set(0, 0.1, plotLength / 2 + 10);
+                    borderField.receiveShadow = true;
+                    houseGroup.add(borderField);
 
-            houseGroup.add(tree);
+                    // --- Add Tree ---
+                    const tree = createTree();
+                    const cornerX = (plotWidth / 2) - 8;
+                    const cornerZ = (plotLength / 2) - 8;
+                    const side = Math.random() > 0.5 ? 1 : -1;
+                    tree.position.set(side * cornerX, 0, cornerZ);
+                    houseGroup.add(tree);
 
-            return houseGroup;
+                    // mark interactive parts
+                    houseGroup.traverse(c => { if (c.isMesh) c.userData.isHousePart = true; });
+
+                    return houseGroup;
         }
 
 
