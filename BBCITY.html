@@ -127,11 +127,12 @@
                     // new THREE.Vector3(0, 0, -1150),
                     new THREE.Vector3(0, 0, -2050),
                     new THREE.Vector3(0, 0, -2050),
-                    new THREE.Vector3(1200, 0, -1950),
+                    new THREE.Vector3(1400, 0, -1900),
                     new THREE.Vector3(1200, 0, -1250),
-                    new THREE.Vector3(900, 0, -800),
-                    new THREE.Vector3(1200, 0, -200),
-                    new THREE.Vector3(1200, 0, 0),
+                    new THREE.Vector3(1000, 0, -800),
+                    new THREE.Vector3(1050, 0, -500),
+                    new THREE.Vector3(1000, 0, -200),
+                    new THREE.Vector3(1000, 0, 0),
                     // new THREE.Vector3(1200, 0, -2150),
                     // new THREE.Vector3(1200, 0, -550),
                     // new THREE.Vector3(1200, 0, 0),
@@ -400,8 +401,8 @@
             document.body.appendChild(renderer.domElement)
 
             // Grid Helper
-            const grid = new THREE.GridHelper(1510, 80, 0x697565, 0x697565);
-            scene.add(grid);
+            // const grid = new THREE.GridHelper(1510, 80, 0x697565, 0x697565);
+            // scene.add(grid);
 
             // Orbit Controls
             controls = new THREE.OrbitControls(camera, renderer.domElement);
