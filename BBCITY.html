@@ -520,7 +520,7 @@
             const cityBlocks = new THREE.Group();
             scene.add(cityBlocks);
 
-            const cityLandGeometry = new THREE.PlaneGeometry(1400, 800);
+            const cityLandGeometry = new THREE.PlaneGeometry(1400, 3200);
             const cityLandMaterial = new THREE.MeshBasicMaterial({
                 color: 0xc1d86c,
                 polygonOffset: true,
@@ -532,7 +532,7 @@
             cityLand.rotation.x = -Math.PI / 2;
             cityLand.position.y = 0;
             cityLand.position.x = -50;
-            cityLand.position.z = 100;
+            cityLand.position.z = -300;
 
             cityBlocks.add(cityLand);
 
