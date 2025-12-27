@@ -377,10 +377,10 @@
 
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 14000);
 
-            camera.position.z = 668;
-            camera.position.y = -98;
-            camera.position.x = -178;
-            camera.lookAt(1000, 100, 1000);
+            camera.position.z = 0;
+            camera.position.y = 0;
+            camera.position.x = 0;
+            camera.lookAt(0, 0, 0);
 
             scene.add(camera)
 
@@ -439,254 +439,6 @@
             groundMesh.position.y = -0.1;
             scene.add(groundMesh);
 
-<<<<<<< HEAD
-            // Dynamic Road Examples
-            // 1. Straight Road with Depth
-            // Bunch Left Road
-            createCustomRoad(scene, {
-                points: [new THREE.Vector3(12, 0, -10),
-                new THREE.Vector3(-1620, 0, -10),
-                ],
-                width: 10,
-                thickness: .2,
-                style: 'dashed',
-                position: { x: -44, y: 0, z: 315 },
-                rotation: { x: 0, y: 11, z: 0 },
-            });
-            createCustomRoad(scene, {
-                points: [new THREE.Vector3(-35, 0, -10),
-                new THREE.Vector3(220, 0, -10),
-                ],
-                width: 4,
-                thickness: .1,
-                style: 'dashed',
-                position: { x: 0, y: 0, z: 5 },
-                rotation: { x: 0, y: 0, z: 0 },
-            });
-            createCustomRoad(scene, {
-                points: [new THREE.Vector3(-35, 0, -10),
-                new THREE.Vector3(215, 0, -10),
-                ],
-                width: 4,
-                thickness: .1,
-                style: 'dashed',
-                position: { x: 0, y: 0, z: 60 },
-                rotation: { x: 0, y: 0, z: 0 },
-            });
-            createCustomRoad(scene, {
-                points: [new THREE.Vector3(-35, 0, -10),
-                new THREE.Vector3(205, 0, -10),
-                ],
-                width: 4,
-                thickness: .1,
-                style: 'dashed',
-                position: { x: 0, y: 0, z: 115 },
-                rotation: { x: 0, y: 0, z: 0 },
-            });
-            createCustomRoad(scene, {
-                points: [new THREE.Vector3(-35, 0, -10),
-                new THREE.Vector3(197, 0, -10),
-                ],
-                width: 4,
-                thickness: .1,
-                style: 'dashed',
-                position: { x: 0, y: 0, z: 170 },
-                rotation: { x: 0, y: 0, z: 0 },
-            });
-            createCustomRoad(scene, {
-                points: [new THREE.Vector3(-35, 0, -10),
-                new THREE.Vector3(210, 0, -10),
-                ],
-                width: 4,
-                thickness: .1,
-                style: 'dashed',
-                position: { x: 0, y: 0, z: 225 },
-                rotation: { x: 0, y: 0, z: 0 },
-            });
-            createCustomRoad(scene, {
-                points: [new THREE.Vector3(-35, 0, -10),
-                new THREE.Vector3(264, 0, -10),
-                ],
-                width: 4,
-                thickness: .1,
-                style: 'dashed',
-                position: { x: 0, y: 0, z: 280 },
-                rotation: { x: 0, y: 0, z: 0 },
-            });
-            createCustomRoad(scene, {
-                points: [
-                    new THREE.Vector3(-35, 0, -10),
-                    new THREE.Vector3(265, 0, -10), // straight
-                ],
-                width: 4,
-                thickness: 0.1,
-                style: 'dashed',
-                position: { x: 0, y: 0, z: 335 },
-                rotation: { x: 0, y: 0, z: 0 },
-            });
-            // CLUSTER ROAD START
-            createCustomRoad(scene, {
-                points: [new THREE.Vector3(12, 0, -10),
-                new THREE.Vector3(-1400, 0, -10),
-                ],
-                width: 10,
-                thickness: .2,
-                style: 'dashed',
-                position: { x: -344, y: 0, z: 315 },
-                rotation: { x: 0, y: 11, z: 0 },
-            });
-            createCustomRoad(scene, {
-                points: [new THREE.Vector3(-35, 0, -10),
-                new THREE.Vector3(264, 0, -10),
-                ],
-                width: 4,
-                thickness: .1,
-                style: 'dashed',
-                position: { x: -300, y: 0, z: 5 },
-                rotation: { x: 0, y: 0, z: 0 },
-            });
-            createCustomRoad(scene, {
-                points: [new THREE.Vector3(-35, 0, -10),
-                new THREE.Vector3(264, 0, -10),
-                ],
-                width: 4,
-                thickness: .1,
-                style: 'dashed',
-                position: { x: -300, y: 0, z: 57 },
-                rotation: { x: 0, y: 0, z: 0 },
-            });
-            createCustomRoad(scene, {
-                points: [new THREE.Vector3(-35, 0, -10),
-                new THREE.Vector3(264, 0, -10),
-                ],
-                width: 4,
-                thickness: .1,
-                style: 'dashed',
-                position: { x: -300, y: 0, z: 104 },
-                rotation: { x: 0, y: 0, z: 0 },
-            });
-            createCustomRoad(scene, {
-                points: [new THREE.Vector3(-35, 0, -10),
-                new THREE.Vector3(264, 0, -10),
-                ],
-                width: 4,
-                thickness: .1,
-                style: 'dashed',
-                position: { x: -300, y: 0, z: 152 },
-                rotation: { x: 0, y: 0, z: 0 },
-            });
-            createCustomRoad(scene, {
-                points: [new THREE.Vector3(-35, 0, -10),
-                new THREE.Vector3(264, 0, -10),
-                ],
-                width: 4,
-                thickness: .1,
-                style: 'dashed',
-                position: { x: -300, y: 0, z: 197 },
-                rotation: { x: 0, y: 0, z: 0 },
-            });
-            createCustomRoad(scene, {
-                points: [new THREE.Vector3(-35, 0, -10),
-                new THREE.Vector3(264, 0, -10),
-                ],
-                width: 4,
-                thickness: .1,
-                style: 'dashed',
-                position: { x: -300, y: 0, z: 239 },
-                rotation: { x: 0, y: 0, z: 0 },
-            });
-            createCustomRoad(scene, {
-                points: [
-                    new THREE.Vector3(-35, 0, -10),
-                    new THREE.Vector3(264, 0, -10), // straight
-                ],
-                width: 4,
-                thickness: 0.1,
-                style: 'dashed',
-                position: { x: -300, y: 0, z: 286 },
-                rotation: { x: 0, y: 0, z: 0 },
-            });
-            createCustomRoad(scene, {
-                points: [
-                    new THREE.Vector3(-35, 0, -10),
-                    new THREE.Vector3(264, 0, -10), // straight
-                ],
-                width: 4,
-                thickness: 0.1,
-                style: 'dashed',
-                position: { x: -300, y: 0, z: 335},
-                rotation: { x: 0, y: 0, z: 0 },
-            });
-            // Left Side Cluster 7-10
-            createCustomRoad(scene, {
-                points: [new THREE.Vector3(-12, 0, -10),
-                new THREE.Vector3(210, 0, -10),
-                ],
-                width: 10,
-                thickness: .2,
-                style: 'dashed',
-                position: { x: -625, y: 0, z: 315 },
-                rotation: { x: 0, y: -11, z: 0 },
-            });
-            createCustomRoad(scene, {
-                points: [new THREE.Vector3(-35, 0, -10),
-                new THREE.Vector3(264, 0, -10),
-                ],
-                width: 4,
-                thickness: .1,
-                style: 'dashed',
-                position: { x: -600, y: 0, z: 197 },
-                rotation: { x: 0, y: 0, z: 0 },
-            });
-            createCustomRoad(scene, {
-                points: [new THREE.Vector3(-35, 0, -10),
-                new THREE.Vector3(264, 0, -10),
-                ],
-                width: 4,
-                thickness: .1,
-                style: 'dashed',
-                position: { x: -600, y: 0, z: 239 },
-                rotation: { x: 0, y: 0, z: 0 },
-            });
-            createCustomRoad(scene, {
-                points: [new THREE.Vector3(-35, 0, -10),
-                new THREE.Vector3(264, 0, -10),
-                ],
-                width: 4,
-                thickness: .1,
-                style: 'dashed',
-                position: { x: -600, y: 0, z: 286 },
-                rotation: { x: 0, y: 0, z: 0 },
-            });
-            createCustomRoad(scene, {
-                points: [
-                    new THREE.Vector3(-35, 0, -10),
-                    new THREE.Vector3(264, 0, -10), // straight
-                ],
-                width: 4,
-                thickness: 0.1,
-                style: 'dashed',
-                position: { x: -600, y: 0, z: 335 },
-                rotation: { x: 0, y: 0, z: 0 },
-            });
-          createCustomRoad(scene, {
-                points: [ 
-                new THREE.Vector3(-260, 0,300),
-                new THREE.Vector3(-50, 0,300),
-                new THREE.Vector3(-10, 0, 50),
-                new THREE.Vector3(-10, 0, 10),
-                new THREE.Vector3(300, 0, 22),
-                new THREE.Vector3(690, 0, 25),
-                new THREE.Vector3(1050, 0, -555),
-            ],
-                width: 10,
-                thickness: 0.8,
-                style: 'dashed',
-                position: { x: -550, y: 10.1, z: -280 },
-                rotation: { x: 0, y: 0, z: 0 },
-            });
-=======
->>>>>>> 321dbdd4d000f36a4afeb246ec06794212fa6705
 
             // 
             // lakeObj = createCustomRoad(scene, {
@@ -1424,11 +1176,7 @@
             ctx.fillText("Bangla Bosoti Square", canvas.width / 2, canvas.height / 2);
 
             const flagTexture = new THREE.CanvasTexture(canvas);
-
-            /* =========================
-               Flag Cloth
-            ========================= */
-            const flagGeometry = new THREE.PlaneGeometry(6, 3, 20, 10);
+            const flagGeometry = new THREE.PlaneGeometry(6, 3, 8, 8);
             const flagMaterial = new THREE.MeshBasicMaterial({
                 map: flagTexture,
                 side: THREE.DoubleSide
@@ -1539,6 +1287,68 @@
             const upperCone = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.5, 8), leavesMaterial);
             upperCone.position.y = 0.9;
             treeGroup.add(upperCone);
+
+            return treeGroup;
+        }
+
+        /**
+         * Creates a simple stylized tree with minimal foliage geometry.
+         */
+        function createHighQualityTree() {
+            const treeGroup = new THREE.Group();
+
+            // Trunk - Simple dark wood
+            const trunkGeometry = new THREE.CylinderGeometry(0.15, 0.2, 1.0, 6);
+            const trunkMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x654321,
+                roughness: 0.88,
+                metalness: 0.0
+            });
+            const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+            trunk.castShadow = true;
+            trunk.receiveShadow = true;
+            trunk.position.y = 0.5;
+            treeGroup.add(trunk);
+
+            // Simple foliage - green palette
+            const foliageMaterial1 = new THREE.MeshStandardMaterial({ 
+                color: 0x2E7D32,  // Dark green
+                roughness: 0.76,
+                metalness: 0.0
+            });
+
+            const foliageMaterial2 = new THREE.MeshStandardMaterial({ 
+                color: 0x43A047,  // Medium green
+                roughness: 0.78,
+                metalness: 0.0
+            });
+
+            const foliageMaterial3 = new THREE.MeshStandardMaterial({ 
+                color: 0x66BB6A,  // Light green
+                roughness: 0.82,
+                metalness: 0.0
+            });
+
+            // Bottom sphere - main foliage
+            const baseSphere = new THREE.Mesh(new THREE.SphereGeometry(0.7, 12, 12), foliageMaterial1);
+            baseSphere.position.set(0, 1.0, 0);
+            baseSphere.castShadow = true;
+            baseSphere.receiveShadow = true;
+            treeGroup.add(baseSphere);
+            
+            // Middle sphere - overlapping
+            const midSphere = new THREE.Mesh(new THREE.SphereGeometry(0.6, 12, 12), foliageMaterial2);
+            midSphere.position.set(0, 1.6, 0);
+            midSphere.castShadow = true;
+            midSphere.receiveShadow = true;
+            treeGroup.add(midSphere);
+            
+            // Top sphere - accent
+            const topSphere = new THREE.Mesh(new THREE.SphereGeometry(0.45, 10, 10), foliageMaterial3);
+            topSphere.position.set(0, 2.05, 0);
+            topSphere.castShadow = true;
+            topSphere.receiveShadow = true;
+            treeGroup.add(topSphere);
 
             return treeGroup;
         }
@@ -1754,6 +1564,33 @@
             building.add(b1);
             const b2 = b1.clone(); b2.position.x = houseWidth / 2 - 30;
             building.add(b2);
+
+            // Add 2 custom trees at the front corners only (removed back-side trees)
+            try {
+                const plotPadding = 50; // Distance from walls
+                const treeScale = 1 / 0.015; // Compensate for house scaling (66.67x larger)
+                
+                // Define 2 front corner positions only
+                const cornerPositions = [
+                    { x: -plotW / 2 + plotPadding, z: -plotD / 2 + plotPadding }, // Front-Left
+                    { x: plotW / 2 - plotPadding, z: -plotD / 2 + plotPadding }   // Front-Right
+                ];
+                
+                cornerPositions.forEach(corner => {
+                    const t = createHighQualityTree();
+                    t.position.set(corner.x, 0, corner.z);
+                    t.scale.set(treeScale, treeScale, treeScale); // Scale up to compensate for house scaling
+                    t.traverse(node => { 
+                        if (node.isMesh) { 
+                            node.castShadow = true; 
+                            node.receiveShadow = true; 
+                        } 
+                    });
+                    house.add(t);
+                });
+            } catch (e) {
+                console.warn('Tree placement skipped:', e.message);
+            }
 
             const scale = 0.015;
             house.scale.set(scale, scale, scale);
