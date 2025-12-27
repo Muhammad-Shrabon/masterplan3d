@@ -82,6 +82,22 @@
         }
         // Configuration from road.html
         const ROAD_CONFIGS = [
+            // Lake Near Road
+            {
+                width: 10,
+                points: [
+                    new THREE.Vector3(300, 0,100),
+                    new THREE.Vector3(300, 0,0),
+                    new THREE.Vector3(100, 0, 0),
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(0, 0, -800),
+                    new THREE.Vector3(-100, 0, -980),
+                ],
+                segments: 2000,
+                position: { x: -550, y: 0, z: -200 },
+                rotation: { x: 0, y: 11, z: 0 }
+            },
+            // River Near Road
             {
                 width: 10,
                 points: [
@@ -92,6 +108,7 @@
                 position: { x: 266, y: 0, z: 330 },
                 rotation: { x: 0, y: 0, z: 0 }
             },
+            // BIG Road
             {
                 width: 10,
                 points: [
@@ -106,7 +123,19 @@
                 width: 10,
                 points: [
                     new THREE.Vector3(0, 0, 0),
-                    new THREE.Vector3(0, 0, -900)
+                    new THREE.Vector3(0, 0, -1000),
+                    // new THREE.Vector3(0, 0, -1150),
+                    new THREE.Vector3(0, 0, -2050),
+                    new THREE.Vector3(0, 0, -2050),
+                    new THREE.Vector3(1200, 0, -1950),
+                    new THREE.Vector3(1200, 0, -1250),
+                    new THREE.Vector3(900, 0, -800),
+                    new THREE.Vector3(1200, 0, -200),
+                    new THREE.Vector3(1200, 0, 0),
+                    // new THREE.Vector3(1200, 0, -2150),
+                    // new THREE.Vector3(1200, 0, -550),
+                    // new THREE.Vector3(1200, 0, 0),
+                    // new THREE.Vector3(1200, 0, -650),
                 ],
                 segments: 2000,
                 position: { x: -334, y: 0, z: 427 },
@@ -331,7 +360,7 @@
 
         function init() {
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x1c96c5);
+            scene.background = new THREE.Color(0x87ceeb);
             flagObj = createFlag(scene, { x: 10, y: 0, z: -5 });
             // scene.fog = new THREE.Fog( 0xcccccc, 10, 15 );
             scene.fog = new THREE.FogExp2(0x87ceeb, 0.0005);
