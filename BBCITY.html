@@ -24,10 +24,11 @@
 
         // --- Fog Reveal Animation Variables ---
         let fogRevealStartTime = null;
-        let fogRevealDuration = 5000; // 5 seconds for city reveal
+        let fogRevealDuration = 8000; // 8 seconds for smoother, more realistic reveal
         let initialFogDensity = 0.18; // Very dense fog
         let finalFogDensity = 0.0005; // Clear visibility (matches existing fog)
         let fogRevealComplete = false;
+        let initialCameraY = null; // Store initial camera Y position
 
         class CartoonRiver {
             constructor(scene, config) {
@@ -1052,17 +1053,24 @@
 
                 if (fogRevealStartTime === null) {
                     fogRevealStartTime = currentTime;
+                    initialCameraY = camera.position.y; // Store initial Y position
                 }
 
                 const elapsed = currentTime - fogRevealStartTime;
                 const progress = Math.min(elapsed / fogRevealDuration, 1.0);
 
-                // Easing function for smooth transition (ease-out cubic)
-                const easedProgress = 1 - Math.pow(1 - progress, 3);
+                // Improved easing function for ultra-smooth transition (ease-in-out-cubic)
+                const easedProgress = progress < 0.5
+                    ? 4 * progress * progress * progress
+                    : 1 - Math.pow(-2 * progress + 2, 3) / 2;
 
-                // Interpolate fog density
+                // Interpolate fog density with smooth curve
                 const currentDensity = initialFogDensity - (initialFogDensity - finalFogDensity) * easedProgress;
                 scene.fog.density = currentDensity;
+
+                // Subtle camera height adjustment for cinematic reveal (rises slightly as fog clears)
+                const cameraLift = 20; // Subtle 20 unit lift
+                camera.position.y = initialCameraY + (cameraLift * easedProgress);
 
                 if (progress >= 1.0) {
                     fogRevealComplete = true;
