@@ -1,31 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Seamless Road Junction System</title>
+    <title>Seamless Road City System</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; }
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #000;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
         #ui {
             position: absolute;
-            top: 20px; left: 20px; color: white;
-            background: rgba(0,0,0,0.8); padding: 20px; border-radius: 12px;
-            pointer-events: none; border: 1px solid rgba(255,255,255,0.1);
+            top: 20px;
+            left: 20px;
+            color: white;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 12px;
+            pointer-events: none;
+            border: 1px solid rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
         }
     </style>
 </head>
+
 <body>
     <div id="ui">
-        <h3 style="margin:0">Advanced Junction Logic</h3>
-        <p style="font-size: 0.85em; opacity: 0.7;">Using Unified Base Layer + Decal Markings to solve Z-fighting.</p>
+        <h3 style="margin:0">City Road System</h3>
+        <p style="font-size: 0.85em; opacity: 0.7;">Use Mouse to Orbit, Scroll to Zoom, Right-Click to Pan.</p>
     </div>
 
     <script>
-        let scene, camera, renderer, clock;
-        let character, walkCycle = 0, isWalking = false;
-        let leftLeg, rightLeg, leftArm, rightArm;
+        let scene, camera, renderer, clock, controls;
 
         // Configuration
         const ROAD_CONFIGS = [
@@ -42,10 +54,12 @@
             {
                 width: 10,
                 points: [
-                    new THREE.Vector3(0, 0, -50), 
+                    new THREE.Vector3(0, 0, -50),
                     new THREE.Vector3(-100, 0, -100),
                     new THREE.Vector3(-250, 0, -150),
-                    new THREE.Vector3(-400, 0, -400)
+                    new THREE.Vector3(-400, 0, -400),
+                    new THREE.Vector3(-1200, 0, -1200),
+                    new THREE.Vector3(-600, 0, -600),
                 ],
                 segments: 200
             }
@@ -54,16 +68,25 @@
         function init() {
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x87ceeb);
-            scene.fog = new THREE.FogExp2(0x87ceeb, 0.001);
+            scene.fog = new THREE.FogExp2(0x87ceeb, 0.0005);
 
-            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 5000);
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 10000);
+            camera.position.set(100, 100, 300);
             clock = new THREE.Clock();
 
-            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer = new THREE.WebGLRenderer({
+                antialias: true,
+                logarithmicDepthBuffer: true
+            });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(window.devicePixelRatio);
             renderer.shadowMap.enabled = true;
             document.body.appendChild(renderer.domElement);
+
+            // Orbit Controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
 
             scene.add(new THREE.AmbientLight(0xffffff, 0.6));
             const sun = new THREE.DirectionalLight(0xffffff, 1.0);
@@ -74,41 +97,53 @@
             sun.shadow.mapSize.set(2048, 2048);
             scene.add(sun);
 
-            // 1. SHARED ASPHALT BASE (No texture, just color)
-            // We use the same material for all road bases so overlapping doesn't flicker
-            const asphaltBaseMat = new THREE.MeshStandardMaterial({ 
-                color: 0x222222, 
-                roughness: 0.9 
+            // Ground
+            const groundGeo = new THREE.PlaneGeometry(10000, 10000);
+            const groundMat = new THREE.MeshStandardMaterial({
+                color: 0x3d5a2b,
+                polygonOffset: true,
+                polygonOffsetFactor: 4,
+                polygonOffsetUnits: 4
+            });
+            const ground = new THREE.Mesh(groundGeo, groundMat);
+            ground.rotation.x = -Math.PI / 2;
+            ground.position.y = -0.05; // Slightly below zero
+            ground.receiveShadow = true;
+            scene.add(ground);
+
+            const asphaltBaseMat = new THREE.MeshStandardMaterial({
+                color: 0x222222,
+                roughness: 0.9,
+                polygonOffset: true,
+                polygonOffsetFactor: 2,
+                polygonOffsetUnits: 2
             });
 
-            // 2. MARKINGS MATERIAL (Transparent with blending)
             const markingsMat = new THREE.MeshStandardMaterial({
                 map: createMarkingsTexture(),
                 transparent: true,
-                depthWrite: false, // This is key: markings don't block each other's depth
+                depthWrite: false,
                 blending: THREE.NormalBlending,
                 polygonOffset: true,
-                polygonOffsetFactor: -1, // Push slightly forward
+                polygonOffsetFactor: -1,
                 polygonOffsetUnits: -1
             });
 
             ROAD_CONFIGS.forEach(config => {
                 const curve = new THREE.CatmullRomCurve3(config.points);
                 const roadGeo = createRoadGeometry(curve, config.width, config.segments);
-                
-                // Create the base mesh
+
                 const baseMesh = new THREE.Mesh(roadGeo, asphaltBaseMat);
                 baseMesh.receiveShadow = true;
                 scene.add(baseMesh);
 
-                // Create the markings mesh (slightly higher)
                 const markingsMesh = new THREE.Mesh(roadGeo, markingsMat);
-                markingsMesh.position.y = 0.01; 
+                markingsMesh.position.y = 0.01;
                 scene.add(markingsMesh);
+
+                createCityBuildings(curve, config.width);
             });
 
-            createCharacter();
-            setupControls();
             animate();
         }
 
@@ -128,7 +163,7 @@
                 const pR = p.clone().add(binormal.clone().multiplyScalar(-width / 2));
 
                 vertices.push(pL.x, 0, pL.z, pR.x, 0, pR.z);
-                
+
                 const dist = t * curve.getLength();
                 uvs.push(0, dist / 20, 1, dist / 20);
 
@@ -150,92 +185,123 @@
             const canvas = document.createElement('canvas');
             canvas.width = 512; canvas.height = 1024;
             const ctx = canvas.getContext('2d');
-            
-            // Clear to transparent
             ctx.clearRect(0, 0, 512, 1024);
-
-            // Center dashes
             ctx.strokeStyle = 'white';
             ctx.lineWidth = 12;
             ctx.setLineDash([60, 60]);
             ctx.beginPath(); ctx.moveTo(256, 0); ctx.lineTo(256, 1024); ctx.stroke();
-            
-            // Solid sides
             ctx.setLineDash([]);
             ctx.globalAlpha = 0.6;
             ctx.lineWidth = 8;
             ctx.strokeRect(15, -10, 2, 1044);
             ctx.strokeRect(495, -10, 2, 1044);
-
             const texture = new THREE.CanvasTexture(canvas);
             texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
             texture.anisotropy = 16;
             return texture;
         }
 
-        function createCharacter() {
-            character = new THREE.Group();
-            const mat = (c) => new THREE.MeshStandardMaterial({ color: c });
-            const torso = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.9, 0.4), mat(0x2244aa));
-            torso.position.y = 1.35;
-            character.add(torso);
-            const head = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), mat(0xffdbac));
-            head.position.y = 2.05;
-            character.add(head);
-            const legGeo = new THREE.BoxGeometry(0.25, 0.9, 0.25);
-            leftLeg = new THREE.Mesh(legGeo, mat(0x111111));
-            leftLeg.position.set(-0.2, 0.45, 0);
-            character.add(leftLeg);
-            rightLeg = new THREE.Mesh(legGeo, mat(0x111111));
-            rightLeg.position.set(0.2, 0.45, 0);
-            character.add(rightLeg);
-            const armGeo = new THREE.BoxGeometry(0.2, 0.8, 0.2);
-            leftArm = new THREE.Mesh(armGeo, mat(0xffdbac));
-            leftArm.position.set(-0.45, 1.3, 0);
-            character.add(leftArm);
-            rightArm = new THREE.Mesh(armGeo, mat(0xffdbac));
-            rightArm.position.set(0.45, 1.3, 0);
-            character.add(rightArm);
-            character.traverse(c => { if(c.isMesh) c.castShadow = true; });
-            character.position.set(0, 0, 50);
-            scene.add(character);
+         
+        function createCityBuildings(curve, roadWidth) {
+            const length = curve.getLength();
+            const count = Math.floor(length / 40);
+
+            for (let i = 0; i < count; i++) {
+                const t = i / count;
+                const p = curve.getPointAt(t);
+                const tangent = curve.getTangentAt(t).normalize();
+                const binormal = new THREE.Vector3().crossVectors(tangent, new THREE.Vector3(0, 1, 0)).normalize();
+
+                // Left and right side of road
+                [1, -1].forEach(side => {
+                    const offset = roadWidth * 1.5;
+                    const buildingPos = p.clone().add(binormal.clone().multiplyScalar(side * offset));
+
+                    const building = createBuilding();
+                    building.position.copy(buildingPos);
+
+                    // Rotate to face road
+                    const lookAtTarget = p.clone();
+                    building.lookAt(lookAtTarget);
+
+                    scene.add(building);
+
+                    // Add a tree next to building
+                    const treePos = buildingPos.clone().add(tangent.clone().multiplyScalar(10));
+                    const tree = createTree();
+                    tree.position.copy(treePos);
+                    scene.add(tree);
+                });
+            }
         }
 
-        function setupControls() {
-            window.addEventListener('mousedown', () => isWalking = true);
-            window.addEventListener('mouseup', () => isWalking = false);
-            window.addEventListener('mousemove', (e) => {
-                const rot = ((e.clientX / window.innerWidth) - 0.5) * Math.PI * 2;
-                character.rotation.y = -rot;
-            });
+        function createBuilding() {
+            const group = new THREE.Group();
+
+            const heights = [15, 25, 40, 60];
+            const h = heights[Math.floor(Math.random() * heights.length)];
+            const w = 15 + Math.random() * 5;
+            const d = 15 + Math.random() * 5;
+
+            const color = new THREE.Color().setHSL(Math.random(), 0.2, 0.4);
+            const mat = new THREE.MeshStandardMaterial({ color: color });
+            const geo = new THREE.BoxGeometry(w, h, d);
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.y = h / 2;
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            group.add(mesh);
+
+            // Windows
+            const winMat = new THREE.MeshStandardMaterial({ color: 0xffffaa, emissive: 0xffffaa, emissiveIntensity: 0.5 });
+            const rows = Math.floor(h / 3);
+            const cols = Math.floor(w / 3);
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    if (Math.random() > 0.3) {
+                        const winGeo = new THREE.PlaneGeometry(1.5, 1.5);
+                        const win = new THREE.Mesh(winGeo, winMat);
+                        win.position.set(-w / 2 + c * 3 + 1.5, h / 2 - r * 3 - 1.5, d / 2 + 0.1);
+                        group.add(win);
+                    }
+                }
+            }
+
+            return group;
+        }
+
+        function createTree() {
+            const group = new THREE.Group();
+            const trunkGeo = new THREE.CylinderGeometry(0.5, 0.7, 4, 8);
+            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x4b3621 });
+            const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+            trunk.position.y = 2;
+            group.add(trunk);
+
+            const foliageGeo = new THREE.ConeGeometry(5, 10, 8);
+            const foliageMat = new THREE.MeshStandardMaterial({ color: 0x2d5a27 });
+            const foliage = new THREE.Mesh(foliageGeo, foliageMat);
+            foliage.position.y = 8;
+            group.add(foliage);
+
+            group.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+            return group;
         }
 
         function animate() {
             requestAnimationFrame(animate);
-            const dt = clock.getDelta();
-            if (isWalking) {
-                const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(character.quaternion);
-                character.position.add(dir.multiplyScalar(0.4));
-                walkCycle += dt * 10;
-                leftLeg.rotation.x = Math.sin(walkCycle) * 0.6;
-                rightLeg.rotation.x = -Math.sin(walkCycle) * 0.6;
-                leftArm.rotation.x = -Math.sin(walkCycle) * 0.6;
-                rightArm.rotation.x = Math.sin(walkCycle) * 0.6;
-                character.children[0].position.y = 1.35 + Math.abs(Math.cos(walkCycle)) * 0.05;
-            } else {
-                [leftLeg, rightLeg, leftArm, rightArm].forEach(p => p.rotation.x = THREE.MathUtils.lerp(p.rotation.x, 0, 0.1));
-            }
-            const offset = new THREE.Vector3(0, 6, 15).applyMatrix4(character.matrixWorld);
-            camera.position.lerp(offset, 0.1);
-            camera.lookAt(character.position.x, character.position.y + 1, character.position.z);
+            controls.update();
             renderer.render(scene, camera);
         }
+
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
+
         init();
     </script>
 </body>
+
 </html>
