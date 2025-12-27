@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,6 +13,7 @@
             background-color: #e0f7fa;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
+
         #ui {
             position: absolute;
             top: 20px;
@@ -20,213 +22,259 @@
             padding: 15px;
             border-radius: 12px;
             pointer-events: none;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
             backdrop-filter: blur(5px);
             z-index: 10;
         }
-        h1 { margin: 0 0 5px 0; font-size: 18px; color: #00796b; }
-        p { margin: 0; font-size: 14px; color: #444; }
+
+        h1 {
+            margin: 0 0 5px 0;
+            font-size: 18px;
+            color: #00796b;
+        }
+
+        p {
+            margin: 0;
+            font-size: 14px;
+            color: #444;
+        }
     </style>
 </head>
+
 <body>
 
-<div id="ui">
-    <h1>Modular Cartoon River</h1>
-    <p>Position & Rotation Controls Added</p>
-    <p><small>Drag to rotate view</small></p>
-</div>
+    <div id="ui">
+        <h1>Modular Cartoon River</h1>
+        <p>Position & Rotation Controls Added</p>
+        <p><small>Drag to rotate view</small></p>
+    </div>
 
-<script>
-    /**
-     * River Module
-     * Handles the creation and animation of the smooth river mesh
-     */
-    class CartoonRiver {
-        constructor(config) {
-            this.points = config.points || [];
-            this.width = config.width || 10;
-            this.thickness = config.thickness || 0.8;
-            this.color = config.color || 0x33ccff;
-            
-            // New position and rotation configuration
-            this.position = config.position || { x: 0, y: -0.3, z: 0 };
-            this.rotation = config.rotation || { x: 0, y: 0, z: 0 };
-            
-            this.mesh = null;
-            this.material = null;
-            
-            this.init();
-        }
+    <script>
+        /**
+         * River Module
+         * Handles the creation and animation of the smooth river mesh
+         */
+        class CartoonRiver {
+            constructor(config) {
+                this.points = config.points || [];
+                this.width = config.width || 10;
+                this.thickness = config.thickness || 0.8;
+                this.color = config.color || 0x33ccff;
 
-        init() {
-            // Create the smooth curve path
-            const curve = new THREE.CatmullRomCurve3(this.points);
-            curve.curveType = 'catmullrom';
-            curve.tension = 0.5;
+                // New position and rotation configuration
+                this.position = config.position || { x: 0, y: -0.3, z: 0 };
+                this.rotation = config.rotation || { x: 0, y: 0, z: 0 };
 
-            // Tube radius is half the width
-            const radius = this.width / 2;
-            
-            // Create the geometry
-            const tubeGeo = new THREE.TubeGeometry(curve, 100, radius, 8, false);
-            
-            // Apply thickness by scaling the Y axis
-            const yScale = this.thickness / this.width;
-            tubeGeo.scale(1, yScale, 1);
+                this.mesh = null;
+                this.material = null;
 
-            this.material = new THREE.MeshPhongMaterial({ 
-                color: this.color, 
-                transparent: true, 
-                opacity: 0.9,
-                shininess: 120
-            });
+                this.init();
+            }
 
-            this.mesh = new THREE.Mesh(tubeGeo, this.material);
-            this.mesh.receiveShadow = true;
-            
-            // Apply coordinates and rotation
-            this.mesh.position.set(this.position.x, this.position.y, this.position.z);
-            this.mesh.rotation.set(this.rotation.x, this.rotation.y, this.rotation.z);
-        }
+            init() {
+                // Create the smooth curve path
+                const curve = new THREE.CatmullRomCurve3(this.points);
+                curve.curveType = 'catmullrom';
+                curve.tension = 0.5;
 
-        update(time) {
-            if (this.material) {
-                // Gentle pulse effect for water movement
-                this.material.opacity = 0.85 + Math.sin(time * 0.0015) * 0.05;
+                // Tube radius is half the width
+                const radius = this.width / 2;
+
+                // Create the geometry
+                const tubeGeo = new THREE.TubeGeometry(curve, 100, radius, 8, false);
+
+                // Apply thickness by scaling the Y axis
+                const yScale = this.thickness / this.width;
+                tubeGeo.scale(1, yScale, 1);
+
+                this.material = new THREE.MeshPhongMaterial({
+                    color: this.color,
+                    transparent: true,
+                    opacity: 0.9,
+                    shininess: 120
+                });
+
+                this.mesh = new THREE.Mesh(tubeGeo, this.material);
+                this.mesh.receiveShadow = true;
+
+                // Apply coordinates and rotation
+                this.mesh.position.set(this.position.x, this.position.y, this.position.z);
+                this.mesh.rotation.set(this.rotation.x, this.rotation.y, this.rotation.z);
+            }
+
+            update(time) {
+                if (this.material) {
+                    // Gentle pulse effect for water movement
+                    this.material.opacity = 0.85 + Math.sin(time * 0.0015) * 0.05;
+                }
             }
         }
-    }
 
-    // --- Main Scene Variables ---
-    let scene, camera, renderer, river;
-    let targetRotationX = 0.5, targetRotationY = 0.5;
-    let currentRotationX = 0.5, currentRotationY = 0.5;
+        // --- Main Scene Variables ---
+        let scene, camera, renderer, river;
+        let targetRotationX = 0.5, targetRotationY = 0.5;
+        let currentRotationX = 0.5, currentRotationY = 0.5;
 
-    function init() {
-        scene = new THREE.Scene();
-        scene.background = new THREE.Color(0xd0f0ff);
+        // --- Fog Reveal Animation Variables ---
+        let fogRevealStartTime = null;
+        let fogRevealDuration = 4000; // 4 seconds
+        let initialFogDensity = 0.08; // Very dense fog
+        let finalFogDensity = 0.0005; // Clear visibility
+        let fogRevealComplete = false;
 
-        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-        
-        renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        document.body.appendChild(renderer.domElement);
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xd0f0ff);
 
-        // Lighting
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-        scene.add(ambientLight);
+            // Add exponential fog for reveal animation
+            scene.fog = new THREE.FogExp2(0xd0f0ff, initialFogDensity);
 
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
-        dirLight.position.set(100, 150, 100);
-        dirLight.castShadow = true;
-        dirLight.shadow.camera.left = -150;
-        dirLight.shadow.camera.right = 150;
-        dirLight.shadow.camera.top = 150;
-        dirLight.shadow.camera.bottom = -150;
-        scene.add(dirLight);
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
 
-        // Ground
-        const groundGeo = new THREE.BoxGeometry(250, 10, 250);
-        const groundMat = new THREE.MeshPhongMaterial({ color: 0x8edb42, flatShading: true });
-        const ground = new THREE.Mesh(groundGeo, groundMat);
-        ground.position.y = -5.5; 
-        ground.receiveShadow = true;
-        scene.add(ground);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.body.appendChild(renderer.domElement);
 
-        // Initialize Separated River Code
-        const riverPoints = [
-            new THREE.Vector3(-100, 0, -60),
-            new THREE.Vector3(-40, 0, -60),
-            new THREE.Vector3(-40, 0, 40),
-            new THREE.Vector3(100, 0, 40)
-        ];
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
 
-        river = new CartoonRiver({
-            points: riverPoints,
-            width: 10,
-            thickness: 0.8,
-            color: 0x33ccff,
-            // Example of using the new parameters
-            position: { x: 0, y: -0.3, z: 0 },
-            rotation: { x: 0, y: 0, z: 0 }
-        });
-        
-        scene.add(river.mesh);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
+            dirLight.position.set(100, 150, 100);
+            dirLight.castShadow = true;
+            dirLight.shadow.camera.left = -150;
+            dirLight.shadow.camera.right = 150;
+            dirLight.shadow.camera.top = 150;
+            dirLight.shadow.camera.bottom = -150;
+            scene.add(dirLight);
 
-        addDecorations();
+            // Ground
+            const groundGeo = new THREE.BoxGeometry(250, 10, 250);
+            const groundMat = new THREE.MeshPhongMaterial({ color: 0x8edb42, flatShading: true });
+            const ground = new THREE.Mesh(groundGeo, groundMat);
+            ground.position.y = -5.5;
+            ground.receiveShadow = true;
+            scene.add(ground);
 
-        // Listeners
-        window.addEventListener('resize', onWindowResize, false);
-        document.addEventListener('mousedown', () => { this.isDragging = true; }, false);
-        document.addEventListener('mouseup', () => { this.isDragging = false; }, false);
-        document.addEventListener('mousemove', onMouseMove, false);
-    }
+            // Initialize Separated River Code
+            const riverPoints = [
+                new THREE.Vector3(-100, 0, -60),
+                new THREE.Vector3(-40, 0, -60),
+                new THREE.Vector3(-40, 0, 40),
+                new THREE.Vector3(100, 0, 40)
+            ];
 
-    function addDecorations() {
-        const createTree = (x, z) => {
-            const tree = new THREE.Group();
-            const trunk = new THREE.Mesh(
-                new THREE.CylinderGeometry(1.5, 2.2, 8, 8),
-                new THREE.MeshPhongMaterial({ color: 0x7a4d2b })
-            );
-            trunk.position.y = 4;
-            trunk.castShadow = true;
-            tree.add(trunk);
+            river = new CartoonRiver({
+                points: riverPoints,
+                width: 10,
+                thickness: 0.8,
+                color: 0x33ccff,
+                // Example of using the new parameters
+                position: { x: 0, y: -0.3, z: 0 },
+                rotation: { x: 0, y: 0, z: 0 }
+            });
 
-            const leaves = new THREE.Mesh(
-                new THREE.SphereGeometry(6, 8, 8),
-                new THREE.MeshPhongMaterial({ color: 0x2d9e47, flatShading: true })
-            );
-            leaves.position.y = 11;
-            leaves.castShadow = true;
-            tree.add(leaves);
+            scene.add(river.mesh);
 
-            tree.position.set(x, -0.5, z);
-            scene.add(tree);
-        };
+            addDecorations();
 
-        const positions = [[-70, -85], [-20, -40], [-60, 0], [0, 70], [60, 15], [80, 75]];
-        positions.forEach(pos => createTree(pos[0], pos[1]));
-    }
-
-    function onMouseMove(e) {
-        if (this.isDragging) {
-            targetRotationY += e.movementX * 0.005;
-            targetRotationX += e.movementY * 0.005;
-            targetRotationX = Math.max(0.1, Math.min(Math.PI / 2.2, targetRotationX));
+            // Listeners
+            window.addEventListener('resize', onWindowResize, false);
+            document.addEventListener('mousedown', () => { this.isDragging = true; }, false);
+            document.addEventListener('mouseup', () => { this.isDragging = false; }, false);
+            document.addEventListener('mousemove', onMouseMove, false);
         }
-    }
 
-    function onWindowResize() {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-    }
+        function addDecorations() {
+            const createTree = (x, z) => {
+                const tree = new THREE.Group();
+                const trunk = new THREE.Mesh(
+                    new THREE.CylinderGeometry(1.5, 2.2, 8, 8),
+                    new THREE.MeshPhongMaterial({ color: 0x7a4d2b })
+                );
+                trunk.position.y = 4;
+                trunk.castShadow = true;
+                tree.add(trunk);
 
-    function animate() {
-        requestAnimationFrame(animate);
+                const leaves = new THREE.Mesh(
+                    new THREE.SphereGeometry(6, 8, 8),
+                    new THREE.MeshPhongMaterial({ color: 0x2d9e47, flatShading: true })
+                );
+                leaves.position.y = 11;
+                leaves.castShadow = true;
+                tree.add(leaves);
 
-        currentRotationX += (targetRotationX - currentRotationX) * 0.05;
-        currentRotationY += (targetRotationY - currentRotationY) * 0.05;
+                tree.position.set(x, -0.5, z);
+                scene.add(tree);
+            };
 
-        const radius = 240;
-        camera.position.x = radius * Math.sin(currentRotationY) * Math.cos(currentRotationX);
-        camera.position.y = radius * Math.sin(currentRotationX);
-        camera.position.z = radius * Math.cos(currentRotationY) * Math.cos(currentRotationX);
-        camera.lookAt(0, 0, 0);
+            const positions = [[-70, -85], [-20, -40], [-60, 0], [0, 70], [60, 15], [80, 75]];
+            positions.forEach(pos => createTree(pos[0], pos[1]));
+        }
 
-        // Update River animation
-        if (river) river.update(Date.now());
+        function onMouseMove(e) {
+            if (this.isDragging) {
+                targetRotationY += e.movementX * 0.005;
+                targetRotationX += e.movementY * 0.005;
+                targetRotationX = Math.max(0.1, Math.min(Math.PI / 2.2, targetRotationX));
+            }
+        }
 
-        renderer.render(scene, camera);
-    }
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
 
-    window.onload = () => {
-        init();
-        animate();
-    };
-</script>
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // --- Fog Reveal Animation ---
+            if (!fogRevealComplete) {
+                const currentTime = Date.now();
+
+                if (fogRevealStartTime === null) {
+                    fogRevealStartTime = currentTime;
+                }
+
+                const elapsed = currentTime - fogRevealStartTime;
+                const progress = Math.min(elapsed / fogRevealDuration, 1.0);
+
+                // Easing function for smooth transition (ease-out cubic)
+                const easedProgress = 1 - Math.pow(1 - progress, 3);
+
+                // Interpolate fog density
+                const currentDensity = initialFogDensity - (initialFogDensity - finalFogDensity) * easedProgress;
+                scene.fog.density = currentDensity;
+
+                if (progress >= 1.0) {
+                    fogRevealComplete = true;
+                    console.log('Fog reveal animation complete!');
+                }
+            }
+
+            currentRotationX += (targetRotationX - currentRotationX) * 0.05;
+            currentRotationY += (targetRotationY - currentRotationY) * 0.05;
+
+            const radius = 240;
+            camera.position.x = radius * Math.sin(currentRotationY) * Math.cos(currentRotationX);
+            camera.position.y = radius * Math.sin(currentRotationX);
+            camera.position.z = radius * Math.cos(currentRotationY) * Math.cos(currentRotationX);
+            camera.lookAt(0, 0, 0);
+
+            // Update River animation
+            if (river) river.update(Date.now());
+
+            renderer.render(scene, camera);
+        }
+
+        window.onload = () => {
+            init();
+            animate();
+        };
+    </script>
 </body>
+
 </html>
