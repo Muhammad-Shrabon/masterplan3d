@@ -4,403 +4,1334 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Master Plan Layout</title>
+    <title>Bangla Bosoti - 3D Masterplan</title>
+
+</head>
+
+<body>
+
+
+
+
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Load Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <!-- Load OrbitControls (Requires THREE global object) -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <style>
-        /* Set the canvas to fill the entire viewport area */
-        #container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #f0f0f0;
-            /* Light background for contrast */
-        }
-
-        /* Hide scrollbars */
-        body {
-            overflow: hidden;
-            font-family: 'Inter', sans-serif;
-        }
-    </style>
-</head>
-
-<body class="font-sans bg-gray-100">
-
-    <!-- Three.js Container -->
-    <div id="container"></div>
-
-    <!-- Loading and Instruction Overlay -->
-    <div id="loading-overlay"
-        class="absolute inset-0 bg-gray-900 bg-opacity-90 flex flex-col items-center justify-center z-50 transition-opacity duration-500">
-        <div class="text-white text-center p-8 rounded-lg">
-            <svg class="animate-spin h-8 w-8 text-white mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none"
-                viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                </path>
-            </svg>
-            <h1 class="text-3xl font-bold mb-4">Master Plan 3D Preview</h1>
-            <p class="text-xl">Initializing 3D environment...</p>
-        </div>
-    </div>
-
-    <!-- Instructions -->
-    <div
-        class="absolute top-4 left-4 p-4 bg-white/70 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 z-10 w-64">
-        <h2 class="font-semibold text-lg text-gray-800 mb-2">Controls: </h2>
-        <ul class="list-disc list-inside text-sm text-gray-700 space-y-1">
-            <li><span class="font-medium">Left Click:</span> Select House</li>
-            <li><span class="font-medium">Left Drag:</span> Rotate (Orbit)</li>
-            <li><span class="font-medium">Right Drag:</span> Pan (Move)</li>
-            <li><span class="font-medium">Scroll:</span> Zoom In / Out</li>
-        </ul>
-        <p class="mt-3 text-xs text-gray-600">This is an abstract 3D model representing the zoning of the master plan
-            (Residential, River, Green Space, Roads).</p>
-    </div>
-
-    <!-- House Information Popup (Right Side) -->
-    <div id="house-popup"
-        class="absolute top-4 right-4 w-80 bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl border border-gray-100 z-20 transform translate-x-full transition-transform duration-300 ease-in-out p-6 hidden">
-        <div class="flex justify-between items-start mb-4">
-            <div>
-                <h2 class="text-2xl font-bold text-gray-800" id="popup-title">House Details</h2>
-                <p class="text-sm text-gray-500" id="popup-id">ID: #---</p>
-            </div>
-            <button id="close-popup"
-                class="bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-full p-2 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd"
-                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                        clip-rule="evenodd" />
-                </svg>
-            </button>
-        </div>
-
-        <div class="space-y-4">
-            <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
-                <p class="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1">Status</p>
-                <p class="text-lg font-medium text-blue-900" id="popup-status">Available</p>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-                <div class="bg-gray-50 p-3 rounded-lg">
-                    <p class="text-xs text-gray-500 mb-1">Area</p>
-                    <p class="font-semibold text-gray-800">2,400 sqft</p>
-                </div>
-                <div class="bg-gray-50 p-3 rounded-lg">
-                    <p class="text-xs text-gray-500 mb-1">Price</p>
-                    <p class="font-semibold text-gray-800">$450,000</p>
-                </div>
-            </div>
-
-            <div>
-                <p class="text-sm text-gray-600 leading-relaxed">
-                    Premium residential unit with view of the community park. Close to main highway entrance.
-                </p>
-            </div>
-
-            <button
-                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-xl transition-colors shadow-lg shadow-blue-600/30 mt-2">
-                Contact Agent
-            </button>
-        </div>
-    </div>
-
     <script>
-        // Global Three.js variables
-        let scene, camera, renderer, controls;
-        let mapGroup = new THREE.Group(); // Group to hold all map elements for easier manipulation
+        let scene, camera, renderer, controls, flagObj, lakeObj, river;
 
-        // Raycaster for interaction
-        const raycaster = new THREE.Raycaster();
-        const mouse = new THREE.Vector2();
-        let selectedHouse = null;
-        const SELECTED_COLOR = 0xFFC107; // Amber/Gold color for selection
-        let originalHouseColor = null;
+        // --- Fog Reveal Animation Variables ---
+        let fogRevealStartTime = null;
+        let fogRevealDuration = 8000; // 8 seconds for smoother, more realistic reveal
+        let initialFogDensity = 0.18; // Very dense fog
+        let finalFogDensity = 0.0005; // Clear visibility (matches existing fog)
+        let fogRevealComplete = false;
+        let initialCameraY = null; // Store initial camera Y position
 
-        // Global variables for road coordinates, needed for block calculation
-        const ROAD_WIDTH = 20;
-        let longitudinalX = [];
-        let transverseZ = [];
+        class CartoonRiver {
+            constructor(scene, config) {
+                this.scene = scene;
+                this.points = config.points || [];
+                this.width = config.width || 10;
+                this.thickness = config.thickness || 0.8;
+                this.color = config.color || 0x33ccff;
 
-        // --- Configuration: Increased Map Size ---
-        const MAP_WIDTH = 4500; // Doubled width for a larger area
-        const MAP_LENGTH = 3800; // Doubled length for a larger area
+                // New position and rotation configuration
+                this.position = config.position || { x: 0, y: 0.2, z: 0 };
+                this.rotation = config.rotation || { x: 0, y: 0, z: 0 };
 
-        /**
-         * Initializes the Three.js scene, camera, renderer, and controls.
-         */
-        function init() {
-            // Use try/catch to log errors during initialization, which helps debugging in the inspect panel.
-            try {
-                const container = document.getElementById('container');
+                this.mesh = null;
+                this.material = null;
 
-                // 1. Scene Setup
-                scene = new THREE.Scene();
-                scene.background = new THREE.Color(0x01C3F5); // Lighter green sky/horizon
+                this.init();
+            }
 
-                // 2. Camera Setup
-                camera = new THREE.PerspectiveCamera(
-                    45,
-                    window.innerWidth / window.innerHeight,
-                    1,
-                    50000
-                );
-                // Position the camera high up, looking down onto the new center of the map
-                camera.position.set(MAP_WIDTH / 2, 4000, -1500);
-                camera.lookAt(MAP_WIDTH / 2, 0, MAP_LENGTH / 2);
+            init() {
+                // Create the smooth curve path
+                const curve = new THREE.CatmullRomCurve3(this.points);
+                curve.curveType = 'catmullrom';
+                curve.tension = 0.5;
 
-                // 3. Renderer Setup
-                renderer = new THREE.WebGLRenderer({ antialias: true });
-                renderer.setSize(window.innerWidth, window.innerHeight);
-                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-                renderer.shadowMap.enabled = true; // Enable shadow maps
-                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-                renderer.outputEncoding = THREE.sRGBEncoding;
-                renderer.toneMapping = THREE.ACESFilmicToneMapping;
-                renderer.toneMappingExposure = 1.0;
-                renderer.physicallyCorrectLights = true;
-                container.appendChild(renderer.domElement);
+                // Tube radius is half the width
+                const radius = this.width / 2;
 
-                scene.add(mapGroup);
+                // Create the geometry
+                const tubeGeo = new THREE.TubeGeometry(curve, 100, radius, 8, false);
 
-                if (typeof THREE.OrbitControls === 'undefined') {
-                    console.error("Error: THREE.OrbitControls not loaded. Check the CDN script link in the head.");
-                    return;  
-                }
-                controls = new THREE.OrbitControls(camera, renderer.domElement);
-                controls.target.set(MAP_WIDTH / 2, 0, MAP_LENGTH / 2);  
-                controls.maxPolarAngle = Math.PI / 4.2; 
-                controls.enableDamping = true; 
-                controls.dampingFactor = 0.05;
+                // Apply thickness by scaling the Y axis
+                const yScale = this.thickness / this.width;
+                tubeGeo.scale(1, yScale, 1);
 
-                addLighting();
-
-                createGroundAndBoundary();
-                // createRiver();
-
-                // createGridRoads(); // Must run first to populate road arrays
-                // createAmenitiesAndRoads(); // Uses road positions for placement, placed before blocks to reserve space
-                createLine1_Cluster(); // Right-most (Land 1)
-                createLine2_Cluster(); 
-                createLine3_Bunch();  
-                // createLine4_Empty();  
-                createResidentialBlocks(); // Curved strip is still separate
-
-                // 7. Event Listeners
-                // 7. Event Listeners
-                window.addEventListener('resize', onWindowResize);
-                window.addEventListener('pointerdown', onPointerDown); // Use pointerdown for better mobile/desktop handling
-
-                // Close button listener
-                document.getElementById('close-popup').addEventListener('click', (e) => {
-                    e.stopPropagation(); // Prevent triggering map click
-                    deselectHouse();
+                this.material = new THREE.MeshPhongMaterial({
+                    color: this.color,
+                    transparent: true,
+                    opacity: 0.9,
+                    shininess: 120
                 });
 
-                // Start the animation loop
-                // If the page is opened with ?house=render we show a single high-quality house render
-                const params = new URLSearchParams(window.location.search);
-                if (params.get('house') === 'render') {
-                    // Clear existing mapGroup children
-                    while (mapGroup.children.length) mapGroup.remove(mapGroup.children[0]);
+                this.mesh = new THREE.Mesh(tubeGeo, this.material);
+                this.mesh.receiveShadow = true;
 
-                    // Create a single higher-detail house and center it
-                    const single = createHouseModel(84, 74, 'A-1');
-                    // place at center of visible area
-                    single.position.set(MAP_WIDTH / 2, 0, MAP_LENGTH / 2);
-                    mapGroup.add(single);
+                // Apply coordinates and rotation
+                this.mesh.position.set(this.position.x, this.position.y, this.position.z);
+                this.mesh.rotation.set(this.rotation.x, this.rotation.y, this.rotation.z);
 
-                    // tighter camera for render
-                    camera.position.set(MAP_WIDTH / 2, 60, MAP_LENGTH / 2 + 150);
-                    controls.target.set(MAP_WIDTH / 2, 20, MAP_LENGTH / 2);
-                    controls.update();
+                if (this.scene) this.scene.add(this.mesh);
+            }
 
-                    // increase pixel ratio for better screenshot (clamped above)
-                    renderer.setPixelRatio(Math.min(window.devicePixelRatio * 1.5, 2));
-                    renderer.setSize(window.innerWidth, window.innerHeight);
+            update(time) {
+                if (this.material) {
+                    // Gentle pulse effect for water movement
+                    this.material.opacity = 0.85 + Math.sin(time * 0.0015) * 0.05;
                 }
-
-                animate();
-
-                // If in render mode, add a simple download button to capture a high-res PNG
-                if (params.get('house') === 'render') {
-                    const btn = document.createElement('button');
-                    btn.textContent = 'Download PNG';
-                    btn.style.position = 'fixed';
-                    btn.style.right = '18px';
-                    btn.style.bottom = '18px';
-                    btn.style.zIndex = 60;
-                    btn.style.padding = '10px 14px';
-                    btn.style.borderRadius = '8px';
-                    btn.style.background = '#1f2937';
-                    btn.style.color = 'white';
-                    btn.style.border = 'none';
-                    btn.style.cursor = 'pointer';
-                    document.body.appendChild(btn);
-
-                    async function downloadRender() {
-                        const w = window.innerWidth;
-                        const h = window.innerHeight;
-                        const scale = 2; // 2x for higher quality
-                        renderer.setSize(w * scale, h * scale);
-                        renderer.setPixelRatio(Math.min(window.devicePixelRatio * scale, 2));
-                        // render one frame
-                        renderer.render(scene, camera);
-                        const dataURL = renderer.domElement.toDataURL('image/png');
-                        const a = document.createElement('a');
-                        a.href = dataURL;
-                        a.download = 'house-render.png';
-                        a.click();
-                        // restore
-                        renderer.setSize(w, h);
-                        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-                    }
-
-                    btn.addEventListener('click', () => {
-                        btn.disabled = true;
-                        btn.textContent = 'Rendering...';
-                        setTimeout(async () => { await downloadRender(); btn.disabled = false; btn.textContent = 'Download PNG'; }, 50);
-                    });
-                }
-
-            } catch (error) {
-                console.error("FATAL ERROR during Three.js initialization:", error);
-                document.getElementById('loading-overlay').innerHTML = `
-                    <div class="text-white text-center p-8 rounded-xl bg-red-700">
-                        <h1 class="text-3xl font-bold mb-4">Initialization Error</h1>
-                        <p class="text-lg">The 3D scene failed to load. Please check the browser console for details to debug the issue.</p>
-                        <p class="text-sm mt-4 italic">Error: ${error.message}</p>
-                    </div>
-                `;
             }
         }
+        // Configuration from road.html
+        const ROAD_CONFIGS = [
+            // Lake Near Road
+            {
+                width: 10,
+                points: [
+                    new THREE.Vector3(300, 0, 90),
+                    new THREE.Vector3(300, 0, 50),
+                    new THREE.Vector3(300, 0, 0),
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(0, 0, -700),
+                    new THREE.Vector3(-80, 0, -784),
+                ],
+                segments: 2000,
+                position: { x: -550, y: 0, z: -220 },
+                rotation: { x: 0, y: 11, z: 0 }
+            },
+            // River Near Road
+            {
+                width: 10,
+                points: [
+                    new THREE.Vector3(300, 0, 300),
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(0, 0, -200),
+                    new THREE.Vector3(100, 0, -400),
+                    new THREE.Vector3(-50, 0, -600),
+                    new THREE.Vector3(-10, 0, -800),
+                    new THREE.Vector3(-100, 0, -800),
+                    new THREE.Vector3(-214, 0, -1000),
+                ],
+                segments: 2000,
+                position: { x: 286, y: 0, z: 330 },
+                rotation: { x: 0, y: 0, z: 0 }
+            },
+            // BIG Road
+            {
+                width: 10,
+                points: [
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(0, 0, -2600)
+                ],
+                segments: 2000,
+                position: { x: -34, y: 0, z: 428 },
+                rotation: { x: 0, y: 0, z: 0 }
+            },
+            {
+                width: 10,
+                points: [
+                    new THREE.Vector3(0, 0, 0),
+                    // new THREE.Vector3(0, 0, -1000),
+                    // new THREE.Vector3(0, 0, -1150),
+                    new THREE.Vector3(0, 0, -1150),
+                    new THREE.Vector3(0, 0, -1150),
+                    new THREE.Vector3(800, 0, -800),
+                    new THREE.Vector3(800, 0, -650),
+                    new THREE.Vector3(900, 0, -500),
+                    new THREE.Vector3(800, 0, -300),
+                    new THREE.Vector3(800, 0, -200),
+                    new THREE.Vector3(1000, 0, 0),
+                    // new THREE.Vector3(1200, 0, -2150),
+                    // new THREE.Vector3(1200, 0, -550),
+                    // new THREE.Vector3(1200, 0, 0),
+                    // new THREE.Vector3(1200, 0, -650),
+                ],
+                segments: 2000,
+                position: { x: -334, y: 0, z: 427 },
+                rotation: { x: 0, y: 0, z: 0 }
+            },
+            {
+                width: 10,
+                points: [
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(0, 0, -500)
+                ],
+                segments: 2000,
+                position: { x: -634, y: 0, z: 328 },
+                rotation: { x: 0, y: 0, z: 0 }
+            },
+            // Small Road to connect House
+            // BUnch Road (1 - 6)
+            {
+                width: 4,
+                points: [
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(0, 0, 390)
+                ],
+                segments: 2000,
+                position: { x: -30, y: 0, z: -3 },
+                rotation: { x: 0, y: -11, z: 0 }
+            },
+            {
+                width: 4,
+                points: [
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(0, 0, 362)
+                ],
+                segments: 2000,
+                position: { x: -30, y: 0, z: 50 },
+                rotation: { x: 0, y: -11, z: 0 }
+            },
+            {
+                width: 4,
+                points: [
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(0, 0, 328)
+                ],
+                segments: 2000,
+                position: { x: -30, y: 0, z: 105 },
+                rotation: { x: 0, y: -11, z: 0 },
+            },
+            {
+                width: 4,
+                points: [
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(0, 0, 310)
+                ],
+                segments: 2000,
+                position: { x: -30, y: 0, z: 160 },
+                rotation: { x: 0, y: -11, z: 0 },
+            },
+            {
+                width: 4,
+                points: [
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(0, 0, 300)
+                ],
+                segments: 2000,
+                position: { x: -30, y: 0, z: 215 },
+                rotation: { x: 0, y: -11, z: 0 },
+            },
+            {
+                width: 4,
+                points: [
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(0, 0, 300)
+                ],
+                segments: 2000,
+                position: { x: -30, y: 0, z: 270 },
+                rotation: { x: 0, y: -11, z: 0 },
+            },
+            // BLOCK A ROAD START
+            {
+                width: 4,
+                points: [
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(0, 0, 290)
+                ],
+                segments: 2000,
+                position: { x: -30, y: 0, z: -414 },
+                rotation: { x: 0, y: -11, z: 0 }
+            },
+            {
+                width: 4,
+                points: [
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(0, 0, 276)
+                ],
+                segments: 2000,
+                position: { x: -30, y: 0, z: -367 },
+                rotation: { x: 0, y: -11, z: 0 }
+            },
+            {
+                width: 4,
+                points: [
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(0, 0, 264)
+                ],
+                segments: 2000,
+                position: { x: -30, y: 0, z: -320 },
+                rotation: { x: 0, y: -11, z: 0 }
+            },
+            // BLOCK B ROAD START
+            {
+                width: 4,
+                points: [
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(0, 0, 292)
+                ],
+                segments: 2000,
+                position: { x: -330, y: 0, z: -414 },
+                rotation: { x: 0, y: -11, z: 0 }
+            },
+            {
+                width: 4,
+                points: [
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(0, 0, 292)
+                ],
+                segments: 2000,
+                position: { x: -330, y: 0, z: -367 },
+                rotation: { x: 0, y: -11, z: 0 }
+            },
+            {
+                width: 4,
+                points: [
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(0, 0, 292)
+                ],
+                segments: 2000,
+                position: { x: -330, y: 0, z: -320 },
+                rotation: { x: 0, y: -11, z: 0 }
+            },
+            // Cluster Road Start - (1-7)
+            {
+                width: 4,
+                points: [
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(0, 0, 292)
+                ],
+                segments: 2000,
+                position: { x: -330, y: 0, z: -3 },
+                rotation: { x: 0, y: -11, z: 0 }
+            },
+            {
+                width: 4,
+                points: [
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(0, 0, 292)
+                ],
+                segments: 2000,
+                position: { x: -330, y: 0, z: 45 },
+                rotation: { x: 0, y: -11, z: 0 }
+            },
+            {
+                width: 4,
+                points: [
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(0, 0, 292)
+                ],
+                segments: 2000,
+                position: { x: -330, y: 0, z: 95 },
+                rotation: { x: 0, y: -11, z: 0 },
+            },
+            {
+                width: 4,
+                points: [
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(0, 0, 292)
+                ],
+                segments: 2000,
+                position: { x: -330, y: 0, z: 140 },
+                rotation: { x: 0, y: -11, z: 0 },
+            },
+            {
+                width: 4,
+                points: [
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(0, 0, 292)
+                ],
+                segments: 2000,
+                position: { x: -330, y: 0, z: 185 },
+                rotation: { x: 0, y: -11, z: 0 },
+            },
+            {
+                width: 4,
+                points: [
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(0, 0, 292)
+                ],
+                segments: 2000,
+                position: { x: -330, y: 0, z: 229 },
+                rotation: { x: 0, y: -11, z: 0 },
+            },
+            {
+                width: 4,
+                points: [
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(0, 0, 292)
+                ],
+                segments: 2000,
+                position: { x: -330, y: 0, z: 275 },
+                rotation: { x: 0, y: -11, z: 0 },
+            },
+            {
+                width: 4,
+                points: [
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(0, 0, 920)
+                ],
+                segments: 2000,
+                position: { x: -630, y: 0, z: 324 },
+                rotation: { x: 0, y: -11, z: 0 },
+            },
+            // Cluster road 8-10
+            {
+                width: 4,
+                points: [
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(0, 0, 292)
+                ],
+                segments: 2000,
+                position: { x: -630, y: 0, z: 182 },
+                rotation: { x: 0, y: -11, z: 0 },
+            },
+            {
+                width: 4,
+                points: [
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(0, 0, 292)
+                ],
+                segments: 2000,
+                position: { x: -630, y: 0, z: 229 },
+                rotation: { x: 0, y: -11, z: 0 },
+            },
+            {
+                width: 4,
+                points: [
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(0, 0, 292)
+                ],
+                segments: 2000,
+                position: { x: -630, y: 0, z: 275 },
+                rotation: { x: 0, y: -11, z: 0 },
+            },
+            // Empty Land Road
+            {
+                width: 4,
+                points: [
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(0, 0, 292)
+                ],
+                segments: 2000,
+                position: { x: -330, y: 0, z: 375 },
+                rotation: { x: 0, y: -11, z: 0 },
+            },
+            {
+                width: 4,
+                points: [
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(0, 0, 292)
+                ],
+                segments: 2000,
+                position: { x: -330, y: 0, z: 425 },
+                rotation: { x: 0, y: -11, z: 0 },
+            },
+            {
+                width: 4,
+                points: [
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(0, 0, 100)
+                ],
+                segments: 2000,
+                position: { x: -175, y: 0, z: 328 },
+                rotation: { x: 0, y: 0, z: 0 },
+            },
+        ];
 
-        /**
-         * Adds lighting to the scene.
-         */
-        function addLighting() {
-                    // Soft ambient / hemisphere for overall bounce
-                    const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 0.45);
-                    scene.add(hemi);
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x87ceeb);
+            flagObj = createFlag(scene, { x: 10, y: 0, z: -5 });
+            // scene.fog = new THREE.Fog( 0xcccccc, 10, 15 );
+            // Initialize with dense fog for reveal animation
+            scene.fog = new THREE.FogExp2(0x87ceeb, initialFogDensity);
 
-                    // Key light (soft directional / simulating main studio light)
-                    const key = new THREE.DirectionalLight(0xffffff, 1.1);
-                    key.position.set(400, 600, 300);
-                    key.castShadow = true;
-                    key.shadow.mapSize.width = 2048;
-                    key.shadow.mapSize.height = 2048;
-                    key.shadow.camera.near = 100;
-                    key.shadow.camera.far = 2000;
-                    scene.add(key);
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 14000);
 
-                    // Fill light (soft, opposite side)
-                    const fill = new THREE.DirectionalLight(0xffffff, 0.45);
-                    fill.position.set(-300, 300, -200);
-                    fill.castShadow = false;
-                    scene.add(fill);
+            camera.position.z = 0;
+            camera.position.y = 0;
+            camera.position.x = 0;
+            camera.lookAt(0, 0, 0);
 
-                    // Rim/back light to create separation
-                    const rim = new THREE.DirectionalLight(0xffffff, 0.25);
-                    rim.position.set(-200, 350, 400);
-                    rim.castShadow = false;
-                    scene.add(rim);
+            scene.add(camera)
 
-                    // Subtle ambient to raise shadow floor detail
-                    const ambientLow = new THREE.AmbientLight(0xffffff, 0.18);
-                    scene.add(ambientLow);
-        }
+            // Lighting for MeshStandardMaterial
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+            scene.add(ambientLight);
 
-        /**
-         * Creates the main ground plane (green area) and a base boundary. 0x558B2F
-         */
-        function createGroundAndBoundary() {
-            // Base plane (Main Green Area - now much larger)
-            const groundGeometry = new THREE.PlaneGeometry(MAP_WIDTH + 2600, MAP_LENGTH + 600);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(50, 150, 50);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.bias = -0.0005; // Reduces shadow acne (blinking shadows)
+            directionalLight.shadow.normalBias = 0.05; // Helps with shadow artifacts on surfaces
+            directionalLight.shadow.mapSize.width = 2048;
+            directionalLight.shadow.mapSize.height = 2048;
+            scene.add(directionalLight);
+
+
+            renderer = new THREE.WebGLRenderer({
+                antialias: true,
+                logarithmicDepthBuffer: true // Prevents flickering at far distances/large scales
+            });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.shadowMap.enabled = true; // Enable shadows
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Smoother shadows
+            // Removed ACESFilmicToneMapping and sRGBEncoding to restore original color vibrancy
+            document.body.appendChild(renderer.domElement)
+
+            // Grid Helper
+            // const grid = new THREE.GridHelper(1510, 80, 0x697565, 0x697565);
+            // scene.add(grid);
+
+            // Orbit Controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.rotateSpeed = 0.08; // Less rotation speed
+            controls.zoomSpeed = 1.8;   // Less zoom speed
+            controls.panSpeed = 0.8;    // Less panning speed
+            controls.minDistance = 0.1;
+            controls.maxDistance = 3000;
+            controls.maxPolarAngle = Math.PI / 2.1;
+            controls.screenSpacePanning = true;
+
+            // Ground Land
+            const ground = new THREE.PlaneGeometry(14000, 14000);
             const groundMaterial = new THREE.MeshBasicMaterial({
-                color: 0x62bf41,
+                color: 0x008000,
+                side: THREE.DoubleSide,
                 polygonOffset: true,
-                polygonOffsetFactor: 1,   // ground goes BACK
+                polygonOffsetFactor: 10,
+                polygonOffsetUnits: 10
+            });
+            const groundMesh = new THREE.Mesh(ground, groundMaterial);
+            groundMesh.rotation.x = -Math.PI / 2;
+            groundMesh.position.y = -0.1;
+            scene.add(groundMesh);
+
+
+            // 
+            // lakeObj = createCustomRoad(scene, {
+            //     points: [
+            //         new THREE.Vector3(-260, 0, 300),
+            //         new THREE.Vector3(-50, 0, 300),
+            //         new THREE.Vector3(-10, 0, 50),
+            //         new THREE.Vector3(-10, 0, 10),
+            //         new THREE.Vector3(300, 0, 22),
+            //         new THREE.Vector3(650, 0, 25),
+            //         new THREE.Vector3(1050, 0, -555),
+            //     ],
+            //     width: 20,
+            //     thickness: 0.8,
+            //     style: 'lake',
+            //     position: { x: -450, y: 10.1, z: -160 },
+            //     rotation: { x: 0, y: 0, z: 0 },
+            // });
+
+
+
+            // LAKE START FROM HERE
+            // INITIALIZE THE RIVER CLASS WITH CUSTOM PARAMETERS
+            // RIVER SYSTEM - A large flowing river at the edge of the city
+            // RIVER SYSTEM - Centered at the Flag (10, 0, -5) with a high-quality "Z" curve
+            // const riverPathPoints = [
+            //     new THREE.Vector3(-600, 0, 150),
+            //     new THREE.Vector3(-150, 0, 150),
+            //     new THREE.Vector3(150, 0, -150),
+            //     new THREE.Vector3(600, 0, -150)
+            // ];
+
+            // river = new RiverSystem(scene, riverPathPoints, {
+            //     color: 0x00ccff,
+            //     width: 40,
+            //     thickness: 0.05, // Very flat to match the land surface
+            //     position: { x: 10, y: 0.4, z: -5 }, // Centered exactly at the Flag
+            //     rotation: { x: 0, y: 0, z: 0 }
+            // });
+
+
+
+            // 2. Snake Shape Curved Road with Depth
+            // Curve ROAD START
+            // createCustomRoad(scene, {
+            //     points: [
+            //         new THREE.Vector3(-12, 0, -10),     // Junction (start)
+            //         new THREE.Vector3(28, 0, -10),     // Straighten out at end
+            //         // new THREE.Vector3(28, 0, -12),     // Straighten out at end
+            //         new THREE.Vector3(64, 0, -70),
+            //         new THREE.Vector3(104, 0, -82),
+            //         new THREE.Vector3(154, 0, -60),
+            //         // new THREE.Vector3(184, 0, -72), 
+            //         new THREE.Vector3(224, 0, -62),
+            //         new THREE.Vector3(294, 0, -52),
+            //         // new THREE.Vector3(304, 0, -72), 
+            //         new THREE.Vector3(344, 0, -48),
+            //         new THREE.Vector3(484, 0, -112),
+            //         // new THREE.Vector3(144, 0, -112),     // Straighten out at end
+            //         // new THREE.Vector3(124, 0, -122),     // Straighten out at end
+            //     ],
+            //     width: 10,
+            //     thickness: 0.21, // Matches previous road
+            //     style: 'dashed',
+            //     position: { x: 276, y: 0, z: 195 },
+            //     rotation: { x: 0, y: -11, z: 0 },
+            // });
+
+
+
+            requestAnimationFrame(sceneRender);
+
+            const cityBlocks = new THREE.Group();
+            scene.add(cityBlocks);
+
+            const cityLandGeometry = new THREE.PlaneGeometry(1400, 3200);
+            const cityLandMaterial = new THREE.MeshBasicMaterial({
+                color: 0xc1d86c,
+                polygonOffset: true,
+                polygonOffsetFactor: 5,
+                polygonOffsetUnits: 5
+            });
+
+            const cityLand = new THREE.Mesh(cityLandGeometry, cityLandMaterial);
+            cityLand.rotation.x = -Math.PI / 2;
+            cityLand.position.y = 0;
+            cityLand.position.x = -50;
+            cityLand.position.z = -300;
+
+            cityBlocks.add(cityLand);
+
+
+            const subGreenLand1 = new THREE.Group();
+            subGreenLand1.position.set(-20, 0, 5);
+            cityBlocks.add(subGreenLand1);
+
+            const subGreenLand2 = new THREE.Group();
+            subGreenLand2.position.set(-20, 0, 5);
+            cityBlocks.add(subGreenLand2);
+
+            const subGreenLand3 = new THREE.Group();
+            subGreenLand3.position.set(-20, 0, 5);
+            cityBlocks.add(subGreenLand3);
+
+            const subGreenLand4 = new THREE.Group();
+            subGreenLand4.position.set(-20, 0, 5);
+            cityBlocks.add(subGreenLand4);
+
+            const subGreenLand5 = new THREE.Group();
+            subGreenLand5.position.set(-20, 0, 5);
+            cityBlocks.add(subGreenLand5);
+
+            const subGreenLand6 = new THREE.Group();
+            subGreenLand6.position.set(-20, 0, 5);
+            cityBlocks.add(subGreenLand6);
+
+
+            // Cluster 1
+            const subGreenLandCL1 = new THREE.Group();
+            subGreenLandCL1.position.set(-320, 0, 80);
+            cityBlocks.add(subGreenLandCL1);
+            // Cluster 2
+            const subGreenLandCL2 = new THREE.Group();
+            subGreenLandCL2.position.set(-320, 0, 31);
+            cityBlocks.add(subGreenLandCL2);
+            // Cluster 3
+            const subGreenLandCL3 = new THREE.Group();
+            subGreenLandCL3.position.set(-320, 0, -12);
+            cityBlocks.add(subGreenLandCL3);
+            // Cluster 4
+            const subGreenLandCL4 = new THREE.Group();
+            subGreenLandCL4.position.set(-320, 0, -55);
+            cityBlocks.add(subGreenLandCL4);
+            // Cluster 5
+            const subGreenLandCL5 = new THREE.Group();
+            subGreenLandCL5.position.set(-320, 0, -102);
+            cityBlocks.add(subGreenLandCL5);
+            // Cluster 6
+            const subGreenLandCL6 = new THREE.Group();
+            subGreenLandCL6.position.set(-320, 0, -151);
+            cityBlocks.add(subGreenLandCL6);
+            // Cluster 7
+            const subGreenLandCL7 = new THREE.Group();
+            subGreenLandCL7.position.set(-320, 0, -199);
+            cityBlocks.add(subGreenLandCL7);
+            // Cluster 8
+            const subGreenLandCL8 = new THREE.Group();
+            subGreenLandCL8.position.set(-620, 0, -12);
+            cityBlocks.add(subGreenLandCL8);
+            // Cluster 9
+            const subGreenLandCL9 = new THREE.Group();
+            subGreenLandCL9.position.set(-620, 0, 31);
+            cityBlocks.add(subGreenLandCL9);
+            // Cluster 10
+            const subGreenLandCL10 = new THREE.Group();
+            subGreenLandCL10.position.set(-620, 0, 80);
+            cityBlocks.add(subGreenLandCL10);
+
+
+            // Multiple Bunch Calls with refined serial pairing
+            createHouseBunch(subGreenLand6, {
+                serialCount: 30, // Numbers 1 to 20, each with A/B
+                startX: 0,
+                startZ: 5,
+                unitSpacing: 16,
+                houseGap: 280,
+                rowSpacing: 25,
+                startId: 1,
+                clusterName: "BUNCH-6"
+            });
+            createHouseBunch(subGreenLand5, {
+                serialCount: 28, // Numbers 1 to 20, each with A/B
+                startX: 0,
+                startZ: 60,
+                unitSpacing: 16,
+                houseGap: 280,
+                rowSpacing: 25,
+                startId: 2,
+                clusterName: "BUNCH-5"
+            });
+            createHouseBunch(subGreenLand4, {
+                serialCount: 24, // Numbers 1 to 20, each with A/B
+                startX: 0,
+                startZ: 115,
+                unitSpacing: 16,
+                houseGap: 280,
+                rowSpacing: 25,
+                startId: 2,
+                clusterName: "BUNCH-4"
+            });
+            createHouseBunch(subGreenLand3, {
+                serialCount: 27, // Numbers 1 to 20, each with A/B
+                startX: 0,
+                startZ: 170,
+                unitSpacing: 16,
+                houseGap: 280,
+                rowSpacing: 25,
+                startId: 2,
+                clusterName: "BUNCH-3"
+            });
+            createHouseBunch(subGreenLand2, {
+                serialCount: 28, // Numbers 1 to 20, each with A/B
+                startX: 0,
+                startZ: 225,
+                unitSpacing: 16,
+                houseGap: 280,
+                rowSpacing: 25,
+                startId: 2,
+                clusterName: "BUNCH-2"
+            });
+            createHouseBunch(subGreenLand1, {
+                serialCount: 36,
+                startX: 0,
+                startZ: 280,
+                unitSpacing: 16,
+                houseGap: 280,
+                rowSpacing: 25,
+                startId: 2,
+                clusterName: "BUNCH-1"
+            });
+
+            // CLUSTER 1
+            createHouseCluster(subGreenLandCL1, {
+                serialCount: 36,
+                startX: 0,
+                startZ: 210,
+                unitSpacing: 16,
+                houseGap: 280,
+                rowSpacing: 21,
+                startId: 2,
+                clusterName: "CLUSTER-1"
+            });
+            // CLUSTER 2
+            createHouseCluster(subGreenLandCL2, {
+                serialCount: 36,
+                startX: 0,
+                startZ: 210,
+                unitSpacing: 16,
+                houseGap: 280,
+                rowSpacing: 20,
+                startId: 2,
+                clusterName: "CLUSTER-2"
+            });
+            // CLUSTER 3
+            createHouseCluster(subGreenLandCL3, {
+                serialCount: 36,
+                startX: 0,
+                startZ: 210,
+                unitSpacing: 16,
+                houseGap: 280,
+                rowSpacing: 20,
+                startId: 2,
+                clusterName: "CLUSTER-3"
+            });
+            // CLUSTER 4
+            createHouseCluster(subGreenLandCL4, {
+                serialCount: 36,
+                startX: 0,
+                startZ: 210,
+                unitSpacing: 16,
+                houseGap: 280,
+                rowSpacing: 20,
+                startId: 2,
+                clusterName: "CLUSTER-4"
+            });
+            // CLUSTER 5
+            createHouseCluster(subGreenLandCL5, {
+                serialCount: 36,
+                startX: 0,
+                startZ: 210,
+                unitSpacing: 16,
+                houseGap: 280,
+                rowSpacing: 20,
+                startId: 2,
+                clusterName: "CLUSTER-5"
+            });
+            // CLUSTER 6
+            createHouseCluster(subGreenLandCL6, {
+                serialCount: 36,
+                startX: 0,
+                startZ: 210,
+                unitSpacing: 16,
+                houseGap: 280,
+                rowSpacing: 22,
+                startId: 2,
+                clusterName: "CLUSTER-6"
+            });
+            // CLUSTER 7
+            createHouseCluster(subGreenLandCL7, {
+                serialCount: 36,
+                startX: 0,
+                startZ: 210,
+                unitSpacing: 16,
+                houseGap: 280,
+                rowSpacing: 22,
+                startId: 2,
+                clusterName: "CLUSTER-7"
+            });
+            // CLUSTER 8
+            createHouseCluster(subGreenLandCL8, {
+                serialCount: 36,
+                startX: 0,
+                startZ: 210,
+                unitSpacing: 16,
+                houseGap: 280,
+                rowSpacing: 22,
+                startId: 2,
+                clusterName: "CLUSTER-8"
+            });
+            // CLUSTER 9
+            createHouseCluster(subGreenLandCL9, {
+                serialCount: 36,
+                startX: 0,
+                startZ: 210,
+                unitSpacing: 16,
+                houseGap: 280,
+                rowSpacing: 22,
+                startId: 2,
+                clusterName: "CLUSTER-9"
+            });
+            // CLUSTER 10
+            createHouseCluster(subGreenLandCL10, {
+                serialCount: 36,
+                startX: 0,
+                startZ: 210,
+                unitSpacing: 16,
+                houseGap: 280,
+                rowSpacing: 22,
+                startId: 2,
+                clusterName: "CLUSTER-10"
+            });
+
+            // createHouseBunch(subGreenLand2, {
+            //     serialCount: 10, // Numbers 101 to 110, each with A/B
+            //     startX: 0,
+            //     startZ: 0,
+            //     unitSpacing: 7,
+            //     houseGap: 3,
+            //     rowSpacing: 12,
+            //     startId: 101,
+            //     clusterName: "CLUSTER-7"
+            // });
+            const asphaltBaseMat = new THREE.MeshStandardMaterial({
+                color: 0x222222,
+                roughness: 0.9,
+                polygonOffset: true,
+                polygonOffsetFactor: 1,
                 polygonOffsetUnits: 1
             });
-            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
-            ground.rotation.x = -Math.PI / 2; // Rotate to lie flat
-            ground.position.set(MAP_WIDTH / 2, -1, MAP_LENGTH / 2);
-            ground.receiveShadow = true;
-            mapGroup.add(ground);
 
-            // Central Development Land (lighter green - also larger)
-
-            const landGeometry = new THREE.PlaneGeometry(MAP_WIDTH + 2200, MAP_LENGTH + 200);
-            const landMaterial = new THREE.MeshBasicMaterial({
-                color: 0xe6ff82,
+            const markingsMat = new THREE.MeshStandardMaterial({
+                map: createMarkingsTexture(),
+                transparent: true,
+                depthWrite: false,
+                blending: THREE.NormalBlending,
                 polygonOffset: true,
-                polygonOffsetFactor: 1,   // ground goes BACK
-                polygonOffsetUnits: 1
-            }); // Lighter green for development land
+                polygonOffsetFactor: -2,
+                polygonOffsetUnits: -2
+            });
 
-            const land = new THREE.Mesh(landGeometry, landMaterial);
-            land.rotation.x = -Math.PI / 2;
-            land.position.set(MAP_WIDTH / 2, 0, MAP_LENGTH / 2);
-            land.receiveShadow = true;
-            mapGroup.add(land);
-        }
+            ROAD_CONFIGS.forEach(config => {
+                const curve = new THREE.CatmullRomCurve3(config.points);
+                const roadGeo = createRoadGeometry(curve, config.width, config.segments);
 
-        /**
-         * Creates the main river path, now located outside the enlarged primary land area.
-         */
-        function createRiver() {
-            // Increased offset to keep the river outside the new, larger MAP_LENGTH boundary (3000)
-            const Z_OFFSET = 600;
+                // Create a group for each road to handle position and rotation together
+                const roadGroup = new THREE.Group();
+                scene.add(roadGroup);
 
-            const riverPoints2D = [
-                // X coordinates are scaled, Z coordinates are relative to the new map length
-                new THREE.Vector2(-200, MAP_LENGTH + 50 + Z_OFFSET),
-                new THREE.Vector2(400, MAP_LENGTH - 100 + Z_OFFSET),
-                new THREE.Vector2(800, MAP_LENGTH + 50 + Z_OFFSET), // New center X
-                new THREE.Vector2(1200, MAP_LENGTH - 50 + Z_OFFSET),
-                new THREE.Vector2(MAP_WIDTH + 200, MAP_LENGTH + 50 + Z_OFFSET),
+                const baseMesh = new THREE.Mesh(roadGeo, asphaltBaseMat);
+                baseMesh.position.y = 0.05; // Lift up slightly to avoid Z-fighting with city land
+                baseMesh.receiveShadow = true;
+                roadGroup.add(baseMesh);
+
+                const markingsMesh = new THREE.Mesh(roadGeo, markingsMat);
+                markingsMesh.position.y = 0.06; // Slightly above baseMesh
+                roadGroup.add(markingsMesh);
+
+                // Apply Position if defined
+                if (config.position) {
+                    roadGroup.position.set(config.position.x || 0, config.position.y || 0, config.position.z || 0);
+                }
+
+                // Apply Rotation if defined
+                if (config.rotation) {
+                    roadGroup.rotation.set(config.rotation.x || 0, config.rotation.y || 0, config.rotation.z || 0);
+                }
+
+                // createCityBuildings(curve, config.width);
+            });
+
+            // --- Initialize Cartoon River ---
+            const riverPoints = [
+                // new THREE.Vector3(-100, 0, -60),
+                new THREE.Vector3(-680, 0, 350),
+                new THREE.Vector3(-480, 0, 330),
+                new THREE.Vector3(-480, 0, 140),
+                new THREE.Vector3(-340, 0, 40),
+                new THREE.Vector3(0, 0, 40),
+                new THREE.Vector3(100, 0, 40),
+                new THREE.Vector3(200, 0, 40),
+                new THREE.Vector3(400, 0, -240),
+                new THREE.Vector3(600, 0, -540),
+                new THREE.Vector3(1080, 0, -1400),
             ];
 
-            // Convert 2D points to 3D points (y is up). 
-            const riverPoints3D = riverPoints2D.map(p => new THREE.Vector3(p.x, -0.5, p.y));
-
-            // Create a smooth curve using CatmullRomCurve3
-            const curve = new THREE.CatmullRomCurve3(riverPoints3D, false, 'centripetal');
-
-            const riverRadius = 80; // Slightly wider river
-            const tubularSegments = 200;
-            const radialSegments = 4;
-
-            // Create TubeGeometry along the curve
-            const riverGeometry = new THREE.TubeGeometry(
-                curve,
-                tubularSegments,
-                riverRadius,
-                radialSegments,
-                false
-            );
-
-            // Material for deeper water color and higher opacity
-            const riverMaterial = new THREE.MeshLambertMaterial({
-                color: 0x0056a0, // Darker blue water
-                transparent: true,
-                opacity: 0.85
+            river = new CartoonRiver(scene, {
+                points: riverPoints,
+                width: 20,
+                thickness: 0.8,
+                color: 0x33ccff,
+                position: { x: 0, y: 0.2, z: -180 },
+                rotation: { x: 0, y: 0, z: 0 }
             });
 
-            const riverMesh = new THREE.Mesh(riverGeometry, riverMaterial);
-            riverMesh.receiveShadow = true;
-            mapGroup.add(riverMesh);
+            requestAnimationFrame(sceneRender);
         }
+
+        /**
+         * Creates a custom road with 3D thickness using THREE.BufferGeometry
+         * @param {THREE.Scene} scene - The scene to add the road to
+         * @param {Object} options - { points: [], width: 4, thickness: 0.5, segments: 128, style: 'dashed' }
+         */
+
+        // Create strait road with depth
+        function createCustomRoad(scene, options) {
+            const {
+                points = [],
+                width = 4,
+                thickness = 0.01,
+                segments = 128,
+                style = 'dashed',
+                position = { x: 0, y: 0, z: 0 },
+                rotation = { x: 0, y: 0, z: 0 },
+                color = null // Custom base color
+            } = options;
+
+            if (points.length < 2) return null;
+
+            const curve = new THREE.CatmullRomCurve3(points);
+            const curvePoints = curve.getPoints(segments);
+            const tangent = new THREE.Vector3();
+
+            const vertices = [];
+            const indices = [];
+            const uvs = [];
+
+            for (let i = 0; i <= segments; i++) {
+                const t = i / segments;
+                const p = curvePoints[i];
+
+                curve.getTangentAt(t, tangent);
+                const normal = new THREE.Vector3(0, 1, 0);
+                const binormal = new THREE.Vector3().crossVectors(tangent, normal).normalize();
+
+                // Calculate 4 vertices per segment (Top-Left, Top-Right, Bottom-Left, Bottom-Right)
+                const pTL = p.clone().add(binormal.clone().multiplyScalar(width / 2)).add(new THREE.Vector3(0, thickness, 0));
+                const pTR = p.clone().add(binormal.clone().multiplyScalar(-width / 2)).add(new THREE.Vector3(0, thickness, 0));
+                const pBL = p.clone().add(binormal.clone().multiplyScalar(width / 2));
+                const pBR = p.clone().add(binormal.clone().multiplyScalar(-width / 2));
+
+                // Push vertices: Top Face (0, 1), Left Side (2, 3), Right Side (4, 5)
+                // We duplicate vertices to have sharp edges (different normals/UVs)
+
+                // Top vertices
+                vertices.push(pTL.x, pTL.y, pTL.z); // 0
+                vertices.push(pTR.x, pTR.y, pTR.z); // 1
+                uvs.push(0, t * (curve.getLength() / width));
+                uvs.push(1, t * (curve.getLength() / width));
+
+                // Left side vertices
+                vertices.push(pTL.x, pTL.y, pTL.z); // 2
+                vertices.push(pBL.x, pBL.y, pBL.z); // 3
+                uvs.push(0, t * (curve.getLength() / thickness));
+                uvs.push(0.1, t * (curve.getLength() / thickness)); // Using tiny bit of texture space for sides
+
+                // Right side vertices
+                vertices.push(pTR.x, pTR.y, pTR.z); // 4
+                vertices.push(pBR.x, pBR.y, pBR.z); // 5
+                uvs.push(0, t * (curve.getLength() / thickness));
+                uvs.push(0.1, t * (curve.getLength() / thickness));
+
+                if (i < segments) {
+                    const base = i * 6;
+                    // Top Face
+                    indices.push(base, base + 6, base + 1);
+                    indices.push(base + 1, base + 6, base + 7);
+                    // Left Wall
+                    indices.push(base + 2, base + 3, base + 8);
+                    indices.push(base + 3, base + 9, base + 8);
+                    // Right Wall
+                    indices.push(base + 4, base + 10, base + 5);
+                    indices.push(base + 5, base + 10, base + 11);
+                }
+            }
+
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+            geometry.setIndex(indices);
+            geometry.computeVertexNormals();
+
+            const canvas = document.createElement('canvas');
+            canvas.width = 128;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+
+            if (style === 'lake') {
+                // Water Base - Deep Ocean Blue
+                const grad = ctx.createLinearGradient(0, 0, 0, 512);
+                grad.addColorStop(0, '#002b4d');
+                grad.addColorStop(0.5, '#005b96');
+                grad.addColorStop(1, '#002b4d');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, 128, 512);
+
+                // Animated ripples/foam look (texture side)
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+                ctx.lineWidth = 1.5;
+                for (let i = 0; i < 60; i++) {
+                    ctx.beginPath();
+                    const x = Math.random() * 128;
+                    const y = Math.random() * 512;
+                    const w = 5 + Math.random() * 20;
+                    ctx.moveTo(x - w, y);
+                    ctx.bezierCurveTo(x - w / 2, y + 5, x + w / 2, y - 5, x + w, y);
+                    ctx.stroke();
+                }
+            } else {
+                // Asphalt Base
+                ctx.fillStyle = color || '#222222';
+                ctx.fillRect(0, 0, 128, 512);
+
+                // Sidebar color for side walls (using a small strip of the texture)
+                ctx.fillStyle = '#444444';
+                ctx.fillRect(0, 0, 15, 512);
+
+                // Noise/Grit for road
+                for (let i = 0; i < 2000; i++) {
+                    const x = 15 + Math.random() * 113;
+                    const y = Math.random() * 512;
+                    const gray = 20 + Math.random() * 30;
+                    ctx.fillStyle = `rgb(${gray},${gray},${gray})`;
+                    ctx.fillRect(x, y, 1, 1);
+                }
+            }
+
+            if (style !== 'lake') {
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 4;
+                if (style === 'dashed') {
+                    ctx.setLineDash([80, 100]);
+                    ctx.beginPath(); ctx.moveTo(71, 0); ctx.lineTo(71, 512); ctx.stroke();
+                } else if (style === 'double') {
+                    ctx.beginPath();
+                    ctx.moveTo(60, 0); ctx.lineTo(60, 512);
+                    ctx.moveTo(68, 0); ctx.lineTo(68, 512);
+                    ctx.stroke();
+                } else if (style === 'solid') {
+                    ctx.setLineDash([]);
+                    ctx.beginPath(); ctx.moveTo(71, 0); ctx.lineTo(71, 512); ctx.stroke();
+                }
+
+                // Side Lines
+                ctx.strokeStyle = 'rgba(255,255,255,1)';
+                ctx.setLineDash([]);
+                ctx.strokeRect(17, -10, 2, 532);
+                ctx.strokeRect(124, -10, 2, 532);
+            }
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+
+            const material = (style === 'lake') ?
+                new THREE.MeshStandardMaterial({
+                    map: texture,
+                    side: THREE.DoubleSide,
+                    transparent: true,
+                    opacity: 0.8,
+                    roughness: 0.2,
+                    metalness: 0.3
+                }) :
+                new THREE.MeshBasicMaterial({
+                    map: texture,
+                    side: THREE.DoubleSide
+                });
+
+            const roadMesh = new THREE.Mesh(geometry, material);
+
+            // Apply Position
+            if (position) {
+                roadMesh.position.set(position.x || 0, position.y || 0, position.z || 0);
+            }
+
+            // Apply Rotation
+            if (rotation) {
+                roadMesh.rotation.set(rotation.x || 0, rotation.y || 0, rotation.z || 0);
+            }
+
+            scene.add(roadMesh);
+            return roadMesh;
+        }
+
+        function sceneRender(time) {
+            requestAnimationFrame(sceneRender);
+            const t = time * 0.001;
+            controls.update();
+            flagObj.animateFlag(time);
+
+            // --- Fog Reveal Animation ---
+            if (!fogRevealComplete) {
+                const currentTime = time;
+
+                if (fogRevealStartTime === null) {
+                    fogRevealStartTime = currentTime;
+                    initialCameraY = camera.position.y; // Store initial Y position
+                }
+
+                const elapsed = currentTime - fogRevealStartTime;
+                const progress = Math.min(elapsed / fogRevealDuration, 1.0);
+
+                // Improved easing function for ultra-smooth transition (ease-in-out-cubic)
+                const easedProgress = progress < 0.5
+                    ? 4 * progress * progress * progress
+                    : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+
+                // Interpolate fog density with smooth curve
+                const currentDensity = initialFogDensity - (initialFogDensity - finalFogDensity) * easedProgress;
+                scene.fog.density = currentDensity;
+
+                // Subtle camera height adjustment for cinematic reveal (rises slightly as fog clears)
+                const cameraLift = 20; // Subtle 20 unit lift
+                camera.position.y = initialCameraY + (cameraLift * easedProgress);
+
+                if (progress >= 1.0) {
+                    fogRevealComplete = true;
+                    console.log('City fog reveal animation complete!');
+                }
+            }
+
+            // Update River animation
+
+            // --- Lake Water Animation ---
+            if (lakeObj) {
+                // 1. Flowing Texture
+                if (lakeObj.material.map) {
+                    lakeObj.material.map.offset.y = -t * 0.08;
+                    lakeObj.material.map.offset.x = Math.sin(t * 0.5) * 0.02;
+                }
+
+                // 2. Vertex Wave Effect
+                const pos = lakeObj.geometry.attributes.position;
+                for (let i = 0; i < pos.count; i++) {
+                    const mod6 = i % 6;
+                    // Indices 0, 1, 2, 4 are top vertices
+                    if (mod6 !== 3 && mod6 !== 5) {
+                        const px = pos.getX(i);
+                        const pz = pos.getZ(i);
+                        // Multi-octave wave simulation
+                        const wave = Math.sin(px * 0.04 + t * 2.0) * 1.5 +
+                            Math.cos(pz * 0.04 + t * 1.5) * 1.5 +
+                            Math.sin((px + pz) * 0.02 + t * 0.8) * 2.0;
+                        pos.setY(i, 0.8 + wave); // 0.8 is baseline thickness
+                    }
+                }
+                pos.needsUpdate = true;
+                // Optional: compute normals for better lighting on waves
+                // lakeObj.geometry.computeVertexNormals(); 
+            }
+
+            // Update River animation
+            if (river) river.update(time);
+
+            renderer.render(scene, camera)
+        }
+
+
+        // function createSquareGrid(size = 120, divisions = 80) {
+        //     const vertices = [];
+        //     const step = size / divisions;
+        //     const half = size / 2;
+
+        //     for (let i = 0; i <= divisions; i++) {
+        //         const k = -half + i * step;
+
+        //         // Vertical line
+        //         vertices.push(-half, 0, k, half, 0, k);
+        //         // Horizontal line
+        //         vertices.push(k, 0, -half, k, 0, half);
+        //     }
+
+        //     const geometry = new THREE.BufferGeometry();
+        //     geometry.setAttribute(
+        //         'position',
+        //         new THREE.Float32BufferAttribute(vertices, 3)
+        //     );
+
+        //     const material = new THREE.LineBasicMaterial({ color: 0x697565 });
+        //     return new THREE.LineSegments(geometry, material);
+        // }
+
+
+
+        // Center Flag
+        function createFlag(scene, position = { x: 0, y: 0, z: 0 }) {
+            const group = new THREE.Group();
+
+            /* =========================
+               Flag Pole
+            ========================= */
+            const poleGeometry = new THREE.CylinderGeometry(0.1, 0.1, 10, 16);
+            const poleMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            const pole = new THREE.Mesh(poleGeometry, poleMaterial);
+
+            pole.position.set(0, 5, 0);
+            group.add(pole);
+
+            /* =========================
+               Create Text Canvas
+            ========================= */
+            const canvas = document.createElement("canvas");
+            canvas.width = 1024;
+            canvas.height = 512;
+
+            const ctx = canvas.getContext("2d");
+
+            // Background
+            ctx.fillStyle = "#ffffff"; // Bangladesh green
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Text
+            ctx.font = "bold 80px Arial";
+            ctx.fillStyle = "#ffffff";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText("Bangla Bosoti Square", canvas.width / 2, canvas.height / 2);
+
+            const flagTexture = new THREE.CanvasTexture(canvas);
+            const flagGeometry = new THREE.PlaneGeometry(6, 3, 8, 8);
+            const flagMaterial = new THREE.MeshBasicMaterial({
+                map: flagTexture,
+                side: THREE.DoubleSide
+            });
+
+            const flag = new THREE.Mesh(flagGeometry, flagMaterial);
+            flag.position.set(3, 7.5, 0);
+            group.add(flag);
+
+            /* =========================
+               Position Group
+            ========================= */
+            group.position.set(position.x, position.y, position.z);
+            scene.add(group);
+
+            /* =========================
+               Wave Animation
+            ========================= */
+            function animateFlag(time) {
+                const pos = flag.geometry.attributes.position;
+
+                for (let i = 0; i < pos.count; i++) {
+                    const x = pos.getX(i);
+                    pos.setZ(i, Math.sin(x * 2 + time * 0.005) * 0.2);
+                }
+
+                pos.needsUpdate = true;
+            }
+
+            return { group, animateFlag };
+        }
+
+
+        function createRoadGeometry(curve, width, segments) {
+            const points = curve.getSpacedPoints(segments);
+            const vertices = [];
+            const uvs = [];
+            const indices = [];
+
+            for (let i = 0; i <= segments; i++) {
+                const t = i / segments;
+                const p = points[i];
+                const tangent = curve.getTangentAt(t).normalize();
+                const binormal = new THREE.Vector3().crossVectors(tangent, new THREE.Vector3(0, 1, 0)).normalize();
+
+                const pL = p.clone().add(binormal.clone().multiplyScalar(width / 2));
+                const pR = p.clone().add(binormal.clone().multiplyScalar(-width / 2));
+
+                vertices.push(pL.x, 0, pL.z, pR.x, 0, pR.z);
+
+                const dist = t * curve.getLength();
+                uvs.push(0, dist / 20, 1, dist / 20);
+
+                if (i < segments) {
+                    const idx = i * 2;
+                    indices.push(idx, idx + 2, idx + 1, idx + 1, idx + 2, idx + 3);
+                }
+            }
+
+            const geo = new THREE.BufferGeometry();
+            geo.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+            geo.setIndex(indices);
+            geo.computeVertexNormals();
+            return geo;
+        }
+
+        function createMarkingsTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512; canvas.height = 1024;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, 512, 1024);
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 12;
+            ctx.setLineDash([60, 60]);
+            ctx.beginPath(); ctx.moveTo(256, 0); ctx.lineTo(256, 1024); ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.globalAlpha = 0.6;
+            ctx.lineWidth = 8;
+            ctx.strokeRect(15, -10, 2, 1044);
+            ctx.strokeRect(495, -10, 2, 1044);
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+            texture.anisotropy = 16;
+            return texture;
+        }
+
 
         /**
          * Creates a simple low-poly tree.
@@ -409,1752 +1340,637 @@
             const treeGroup = new THREE.Group();
 
             // Trunk
-            const trunkGeometry = new THREE.CylinderGeometry(1.5, 1.5, 6, 6);
-            const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0x8D6E63 });
+            const trunkGeometry = new THREE.CylinderGeometry(0.08, 0.08, 0.5, 6);
+            const trunkMaterial = new THREE.MeshBasicMaterial({ color: 0x8D6E63 });
             const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
-            trunk.position.y = 3; // Half height
-            trunk.castShadow = true;
+            trunk.position.y = 0.25;
             treeGroup.add(trunk);
 
-            // Foliage (two cones for better look)
-            const leavesMaterial = new THREE.MeshLambertMaterial({ color: 0x388E3C });
-
-            const lowerCone = new THREE.Mesh(new THREE.ConeGeometry(5, 8, 8), leavesMaterial);
-            lowerCone.position.y = 8;
-            lowerCone.castShadow = true;
+            // Foliage
+            const leavesMaterial = new THREE.MeshBasicMaterial({ color: 0x388E3C });
+            const lowerCone = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.6, 8), leavesMaterial);
+            lowerCone.position.y = 0.6;
             treeGroup.add(lowerCone);
 
-            const upperCone = new THREE.Mesh(new THREE.ConeGeometry(4, 7, 8), leavesMaterial);
-            upperCone.position.y = 12;
-            upperCone.castShadow = true;
+            const upperCone = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.5, 8), leavesMaterial);
+            upperCone.position.y = 0.9;
             treeGroup.add(upperCone);
 
             return treeGroup;
         }
 
         /**
-         * Creates a single house model with plot border and tree.
+         * Creates a simple stylized tree with minimal foliage geometry.
          */
-        function createHouseModel(width, length, id) {
-                    const houseGroup = new THREE.Group();
+        function createHighQualityTree() {
+            const treeGroup = new THREE.Group();
 
-                    // keep metadata
-                    houseGroup.userData.isHouse = true;
-                    houseGroup.userData.id = id;
+            // Trunk - Simple dark wood
+            const trunkGeometry = new THREE.CylinderGeometry(0.15, 0.2, 1.0, 6);
+            const trunkMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x654321,
+                roughness: 0.88,
+                metalness: 0.0
+            });
+            const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+            trunk.castShadow = true;
+            trunk.receiveShadow = true;
+            trunk.position.y = 0.5;
+            treeGroup.add(trunk);
 
-                    // sizes - GREATLY INCREASED for premium large house
-                    const groundFloorHeight = 16;
-                    const firstFloorHeight = 14;
-                    const totalHeight = groundFloorHeight + firstFloorHeight;
-
-                    const foundationHeight = 2.0;
-                    const foundationMat = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.8 });
-
-                    // --- Main Foundation (larger, prominent) ---
-                    const foundationGeo = new THREE.BoxGeometry(width + 12, foundationHeight, length + 12);
-                    const foundation = new THREE.Mesh(foundationGeo, foundationMat);
-                    foundation.position.y = foundationHeight / 2 - 0.01;
-                    foundation.receiveShadow = true;
-                    houseGroup.add(foundation);
-
-                    // Wing Foundation - HORIZONTAL L-SHAPE (extends right on X-axis)
-                    const wingWidth = width * 0.75;  // Larger width
-                    const wingLength = length * 0.85; // Larger length
-                    const wingFoundGeo = new THREE.BoxGeometry(wingWidth + 6, foundationHeight, wingLength + 6);
-                    const wingFound = new THREE.Mesh(wingFoundGeo, foundationMat);
-                    // Position wing centered on Z, extends right (positive X)
-                    wingFound.position.set(width / 2 + wingWidth / 2 + 3, foundationHeight / 2 - 0.01, 0);
-                    wingFound.receiveShadow = true;
-                    houseGroup.add(wingFound);
-
-                    // --- Walls: two stacked boxes (white) with wooden trims ---
-                    const wallMat = new THREE.MeshStandardMaterial({ color: 0xf7f7f7, roughness: 0.6 });
-                    const trimMat = new THREE.MeshStandardMaterial({ color: 0xD7A66A, roughness: 0.6 });
-
-                    const groundGeo = new THREE.BoxGeometry(width, groundFloorHeight, length);
-                    const groundMesh = new THREE.Mesh(groundGeo, wallMat);
-                    groundMesh.position.y = foundationHeight + groundFloorHeight / 2;
-                    groundMesh.castShadow = true;
-                    groundMesh.receiveShadow = true;
-                    groundMesh.userData.isHousePart = true;
-                    houseGroup.add(groundMesh);
-
-                    const firstGeo = new THREE.BoxGeometry(width * 0.97, firstFloorHeight, length * 0.97);
-                    const firstMesh = new THREE.Mesh(firstGeo, wallMat);
-                    firstMesh.position.y = foundationHeight + groundFloorHeight + firstFloorHeight / 2;
-                    firstMesh.castShadow = true;
-                    firstMesh.receiveShadow = true;
-                    firstMesh.userData.isHousePart = true;
-                    houseGroup.add(firstMesh);
-
-                    // Wooden trims: thin boxes around floor separations and window frames
-                    const trimHeight = 0.6;
-                    const floorTrimGeo = new THREE.BoxGeometry(width + 2, trimHeight, 0.6);
-                    const floorTrim = new THREE.Mesh(floorTrimGeo, trimMat);
-                    floorTrim.position.set(0, foundationHeight + groundFloorHeight + 0.2, length / 2 + 0.3);
-                    floorTrim.castShadow = false;
-                    houseGroup.add(floorTrim);
-
-                    // --- HORIZONTAL L-Shape Wing Extension (extends right on X-axis) ---
-                    const wingSpacing = 4; // Gap between main and wing on X
-                    const wingGround = new THREE.Mesh(
-                        new THREE.BoxGeometry(wingWidth, groundFloorHeight, wingLength),
-                        wallMat
-                    );
-                    wingGround.position.set(width / 2 + wingSpacing + wingWidth / 2, foundationHeight + groundFloorHeight / 2, 0);
-                    wingGround.castShadow = true;
-                    wingGround.receiveShadow = true;
-                    wingGround.userData.isHousePart = true;
-                    houseGroup.add(wingGround);
-
-                    const wingFirst = new THREE.Mesh(
-                        new THREE.BoxGeometry(wingWidth * 0.97, firstFloorHeight * 0.90, wingLength * 0.97),
-                        wallMat
-                    );
-                    wingFirst.position.set(width / 2 + wingSpacing + wingWidth / 2, foundationHeight + groundFloorHeight + firstFloorHeight * 0.45, 0);
-                    wingFirst.castShadow = true;
-                    wingFirst.receiveShadow = true;
-                    wingFirst.userData.isHousePart = true;
-                    houseGroup.add(wingFirst);
-
-                    // --- Front balconies on both floors ---
-                    function createBalcony(yPos, depth, balconyWidth) {
-                        const balGroup = new THREE.Group();
-
-                        // floor
-                        const balFloorGeo = new THREE.BoxGeometry(balconyWidth, 0.4, depth);
-                        const balFloorMat = new THREE.MeshStandardMaterial({ color: 0xC59B6B, roughness: 0.7 });
-                        const balFloor = new THREE.Mesh(balFloorGeo, balFloorMat);
-                        balFloor.position.y = yPos - 0.2;
-                        balFloor.position.z = length / 2 + depth / 2 - 0.1;
-                        balFloor.castShadow = true;
-                        balGroup.add(balFloor);
-
-                        // balustrade: repeated cylinders
-                        const balRadius = 0.45;
-                        const balSpacing = 1.6;
-                        const count = Math.floor(balconyWidth / balSpacing) - 1;
-                        const startX = -balconyWidth / 2 + balSpacing;
-                        for (let i = 0; i <= count; i++) {
-                            const cyl = new THREE.Mesh(new THREE.CylinderGeometry(balRadius, balRadius, 2.4, 12), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.7 }));
-                            cyl.position.set(startX + i * balSpacing, yPos + 0.8, length / 2 + depth - 0.2);
-                            balGroup.add(cyl);
-                        }
-
-                        // top rail
-                        const railGeo = new THREE.BoxGeometry(balconyWidth, 0.25, 0.4);
-                        const rail = new THREE.Mesh(railGeo, new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.7 }));
-                        rail.position.set(0, yPos + 1.2, length / 2 + depth - 0.2);
-                        balGroup.add(rail);
-
-                        return balGroup;
-                    }
-
-                    const balconyGround = createBalcony(foundationHeight + 2.8, 4.2, width * 0.6);
-                    balconyGround.position.x = 0;
-                    houseGroup.add(balconyGround);
-
-                    const balconyUpper = createBalcony(foundationHeight + groundFloorHeight + firstFloorHeight - 1.6, 4.6, width * 0.6);
-                    balconyUpper.position.x = 0;
-                    houseGroup.add(balconyUpper);
-
-                    // --- Door Balcony on Wing Extension (horizontal L-shape, on right side) ---
-                    const wingDoorBalconyW = wingWidth * 0.75;
-                    const wingDoorBalconyDepth = 4.0;
-                    const wingBalFloorGeo = new THREE.BoxGeometry(wingDoorBalconyW, 0.4, wingDoorBalconyDepth);
-                    const wingBalFloorMat = new THREE.MeshStandardMaterial({ color: 0xC59B6B, roughness: 0.7 });
-                    const wingBalFloor = new THREE.Mesh(wingBalFloorGeo, wingBalFloorMat);
-                    wingBalFloor.position.set(width / 2 + wingSpacing + wingWidth / 2 + wingDoorBalconyDepth / 2 - 0.1, foundationHeight + groundFloorHeight + 2.6, 0);
-                    wingBalFloor.castShadow = true;
-                    houseGroup.add(wingBalFloor);
-
-                    // Wing balcony balustrade
-                    const wingBalRadius = 0.42;
-                    const wingBalSpacing = 1.5;
-                    const wingBalCount = Math.floor(wingDoorBalconyW / wingBalSpacing) - 1;
-                    const wingBalStartZ = -wingDoorBalconyW / 2 + wingBalSpacing;
-                    for (let i = 0; i <= wingBalCount; i++) {
-                        const cyl = new THREE.Mesh(new THREE.CylinderGeometry(wingBalRadius, wingBalRadius, 2.3, 10), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.7 }));
-                        cyl.position.set(width / 2 + wingSpacing + wingWidth / 2 + wingDoorBalconyDepth / 2 - 0.1, foundationHeight + groundFloorHeight + 3.4, wingBalStartZ + i * wingBalSpacing);
-                        houseGroup.add(cyl);
-                    }
-
-                    // Wing balcony rail
-                    const wingRailGeo = new THREE.BoxGeometry(wingDoorBalconyW, 0.24, 0.35);
-                    const wingRail = new THREE.Mesh(wingRailGeo, new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.7 }));
-                    wingRail.position.set(width / 2 + wingSpacing + wingWidth / 2 + wingDoorBalconyDepth / 2 - 0.1, foundationHeight + groundFloorHeight + 3.7, 0);
-                    houseGroup.add(wingRail);
-
-                    // Add cylindrical support columns from ground to upper balcony
-                    const colRadius = 0.6;
-                    const colHeight = foundationHeight + groundFloorHeight + 1.2;
-                    const colMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8 });
-                    const colPositions = [-width * 0.25, width * 0.25];
-                    colPositions.forEach(x => {
-                        const col = new THREE.Mesh(new THREE.CylinderGeometry(colRadius, colRadius, colHeight, 12), colMat);
-                        col.position.set(x, colHeight / 2 - 0.3, length / 2 + 1.2);
-                        col.castShadow = true;
-                        houseGroup.add(col);
-                    });
-
-                    // --- Multi-pane windows with wood frames ---
-                    const windowGroup = new THREE.Group();
-                    const frameMat = new THREE.MeshStandardMaterial({ color: 0x8C5A34, roughness: 0.6 });
-                    const glassMat = new THREE.MeshStandardMaterial({ color: 0x8fbfe6, metalness: 0.1, roughness: 0.05, transparent: true, opacity: 0.9 });
-
-                    function addWindow(x, y, w, h) {
-                        const frameThickness = 0.4;
-                        const frameOuter = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.6), frameMat);
-                        frameOuter.position.set(x, y, length / 2 + 0.31);
-                        windowGroup.add(frameOuter);
-
-                        // panes: 2x2 grid
-                        const paneW = (w - (frameThickness * 3)) / 2;
-                        const paneH = (h - (frameThickness * 3)) / 2;
-                        const offsetX = - (paneW + frameThickness) / 2 + frameThickness / 2;
-                        const offsetY = (paneH + frameThickness) / 2 - frameThickness / 2;
-
-                        for (let ix = 0; ix < 2; ix++) {
-                            for (let iy = 0; iy < 2; iy++) {
-                                const px = x + offsetX + ix * (paneW + frameThickness);
-                                const py = y - offsetY + iy * -(paneH + frameThickness);
-                                const pane = new THREE.Mesh(new THREE.PlaneGeometry(paneW, paneH), glassMat);
-                                pane.position.set(px, py, length / 2 + 0.6);
-                                windowGroup.add(pane);
-                            }
-                        }
-                    }
-
-                    // Add windows evenly spaced on facade
-                    const winW = 6;
-                    const winH = 6;
-                    const spacingX = width / 4;
-                    addWindow(-spacingX, foundationHeight + groundFloorHeight / 2 + 1, winW, winH);
-                    addWindow(spacingX, foundationHeight + groundFloorHeight / 2 + 1, winW, winH);
-                    addWindow(-spacingX, foundationHeight + groundFloorHeight + firstFloorHeight / 2 + 1, winW, winH);
-                    addWindow(spacingX, foundationHeight + groundFloorHeight + firstFloorHeight / 2 + 1, winW, winH);
-                    houseGroup.add(windowGroup);
-
-                    // --- Main entrance door (dark wood) centered under upper balcony ---
-                    const doorW = 7;
-                    const doorH = 10;
-                    const doorCanvas = document.createElement('canvas');
-                    doorCanvas.width = 256; doorCanvas.height = 512;
-                    const dctx = doorCanvas.getContext('2d');
-                    dctx.fillStyle = '#4b2e1a'; dctx.fillRect(0,0,256,512);
-                    dctx.fillStyle = '#2e1b12'; dctx.fillRect(20,20,216,472);
-                    dctx.fillStyle = '#ffffff'; dctx.font = 'bold 80px Arial'; dctx.textAlign='center'; dctx.fillText(id, 128, 120);
-                    const doorTex = new THREE.CanvasTexture(doorCanvas);
-                    const doorMesh = new THREE.Mesh(new THREE.BoxGeometry(doorW, doorH, 0.6), new THREE.MeshStandardMaterial({ map: doorTex }));
-                    doorMesh.position.set(0, foundationHeight + doorH/2, length/2 + 0.3);
-                    doorMesh.castShadow = true;
-                    houseGroup.add(doorMesh);
-
-                    // --- Roof: blue-gray tiled gable with visible ceramic tile look ---
-                    // Create a canvas texture that tiles to simulate ceramic tiles
-                    // --- Roof with #e25822 color ---
-                    const roofCanvas = document.createElement('canvas');
-                    roofCanvas.width = 128; roofCanvas.height = 64;
-                    const rctx = roofCanvas.getContext('2d');
-                    rctx.fillStyle = '#e25822'; rctx.fillRect(0,0,128,64);
-                    rctx.fillStyle = '#c94618';
-                    for (let y=0; y<64; y+=8) {
-                        for (let x=0; x<128; x+=12) {
-                            rctx.beginPath();
-                            rctx.ellipse(x+6, y+4, 6, 3.5, 0, 0, Math.PI*2);
-                            rctx.fill();
-                        }
-                    }
-                    const roofTex = new THREE.CanvasTexture(roofCanvas);
-                    roofTex.wrapS = roofTex.wrapT = THREE.RepeatWrapping;
-                    roofTex.repeat.set(8, 6);
-
-                    const roofWidth = width * 1.12;
-                    const roofLength = length * 1.0;
-                    const roofHeight = 10.5;
-
-                    // Main roof (front section) - gable style
-                    const roofShape = new THREE.Shape();
-                    roofShape.moveTo(-roofWidth/2, 0);
-                    roofShape.lineTo(0, roofHeight);
-                    roofShape.lineTo(roofWidth/2, 0);
-                    const roofExtrude = new THREE.ExtrudeGeometry(roofShape, { depth: roofLength * 0.70, bevelEnabled: false });
-                    roofExtrude.translate(0, 0, -roofLength * 0.70 / 2);
-                    const roofMat = new THREE.MeshStandardMaterial({ map: roofTex, roughness: 0.9 });
-                    const roofMesh = new THREE.Mesh(roofExtrude, roofMat);
-                    roofMesh.position.y = foundationHeight + groundFloorHeight + firstFloorHeight - 0.4;
-                    roofMesh.castShadow = true;
-                    houseGroup.add(roofMesh);
-
-                    // Wing roof (HORIZONTAL L-shape: extends right on X-axis) - perpendicular gable
-                    const wingRoofWidth = wingWidth * 1.08;
-                    const wingRoofLength = wingLength * 0.98;
-                    const wingRoofHeight = roofHeight * 0.88;
-                    const wingRoofShape = new THREE.Shape();
-                    wingRoofShape.moveTo(-wingRoofWidth/2, 0);
-                    wingRoofShape.lineTo(0, wingRoofHeight);
-                    wingRoofShape.lineTo(wingRoofWidth/2, 0);
-                    const wingRoofExtrude = new THREE.ExtrudeGeometry(wingRoofShape, { depth: wingRoofLength, bevelEnabled: false });
-                    wingRoofExtrude.translate(0, 0, -wingRoofLength / 2);
-                    const wingRoofMesh = new THREE.Mesh(wingRoofExtrude, roofMat);
-                    wingRoofMesh.position.set(width / 2 + wingSpacing + wingWidth / 2, foundationHeight + groundFloorHeight + firstFloorHeight - 0.4, 0);
-                    wingRoofMesh.rotation.z = Math.PI / 2;
-                    wingRoofMesh.castShadow = true;
-                    houseGroup.add(wingRoofMesh);
-
-                    // Chimney on main roof
-                    const chimney = new THREE.Mesh(new THREE.BoxGeometry(3.0, 7.5, 3.0), new THREE.MeshStandardMaterial({ color: 0x8B3A3A, roughness: 0.9 }));
-                    chimney.position.set(0.8, roofMesh.position.y + 4.0, -3);
-                    chimney.castShadow = true;
-                    houseGroup.add(chimney);
-
-                    // Chimney on wing roof (right side)
-                    const wingChimney = new THREE.Mesh(new THREE.BoxGeometry(2.6, 6.5, 2.6), new THREE.MeshStandardMaterial({ color: 0x8B3A3A, roughness: 0.9 }));
-                    wingChimney.position.set(width / 2 + wingSpacing + wingWidth / 2 + 5, wingRoofMesh.position.y + 3.2, -4);
-                    wingChimney.castShadow = true;
-                    houseGroup.add(wingChimney);
-
-                    // --- Subtle beveling: add rounded edge approximations using thin fillets (small chamfer boxes) ---
-                    // (This is a light approximation to avoid sharp edges visually)
-                    const bevelMat = new THREE.MeshStandardMaterial({ color: 0xf5f5f5, roughness: 0.7 });
-                    const bevel = new THREE.Mesh(new THREE.BoxGeometry(width + 1.6, 0.6, length + 0.6), bevelMat);
-                    bevel.position.y = foundationHeight + 0.3;
-                    bevel.receiveShadow = false;
-                    bevel.material.transparent = true;
-                    bevel.material.opacity = 0.99;
-                    houseGroup.add(bevel);
-
-                    // --- Plot Boundary (Dotted Line) - GREATLY EXPANDED ---
-                    const plotWidth = width + 50;
-                    const plotLength = length + wingLength + 80;
-                    const plotGeometry = new THREE.EdgesGeometry(new THREE.PlaneGeometry(plotWidth, plotLength));
-                    const plotMaterial = new THREE.LineDashedMaterial({
-                        color: 0x999999,
-                        dashSize: 5,
-                        gapSize: 4,
-                        opacity: 0.7,
-                        transparent: true
-                    });
-                    const plotLines = new THREE.LineSegments(plotGeometry, plotMaterial);
-                    plotLines.rotation.x = -Math.PI / 2;
-                    plotLines.position.y = 0.25;
-                    plotLines.computeLineDistances();
-                    houseGroup.add(plotLines);
-
-                    // --- Field Separator Line (solid line between house area and field) ---
-                    const separatorGeo = new THREE.BoxGeometry(plotWidth + 20, 0.08, 0.8);
-                    const separatorMat = new THREE.MeshStandardMaterial({ color: 0x777777, roughness: 0.8 });
-                    const separator = new THREE.Mesh(separatorGeo, separatorMat);
-                    separator.position.set(0, 0.3, plotLength / 2 - 5);
-                    separator.receiveShadow = true;
-                    houseGroup.add(separator);
-
-                    // --- Extended Field/Border Area with subtle texture ---
-                    const borderFieldGeo = new THREE.BoxGeometry(plotWidth + 30, 0.05, 15);
-                    const borderFieldMat = new THREE.MeshStandardMaterial({ color: 0xAEC2A0, roughness: 0.95 });
-                    const borderField = new THREE.Mesh(borderFieldGeo, borderFieldMat);
-                    borderField.position.set(0, 0.1, plotLength / 2 + 10);
-                    borderField.receiveShadow = true;
-                    houseGroup.add(borderField);
-
-                    // --- Add Tree ---
-                    const tree = createTree();
-                    const cornerX = (plotWidth / 2) - 8;
-                    const cornerZ = (plotLength / 2) - 8;
-                    const side = Math.random() > 0.5 ? 1 : -1;
-                    tree.position.set(side * cornerX, 0, cornerZ);
-                    houseGroup.add(tree);
-
-                    // mark interactive parts
-                    houseGroup.traverse(c => { if (c.isMesh) c.userData.isHousePart = true; });
-
-                    return houseGroup;
-        }
-
-
-        /**
-         * Creates the residential strips following a curved layout.
-         */
-        /**
-         * Creates the residential strips following a curved layout with clustered blocks and a river.
-         */
-        function createResidentialBlocks() {
-            // Updated Material for the "Green Spine" (previously road)
-            const greenCentralMaterial = new THREE.MeshLambertMaterial({ color: 0x8BC34A }); // Same as development land
-            // Material for the Road Divider
-            const roadDividerMaterial = new THREE.MeshBasicMaterial({
-                color: 0x515151,
-                polygonOffset: true,
-                polygonOffsetFactor: -1,
-                polygonOffsetUnits: -1
+            // Simple foliage - green palette
+            const foliageMaterial1 = new THREE.MeshStandardMaterial({ 
+                color: 0x2E7D32,  // Dark green
+                roughness: 0.76,
+                metalness: 0.0
             });
 
-            const HOUSE_WIDTH = 82; // Match Line 1/2/3 style
-            const HOUSE_LENGTH = 92; // Match Line 1/2/3 style
-            // HOUSE_SPACING is now calculated automatically
+            const foliageMaterial2 = new THREE.MeshStandardMaterial({ 
+                color: 0x43A047,  // Medium green
+                roughness: 0.78,
+                metalness: 0.0
+            });
 
-            // Block Configuration: 4 Zones with specified house counts
-            const blockCounts = [17, 56, 29, 17]; // Zone A, B, C, D
-            const zoneNames = ['A', 'B', 'C', 'D'];
-            const totalHousesInBlocks = blockCounts.reduce((a, b) => a + b, 0);
-            // Separation between the two house strips - now dynamic
-            const STRIP_START_SEPARATION = HOUSE_LENGTH * 1.5;
-            const STRIP_END_SEPARATION = HOUSE_LENGTH * 4.0; // Widen significantly at the end
+            const foliageMaterial3 = new THREE.MeshStandardMaterial({ 
+                color: 0x66BB6A,  // Light green
+                roughness: 0.82,
+                metalness: 0.0
+            });
 
-            const getStripSeparation = (t) => {
-                return STRIP_START_SEPARATION + (STRIP_END_SEPARATION - STRIP_START_SEPARATION) * t;
+            // Bottom sphere - main foliage
+            const baseSphere = new THREE.Mesh(new THREE.SphereGeometry(0.7, 12, 12), foliageMaterial1);
+            baseSphere.position.set(0, 1.0, 0);
+            baseSphere.castShadow = true;
+            baseSphere.receiveShadow = true;
+            treeGroup.add(baseSphere);
+            
+            // Middle sphere - overlapping
+            const midSphere = new THREE.Mesh(new THREE.SphereGeometry(0.6, 12, 12), foliageMaterial2);
+            midSphere.position.set(0, 1.6, 0);
+            midSphere.castShadow = true;
+            midSphere.receiveShadow = true;
+            treeGroup.add(midSphere);
+            
+            // Top sphere - accent
+            const topSphere = new THREE.Mesh(new THREE.SphereGeometry(0.45, 10, 10), foliageMaterial3);
+            topSphere.position.set(0, 2.05, 0);
+            topSphere.castShadow = true;
+            topSphere.receiveShadow = true;
+            treeGroup.add(topSphere);
+
+            return treeGroup;
+        }
+
+        /**
+         * Creates the new L-Wing house model from the provided CONFIG and logic.
+         * Scaled down to fit the city proportions.
+         */
+        /**
+         * Creates the new L-Wing house model including a stylish boundary wall and gate.
+         */
+        function createHouse(id, plotW = 500, plotD = 600, skipWall = null) {
+            const CONFIG = {
+                houseWidth: 220,
+                houseDepth: 280,
+                wingLen: 260,
+                floorH: 100,
+                wingW: 100,
+                roofH: 80
             };
 
-            // Helper to create tapered geometry
-            const createTaperedGeometry = (widthStart, widthEnd, length, height) => {
-                const shape = new THREE.Shape();
-                shape.moveTo(-widthStart / 2, -length / 2);
-                shape.lineTo(widthStart / 2, -length / 2);
-                shape.lineTo(widthEnd / 2, length / 2);
-                shape.lineTo(-widthEnd / 2, length / 2);
-                shape.lineTo(-widthStart / 2, -length / 2);
+            const house = new THREE.Group();
 
-                const extrudeSettings = { depth: height, bevelEnabled: false };
-                const geometry = new THREE.ExtrudeBufferGeometry(shape, extrudeSettings);
-                geometry.rotateX(Math.PI / 2);
-                return geometry;
-            };
+            // Materials
+            const bodyMat = new THREE.MeshStandardMaterial({ color: 0xe8e4d9 });
+            const roofMat = new THREE.MeshStandardMaterial({ color: 0xC47460 });
+            const winMat = new THREE.MeshStandardMaterial({ color: 0xadd8e6, emissive: 0x111111 });
+            const woodMat = new THREE.MeshStandardMaterial({ color: 0x8b4513 });
+            const beamMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+            const baseMat = new THREE.MeshStandardMaterial({ color: 0x555555 });
+            const wallMat = new THREE.MeshBasicMaterial({ color: 0xeeeeee });
+            const gateMat = new THREE.MeshBasicMaterial({ color: 0x222222 }); // Dark stylish gate
+            const glassMat = new THREE.MeshStandardMaterial({ color: 0x88ccff, transparent: true, opacity: 0.5 }); // New Glass Material
 
-            // --- Curve Definition - Following Line 3 Left Road Path ---
-            // CHL now follows the same curve as Line 3's left road
-            // We'll create points that match the Line 3 left road curve
+            const { houseWidth, houseDepth, wingLen, floorH, wingW, roofH } = CONFIG;
 
-            // Get Line 3 bunch specifications to calculate curve points
-            const line3BunchSpecs = [
-                { houses: 30 }, // Bunch 6
-                { houses: 28 }, // Bunch 5
-                { houses: 24 }, // Bunch 4
-                { houses: 28 }, // Bunch 3
-                { houses: 28 }, // Bunch 2
-                { houses: 36 }  // Bunch 1
-            ];
+            // --- Full Land Boundary Wall & Stylish Gate ---
+            const wallH = 30;
+            const wallT = 8;
+            const gateW = 100;
 
-            const HOUSE_WIDTH_L3 = 64;
-            const HOUSE_DEPTH_L3 = 68;
-            const UNIT_GAP_L3 = 66;
-            const UNIT_WIDTH_L3 = (HOUSE_WIDTH_L3 * 2) + UNIT_GAP_L3;
-            const UNIT_X_SPACING_L3 = UNIT_WIDTH_L3 - 70;
-            const CLUSTER_ROAD_GAP_L3 = 180;
-            const CLUSTER_INTERNAL_GAP_L3 = 60;
-            const BLOCK_HEIGHT_L3 = (HOUSE_DEPTH_L3 * 1.2) + CLUSTER_INTERNAL_GAP_L3;
+            // Back Wall
+            const backWall = new THREE.Mesh(new THREE.BoxGeometry(plotW, wallH, wallT), wallMat);
+            backWall.position.set(0, wallH / 2, plotD / 2 - wallT / 2);
+            house.add(backWall);
 
-            // Calculate Line 3 positions
-            const LINE2_WIDTH = (8 * UNIT_X_SPACING_L3) + 100;
-            const LINE_TOTAL_WIDTH_L3 = (18 * UNIT_X_SPACING_L3) + 100;
-            const X_MAX_LINE3 = MAP_WIDTH - LINE2_WIDTH - LINE_TOTAL_WIDTH_L3;
+            // Left Wall (Skip if requested to avoid "double wall")
+            if (skipWall !== 'left') {
+                const leftWall = new THREE.Mesh(new THREE.BoxGeometry(wallT, wallH, plotD), wallMat);
+                leftWall.position.set(-plotW / 2 + wallT / 2, wallH / 2, 0);
+                house.add(leftWall);
+            }
 
-            // Build curve points matching Line 3's left road
-            const chlCurvePoints = [];
-            let currentZ_CHL = 250;
+            // Right Wall (Skip if requested to avoid "double wall")
+            if (skipWall !== 'right') {
+                const rightWall = new THREE.Mesh(new THREE.BoxGeometry(wallT, wallH, plotD), wallMat);
+                rightWall.position.set(plotW / 2 - wallT / 2, wallH / 2, 0);
+                house.add(rightWall);
+            }
 
-            // Start point - offset from Line 3 left road start for spacing
-            const startBunchWidth = (line3BunchSpecs[0].houses / 2) * UNIT_X_SPACING_L3;
-            const startX = X_MAX_LINE3 - startBunchWidth - 140;
-            const CHL_SPACING_OFFSET = -1000; // Distance between CHL and Line 3 road
-            chlCurvePoints.push(new THREE.Vector3(startX - CHL_SPACING_OFFSET, 0, 0));
+            // Front Wall with Stylish Gate
+            const frontSegW = (plotW - gateW) / 2;
+            const frontWallL = new THREE.Mesh(new THREE.BoxGeometry(frontSegW, wallH, wallT), wallMat);
+            frontWallL.position.set(-plotW / 2 + frontSegW / 2, wallH / 2, -plotD / 2 + wallT / 2);
+            house.add(frontWallL);
 
-            // Add points for each bunch endpoint - following Line 3 left road exactly
-            line3BunchSpecs.forEach((bunch) => {
-                const unitsCount = bunch.houses / 2;
-                const cWidth = unitsCount * UNIT_X_SPACING_L3;
-                currentZ_CHL += BLOCK_HEIGHT_L3;
-                const roadZ = currentZ_CHL + CLUSTER_ROAD_GAP_L3 / 2;
-                const leftEndX = X_MAX_LINE3 - cWidth - 140;
+            const frontWallR = new THREE.Mesh(new THREE.BoxGeometry(frontSegW, wallH, wallT), wallMat);
+            frontWallR.position.set(plotW / 2 - frontSegW / 2, wallH / 2, -plotD / 2 + wallT / 2);
+            house.add(frontWallR);
 
-                chlCurvePoints.push(new THREE.Vector3(leftEndX - CHL_SPACING_OFFSET, 0, roadZ));
-                currentZ_CHL += CLUSTER_ROAD_GAP_L3;
+            // --- Stylish Gate Pillars ---
+            const pillarGeo = new THREE.BoxGeometry(15, wallH + 15, 15);
+            const pLeft = new THREE.Mesh(pillarGeo, gateMat);
+            pLeft.position.set(-gateW / 2, (wallH + 15) / 2, -plotD / 2 + wallT / 2);
+            house.add(pLeft);
+
+            const pRight = new THREE.Mesh(pillarGeo, gateMat);
+            pRight.position.set(gateW / 2, (wallH + 15) / 2, -plotD / 2 + wallT / 2);
+            house.add(pRight);
+
+            // --- Gate Bars ---
+            for (let i = 0; i < 5; i++) {
+                const bar = new THREE.Mesh(new THREE.BoxGeometry(gateW, 3, 3), gateMat);
+                bar.position.set(0, 5 + (i * 10), -plotD / 2 + wallT / 2);
+                house.add(bar);
+            }
+
+            // --- Building Group for easy shifting ---
+            const building = new THREE.Group();
+            building.position.x = 200; // Move right side total 300px (100 + 200)
+            house.add(building);
+
+            // --- Building Components (Main Body, Wing, Roof, door, etc.) shifted back for front space ---
+            const buildingOffsetZ = 120;
+
+            // Main Structure
+            const mainBody = new THREE.Mesh(new THREE.BoxGeometry(houseWidth, floorH * 2, houseDepth), bodyMat);
+            mainBody.position.set(0, floorH, buildingOffsetZ);
+            mainBody.castShadow = true;
+            building.add(mainBody);
+
+            // L-Wing Extension
+            const wingBody = new THREE.Mesh(new THREE.BoxGeometry(wingLen, floorH * 2, wingW), bodyMat);
+            wingBody.position.set(-(houseWidth / 2 + wingLen / 2), floorH, houseDepth / 2 - wingW / 2 + buildingOffsetZ);
+            wingBody.castShadow = true;
+            building.add(wingBody);
+
+            // DOORS with IDs
+            const doorCanvas = document.createElement('canvas');
+            doorCanvas.width = 64; doorCanvas.height = 128;
+            const dctx = doorCanvas.getContext('2d');
+            dctx.fillStyle = '#8b4513'; dctx.fillRect(0, 0, 64, 128);
+            dctx.fillStyle = '#FFFFFF'; dctx.font = 'bold 30px Arial';
+            dctx.textAlign = 'center'; dctx.textBaseline = 'middle';
+            dctx.fillText(id, 32, 40);
+            const doorTex = new THREE.CanvasTexture(doorCanvas);
+
+            const door = new THREE.Mesh(new THREE.BoxGeometry(45, 75, 5), new THREE.MeshStandardMaterial({ map: doorTex }));
+            door.position.set(0, 37.5, -(houseDepth / 2 + 2) + buildingOffsetZ);
+            building.add(door);
+
+            // Balcony Doors
+            const bDoor1 = door.clone(); bDoor1.position.set(-60, floorH + 37.5, -(houseDepth / 2 + 2) + buildingOffsetZ);
+            const bDoor2 = door.clone(); bDoor2.position.set(60, floorH + 37.5, -(houseDepth / 2 + 2) + buildingOffsetZ);
+            building.add(bDoor1); building.add(bDoor2);
+
+            // Windows
+            const winGeo = new THREE.PlaneGeometry(40, 50);
+            [-(houseWidth / 2 + 80), -(houseWidth / 2 + 220)].forEach(x => {
+                const w1 = new THREE.Mesh(winGeo, winMat);
+                w1.position.set(x, 45, houseDepth / 2 - wingW - 1.5 + buildingOffsetZ);
+                w1.rotation.y = Math.PI;
+                building.add(w1);
+                const w2 = w1.clone(); w2.position.y = floorH + 45;
+                building.add(w2);
             });
 
-            // Add transition and end point
-            const lastPoint = chlCurvePoints[chlCurvePoints.length - 1];
-            chlCurvePoints.push(new THREE.Vector3(lastPoint.x, 0, lastPoint.z + 300));
-            // chlCurvePoints.push(new THREE.Vector3(MAP_WIDTH - 100, 0, MAP_LENGTH * 0.85));
-            chlCurvePoints.push(new THREE.Vector3(MAP_WIDTH - 100, 0, MAP_LENGTH * 0.85 + 600));
-
-            const residentialCurve = new THREE.CatmullRomCurve3(
-                chlCurvePoints,
-                false, 'centripetal'
-            );
-
-            // --- Auto-Calculate Spacing ---
-            const curveLength = residentialCurve.getLength();
-            const gapSizeMultiplier = 4; // Gap = N * Spacing
-
-            const totalPairs = Math.ceil(totalHousesInBlocks / 2);
-            const numGaps = blockCounts.length - 1;
-            const HOUSE_SPACING = curveLength / (totalPairs + (numGaps * gapSizeMultiplier));
-
-            // console.log("Auto-calculated Spacing:", HOUSE_SPACING);
-
-            // --- Control Points for Identity ---
-            // Visual markers for Start and End of the curve
-            const markerGeometry = new THREE.SphereGeometry(30, 32, 32);
-
-            // Start Point (Green)
-            const startPoint = residentialCurve.getPoint(0);
-            const startMarker = new THREE.Mesh(markerGeometry, new THREE.MeshLambertMaterial({ color: 0x00FF00 }));
-            startMarker.position.copy(startPoint);
-            startMarker.position.y = 15;
-            mapGroup.add(startMarker);
-
-            // End Point (Red)
-            const endPoint = residentialCurve.getPoint(1);
-            const endMarker = new THREE.Mesh(markerGeometry, new THREE.MeshLambertMaterial({ color: 0xFF0000 }));
-            endMarker.position.copy(endPoint);
-            endMarker.position.y = 15;
-            mapGroup.add(endMarker);
-
-
-            // --- Create Center Divider Road (between house area and river) ---
-            const centerRoadPoints = [];
-            const centerDivisions = 350;
-            for (let i = 0; i <= centerDivisions; i++) {
-                const t = i / centerDivisions;
-                const point = residentialCurve.getPoint(t);
-                const tangent = residentialCurve.getTangent(t).normalize();
-                const normal = new THREE.Vector3(-tangent.z, 0, tangent.x);
-
-                // Offset to position between house area and river - now dynamic
-                const centerRoadOffset = getStripSeparation(t) / 2 + 50;
-                const roadPos = point.clone().add(normal.clone().multiplyScalar(centerRoadOffset));
-                centerRoadPoints.push(roadPos);
-            }
-
-            const centerRoadCurve = new THREE.CatmullRomCurve3(centerRoadPoints);
-            const centerRoadGeometry = new THREE.TubeGeometry(centerRoadCurve, 250, 25, 8, false); // Width 25 (Radius 25)
-
-            const centerRoadMaterial = new THREE.MeshBasicMaterial({
-                color: 0x515151,
-                polygonOffset: true,
-                polygonOffsetFactor: -1,
-                polygonOffsetUnits: -1
-            });
-
-            const centerRoadMesh = new THREE.Mesh(centerRoadGeometry, centerRoadMaterial);
-            centerRoadMesh.position.y = 0.5; // Just above ground
-            // Flatten to look like a road
-            centerRoadMesh.scale.set(1, 0.05, 1);
-
-            mapGroup.add(centerRoadMesh);
-
-
-            // --- Create Parallel Road (formerly River) ---
-            const parallelRoadPoints = [];
-            const divisions = 350;
-            for (let i = 0; i <= divisions; i++) {
-                const t = i / divisions;
-                const point = residentialCurve.getPoint(t);
-                const tangent = residentialCurve.getTangent(t).normalize();
-                const normal = new THREE.Vector3(-tangent.z, 0, tangent.x);
-
-                // Offset to "Outer" side relative to the curve direction - now dynamic
-                const roadOffsetDistance = getStripSeparation(t) + 100;
-                const roadPos = point.clone().add(normal.clone().multiplyScalar(roadOffsetDistance));
-                parallelRoadPoints.push(roadPos);
-            }
-
-            const parallelRoadCurve = new THREE.CatmullRomCurve3(parallelRoadPoints);
-            const parallelRoadGeometry = new THREE.TubeGeometry(parallelRoadCurve, 250, 70, 8, false); // Width 70 (Radius 70)
-
-            // "Road Style": Grey color, flat appearance
-            const parallelRoadMaterial = new THREE.MeshBasicMaterial({
-                color: 0x74f7e3,
-                polygonOffset: true,
-                polygonOffsetFactor: -1,
-                polygonOffsetUnits: -1
-            });
-
-            const parallelRoadMesh = new THREE.Mesh(parallelRoadGeometry, parallelRoadMaterial);
-            parallelRoadMesh.position.y = .5; // Just above ground
-            // Flatten to look like a road
-            parallelRoadMesh.scale.set(1, 0.05, 1);
-
-            mapGroup.add(parallelRoadMesh);
-
-
-            // --- Place Houses in Blocks ---
-            const zoneLengths = [2000, 5000, 5000, 2000];
-            const zoneSpacings = [350, 450, 550, 650]; // Custom spacing per zone A, B, C, D
-            const roadGap = 10;
-            const roadGapT = roadGap / curveLength;
-            const zoneCount = blockCounts.length;
-
-            let runningT = 0;
-
-            blockCounts.forEach((count, blockIndex) => {
-                const zoneName = zoneNames[blockIndex];
-                const segmentLength = zoneLengths[blockIndex];
-                const segmentT = segmentLength / curveLength;
-                const endT = runningT + segmentT;
-
-                const pairs = Math.ceil(count / 2);
-                const currentSpacing = zoneSpacings[blockIndex];
-                const spacingT = currentSpacing / curveLength;
-
-                let zoneHouseCounter = 1;
-                let localT = runningT;
-
-                // 1. Place Houses for this segment
-                // We use count to stay within user's intended house numbers,
-                // but we also stop if we exceed the physical segment length.
-                for (let i = 0; i < pairs; i++) {
-                    const currentT = localT;
-                    if (currentT >= endT || currentT >= 1) break;
-
-                    const point = residentialCurve.getPoint(currentT);
-                    const tangent = residentialCurve.getTangent(currentT).normalize();
-                    const normal = new THREE.Vector3(-tangent.z, 0, tangent.x);
-
-                    const currentStripSeparation = getStripSeparation(currentT);
-
-                    // --- Inner Strip (Odd houses) ---
-                    if (zoneHouseCounter <= count) {
-                        const innerOffset = normal.clone().multiplyScalar(-currentStripSeparation / 2);
-                        const innerPosition = point.clone().add(innerOffset);
-
-                        const id1 = `CHL-Zone${zoneName}-${zoneHouseCounter}`;
-                        const house1 = createHouseModel(HOUSE_WIDTH / 2 - 2, HOUSE_LENGTH, id1);
-                        house1.userData.type = 'CHL';
-                        house1.userData.zone = zoneName;
-
-                        house1.rotation.y = Math.atan2(normal.x, normal.z);
-                        house1.position.copy(innerPosition);
-                        mapGroup.add(house1);
-
-                        // Add border
-                        const borderGeo = new THREE.BoxGeometry(HOUSE_WIDTH / 2 + 4, 0.1, HOUSE_LENGTH + 4);
-                        const borderMat = new THREE.MeshLambertMaterial({ color: 0x8B4513, transparent: true, opacity: 0.3 });
-                        const border1 = new THREE.Mesh(borderGeo, borderMat);
-                        border1.position.copy(innerPosition);
-                        border1.position.y = 0.05;
-                        border1.rotation.y = house1.rotation.y;
-                        mapGroup.add(border1);
-
-                        zoneHouseCounter++;
-                    }
-
-                    // --- Outer Strip (Even houses) ---
-                    if (zoneHouseCounter <= count) {
-                        const outerOffset = normal.clone().multiplyScalar(currentStripSeparation / 2);
-                        const outerPosition = point.clone().add(outerOffset);
-
-                        const id2 = `CHL-Zone${zoneName}-${zoneHouseCounter}`;
-                        const house2 = createHouseModel(HOUSE_WIDTH / 2 - 2, HOUSE_LENGTH, id2);
-                        house2.userData.type = 'CHL';
-                        house2.userData.zone = zoneName;
-
-                        house2.rotation.y = Math.atan2(normal.x, normal.z);
-                        house2.position.copy(outerPosition);
-                        mapGroup.add(house2);
-
-                        // Add border
-                        const border2 = new THREE.Mesh(new THREE.BoxGeometry(HOUSE_WIDTH / 2 + 4, 0.1, HOUSE_LENGTH + 4),
-                            new THREE.MeshLambertMaterial({ color: 0x8B4513, transparent: true, opacity: 0.3 }));
-                        border2.position.copy(outerPosition);
-                        border2.position.y = 0.05;
-                        border2.rotation.y = house2.rotation.y;
-                        mapGroup.add(border2);
-
-                        zoneHouseCounter++;
-                    }
-
-                    // --- Green Land Spine (Tapered) ---
-                    const midT = currentT + (spacingT / 2);
-                    if (midT < endT && midT < 1) {
-                        const widthStart = getStripSeparation(currentT) * 1.1;
-                        const widthEnd = getStripSeparation(currentT + spacingT) * 1.1;
-                        const spineLength = currentSpacing * 1.1;
-
-                        const spineGeo = createTaperedGeometry(widthStart, widthEnd, spineLength, 0.5);
-                        const spine = new THREE.Mesh(spineGeo, greenCentralMaterial);
-
-                        const midPoint = residentialCurve.getPoint(midT);
-                        const midTangent = residentialCurve.getTangent(midT).normalize();
-                        spine.position.copy(midPoint);
-                        spine.position.y = 0.1;
-                        spine.rotation.y = Math.atan2(midTangent.x, midTangent.z);
-                        mapGroup.add(spine);
-                    }
-
-                    localT += spacingT;
-                }
-
-                // 2. Add Road Divider after the segment
-                if (blockIndex < zoneCount - 1) {
-                    const dividerT = endT + (roadGapT / 2);
-                    if (dividerT < 1) {
-                        const point = residentialCurve.getPoint(dividerT);
-                        const tangent = residentialCurve.getTangent(dividerT).normalize();
-
-                        const roadWidth = 40;
-                        const dividerWidth = getStripSeparation(dividerT) * 2.5;
-
-                        const divider = new THREE.Mesh(new THREE.BoxGeometry(dividerWidth, 0.2, roadWidth), roadDividerMaterial);
-                        divider.position.copy(point);
-                        divider.position.y = 0.15;
-                        divider.rotation.y = Math.atan2(tangent.x, tangent.z);
-                        mapGroup.add(divider);
-                    }
-                }
-
-                runningT = endT + roadGapT;
-            });
-        }
-
-        /**
-         * Creates a grid of roads across the main map area and stores their coordinates.
-         */
-        // function createGridRoads() {
-        //     const roadMaterial = new THREE.MeshLambertMaterial({ color: 0x212121 });
-
-        //     // Longitudinal Roads (Vertical - X=constant, Z=variable)
-        //     const longRoads = 5;
-        //     const longSpacing = MAP_WIDTH / (longRoads + 1);
-        //     longitudinalX = []; // Clear array before population
-        //     for (let i = 1; i <= longRoads; i++) {
-        //         const x = longSpacing * i;
-        //         longitudinalX.push(x);
-        //         const roadGeometry = new THREE.BoxGeometry(ROAD_WIDTH, 0.1, MAP_LENGTH);
-        //         const road = new THREE.Mesh(roadGeometry, roadMaterial);
-        //         road.position.set(x, 0.1, MAP_LENGTH / 2);
-        //         road.receiveShadow = true;
-        //         mapGroup.add(road);
-        //     }
-
-        //     // Transverse Roads (Horizontal - Z=constant, X=variable)
-        //     const transRoads = 6;
-        //     const Z_START = 500;
-        //     const Z_END = MAP_LENGTH * 0.6; // 2800 * 0.6 = 1680
-        //     const transLength = Z_END - Z_START;
-        //     const transSpacing = transLength / (transRoads + 1);
-        //     transverseZ = []; // Clear array before population
-
-        //     for (let i = 1; i <= transRoads; i++) {
-        //         const z = Z_START + transSpacing * i;
-        //         transverseZ.push(z);
-        //         const roadGeometry = new THREE.BoxGeometry(MAP_WIDTH, 0.1, ROAD_WIDTH);
-        //         const road = new THREE.Mesh(roadGeometry, roadMaterial);
-        //         road.position.set(MAP_WIDTH / 2, 0.1, z);
-        //         road.receiveShadow = true;
-        //         mapGroup.add(road);
-        //     }
-        // }
-
-        function createGridRoads() {
-            // Define a single material for ALL roads
-            const roadMaterial = new THREE.MeshBasicMaterial({
-                color: 0x74f7e3,
-                polygonOffset: true,
-                polygonOffsetFactor: -1,
-                polygonOffsetUnits: -1
-            });
-
-            // --- Longitudinal Roads (Vertical dividers) ---
-            const longRoads = 3;
-            const longSpacing = MAP_WIDTH / (longRoads + 1);
-            longitudinalX = [];
-
-            for (let i = 1; i <= longRoads; i++) {
-                const x = longSpacing * i;
-                longitudinalX.push(x);
-
-                // Standard straight road
-                const roadGeometry = new THREE.BoxGeometry(ROAD_WIDTH, 0.1, MAP_LENGTH);
-                const road = new THREE.Mesh(roadGeometry, roadMaterial);
-                road.position.set(x, 0.1, MAP_LENGTH / 2);
-                road.receiveShadow = true;
-                mapGroup.add(road);
-            }
-
-            // --- Transverse Roads (Horizontal - Segmented by Column) ---
-            const transRoads = 4; // 10 rows
-            const Z_START = 500;
-            const Z_END = 3500;
-            const transLength = Z_END - Z_START;
-            const transSpacing = transLength / (transRoads + 1);
-
-            transverseZ = []; // Store Z coords for grid population
-
-            // Populate transverseZ array first
-            for (let j = 1; j <= transRoads; j++) {
-                const z = Z_START + transSpacing * j;
-                transverseZ.push(z);
-            }
-
-            // Create Segmented Roads
-            const numCols = longRoads + 1; // 4 columns
-            const colWidth = MAP_WIDTH / numCols;
-
-            for (let j = 0; j < transverseZ.length; j++) {
-                const z = transverseZ[j];
-                const rowIndex = j; // 0 to 8
-
-                for (let col = 0; col < numCols; col++) {
-                    const i = col;
-
-                    // --- Visibility Logic (Same as Rows) ---
-                    // col=0 (Left): Land 4 (CHL) -> Hide Roads
-                    if (i === 0) continue;
-
-                    // col=1: Land 3 -> Show Rows 0-7. Hide >7.
-                    if (i === 1 && rowIndex > 7) continue;
-
-                    // col=2: Land 2 -> Show Rows 0-6. Hide >6.
-                    if (i === 2 && rowIndex > 6) continue;
-
-                    // col=3 (Right): Land 1 -> Show Rows 7-9. Hide <7.
-                    if (i === 3 && rowIndex < 7) continue;
-
-                    // Create Road Segment
-                    const roadSegGeo = new THREE.BoxGeometry(colWidth, 0.1, ROAD_WIDTH);
-                    const roadSeg = new THREE.Mesh(roadSegGeo, roadMaterial);
-
-                    // Position X at center of column
-                    const centerX = (col * colWidth) + (colWidth / 2);
-                    roadSeg.position.set(centerX, 0.1, z);
-                    roadSeg.receiveShadow = false;
-                    mapGroup.add(roadSeg);
-                }
-            }
-        }
-
-        // function createGridRoads() {
-        // const roadMaterial = new THREE.MeshLambertMaterial({ color: 0x212121 });
-        // const CURVE_START_Z = MAP_LENGTH * 0.8; // Z-coordinate where the curve starts (e.g., 80% up the map)
-        // const CURVE_LENGTH = MAP_LENGTH * 0.2; // Length over which the curve happens
-        // const CURVE_RADIUS = 500; // Radius of the curve for the bend
-
-        // // --- Longitudinal Roads (Vertical - X=constant, Z=variable) ---
-        // const longRoads = 5;
-        // const longSpacing = MAP_WIDTH / (longRoads + 1);
-        // longitudinalX = []; // Clear array before population
-
-        // for (let i = 1; i <= longRoads; i++) {
-        //     const x = longSpacing * i;
-        //     longitudinalX.push(x);
-
-        //     let road;
-
-        //     if (i === 1) { // Apply the curve to the FIRST longitudinal road (i=1)
-        //         // 1. Define the points for the curved path
-        //         const straightEnd = CURVE_START_Z;
-
-        //         const startPoint = new THREE.Vector3(x, 0.1, 0);
-        //         const straightEnd_Point = new THREE.Vector3(x, 0.1, straightEnd);
-
-        //         // Define the center and angle for the arc
-        //         const centerPoint = new THREE.Vector3(x, 0.1, straightEnd + CURVE_RADIUS);
-
-        //         // Start of the curve (straight up)
-        //         const curveStart = new THREE.Vector3(x, 0.1, straightEnd);
-        //         // End of the curve (after 100 degrees rotation around the center)
-        //         const angleInRadians = THREE.MathUtils.degToRad(120);
-
-        //         // Calculate the end point of the 100 degree arc
-        //         const endX = centerPoint.x + CURVE_RADIUS * Math.sin(angleInRadians);
-        //         const endZ = centerPoint.z - CURVE_RADIUS * Math.cos(angleInRadians);
-        //         const curveEnd = new THREE.Vector3(endX, 0.1, endZ);
-
-        //         // 2. Create the path using a combination of straight lines and an arc
-        //         const path = new THREE.CurvePath();
-
-        //         // Part 1: Straight road section
-        //         // A straight line is simply a LineCurve from start to end
-        //         const straightPath = new THREE.LineCurve3(startPoint, straightEnd_Point);
-        //         path.add(straightPath);
-
-        //         // Part 2: 100-degree Arc at the end
-        //         // Use an ArcCurve for the bend
-        //         const arcPath = new THREE.ArcCurve(
-        //             centerPoint.x, // x center
-        //             centerPoint.z, // y center (z-axis in 3D)
-        //             CURVE_RADIUS,  // radius
-        //             THREE.MathUtils.degToRad(270), // start angle (270deg = straight up, if rotated around Z axis)
-        //             THREE.MathUtils.degToRad(270 + 100), // end angle (270 + 100 = 370 or 10deg)
-        //             false // Clockwise direction
-        //         );
-
-        //         // Since ArcCurve is 2D, we need a custom function or more complex path construction for a proper 3D road that starts at straightEnd_Point.
-
-        //         // --- SIMPLER APPROACH USING SplineCurve for easy bending ---
-        //         // Let's use a simpler, more common Three.js approach for curved roads: THREE.CatmullRomCurve3, which is good for smooth paths.
-
-        //         const curvePoints = [
-        //             new THREE.Vector3(x, 0.1, 0),                        // Start
-        //             new THREE.Vector3(x, 0.1, straightEnd - 100),        // Control Point 1 (Straight)
-        //             new THREE.Vector3(x, 0.1, straightEnd),              // Start of Curve
-        //             new THREE.Vector3(x + 100, 0.1, straightEnd + 100),  // Mid-Curve Control Point
-        //             new THREE.Vector3(x + 200, 0.1, straightEnd + 200)   // End Point (approximately 100 degrees turn)
-        //         ];
-
-        //         const curve = new THREE.CatmullRomCurve3(curvePoints);
-
-        //         // 3. Generate TubeGeometry along the curve
-        //         const roadGeometry = new THREE.TubeGeometry(
-        //             curve,                 // path
-        //             250,                   // segments (how smooth the path is)
-        //             ROAD_WIDTH / 2,        // radius of the road profile
-        //             6,                     // radial segments (how rounded the road side is)
-        //             false                  // closed (false for open road)
-        //         );
-
-        //         road = new THREE.Mesh(roadGeometry, roadMaterial);
-
-        //         // The position is already defined by the curve points, so we don't set a position here.
-
-        //     } else {
-        //         // All other longitudinal roads remain straight boxes
-        //         const roadGeometry = new THREE.BoxGeometry(ROAD_WIDTH, 0.1, MAP_LENGTH);
-        //         road = new THREE.Mesh(roadGeometry, roadMaterial);
-        //         road.position.set(x, 0.1, MAP_LENGTH / 2);
-        //     }
-
-        //     road.receiveShadow = false;
-        //     mapGroup.add(road);
-        // }
-
-        // // --- Transverse Roads (Horizontal - Z=constant, X=variable) ---
-        // // (These remain unchanged, as they are not the road you wanted to curve)
-        // const transRoads = 6;
-        // const Z_START = 500;
-        // const Z_END = MAP_LENGTH * 0.6; // 2800 * 0.6 = 1680
-        // const transLength = Z_END - Z_START;
-        // const transSpacing = transLength / (transRoads + 1);
-        // transverseZ = []; // Clear array before population
-
-        // for (let i = 1; i <= transRoads; i++) {
-        //     const z = Z_START + transSpacing * i;
-        //     transverseZ.push(z);
-        //     const roadGeometry = new THREE.BoxGeometry(MAP_WIDTH, 0.1, ROAD_WIDTH);
-        //     const road = new THREE.Mesh(roadGeometry, roadMaterial);
-        //     road.position.set(MAP_WIDTH / 2, 0.1, z);
-        //     road.receiveShadow = true;
-        //     mapGroup.add(road);
-        // }
-        // }
-        /**
-         * Creates additional amenities like sports fields and the main highway.
-         */
-        function createAmenitiesAndRoads() {
-            const fieldMaterial = new THREE.MeshLambertMaterial({ color: 0x388E3C });
-            const amenityMaterial = new THREE.MeshLambertMaterial({ color: 0x9E9E9E });
-            const highwayMaterial = new THREE.MeshLambertMaterial({ color: 0x212121 });
-
-            // 1. Sports Fields (Bottom Middle) - placed in empty grid blocks
-            const fieldSize = 100;
-            const longRoads = 5;
-            const longSpacing = MAP_WIDTH / (longRoads + 1);
-            const blockOneXEnd = longSpacing;
-
-            // Field 1: First X block (0 to ~267), low Z area (~50 to 500)
-            const field1 = new THREE.Mesh(
-                new THREE.BoxGeometry(fieldSize, 1, fieldSize * 2),
-                fieldMaterial
-            );
-            field1.position.set(blockOneXEnd / 2, 0.5, 300);
-            field1.receiveShadow = true;
-            mapGroup.add(field1);
-
-            // Field 2: Third X block (around the third road's center)
-            // Center of the 3rd X block (between road 2 and road 3)
-            const field2XCenter = (longitudinalX[1] + longitudinalX[2]) / 2;
-            const field2 = new THREE.Mesh(
-                new THREE.BoxGeometry(fieldSize, 1, fieldSize * 2),
-                fieldMaterial
-            );
-            field2.position.set(field2XCenter, 0.5, 300);
-            field2.receiveShadow = true;
-            mapGroup.add(field2);
-
-            // 2. Main Highway (Bottom)
-            const highwayGeometry = new THREE.BoxGeometry(MAP_WIDTH + 600, 0.5, 100);
-            const highway = new THREE.Mesh(highwayGeometry, highwayMaterial);
-            highway.position.set(MAP_WIDTH / 2, 0.25, -50);
-            highway.receiveShadow = true;
-            mapGroup.add(highway);
-
-            // 3. Main Entrance Gate Area (Bottom Center)
-            const gateGeometry = new THREE.BoxGeometry(100, 25, 20);
-            const gate = new THREE.Mesh(gateGeometry, amenityMaterial);
-            gate.position.set(MAP_WIDTH / 2, 12.5, 0);
-            gate.castShadow = true;
-            mapGroup.add(gate);
-        }
-
-        /**
-         * Populates the grid blocks defined by roads with houses.
-         * Houses are placed in blocks between Z=50 (above highway) and Z=2000 (below residential spine).
-         * Areas reserved for amenities are skipped.
-         */
-        /**
-         * Helper to calculate grid coordinates for house placement.
-         */
-        function calculateGridCoordinates() {
-            // Define X boundaries: map edges and longitudinal roads
-            const allXPositions = [0, ...longitudinalX, MAP_WIDTH];
-
-            // Define Z boundaries
-            const Z_MIN_LAND = 50;
-            const Z_AMENITY_CUTOFF = 500;
-            const Z_MAX_GRID_FILL = 2000;
-
-            // Filter transverseZ
-            const filteredTransverseZ = transverseZ.filter(z => z < Z_MAX_GRID_FILL && z > Z_MIN_LAND);
-
-            // Rebuild allZPositions to ensure proper block segmentation
-            let allZPositions = [Z_MIN_LAND, ...filteredTransverseZ, Z_MAX_GRID_FILL];
-            if (!filteredTransverseZ.some(z => Math.abs(z - Z_AMENITY_CUTOFF) < 5)) {
-                allZPositions.push(Z_AMENITY_CUTOFF);
-            }
-            allZPositions.sort((a, b) => a - b);
-
-            return { allXPositions, allZPositions, filteredTransverseZ, Z_MIN_LAND, Z_AMENITY_CUTOFF, Z_MAX_GRID_FILL };
-        }
-
-        /**
-         * Create Line 1 (Right-most Strip) - CLUSTER BLOCK
-         * Configured for "Cluster 8-10" logic (Rows 7+)
-         */
-        /**
-         * Create Line 1 (Right-most Strip) - CUSTOM LOGIC
-         * - Block C (Bottom): 40 houses + 12 houses (Red Road)
-         * - Cluster 8: 15 pairs
-         * - Cluster 9: 16 pairs
-         * - Cluster 10: 16 pairs
-         */
-        /**
-         * Create Line 1 (Right-most Strip) - CUSTOM LOGIC
-         * - Block C (Bottom): 40 houses + 12 houses (Red Road)
-         * - Cluster 8: 15 pairs
-         * - Cluster 9: 16 pairs
-         * - Cluster 10: 16 pairs
-         * 
-         * Layout optimization: 
-        /**
-         * Total pairs = 20 (C) + 15 (8) + 16 (9) + 16 (10) = 67 pairs.
-         * To fit in ~2400 Z-space (150 to 2550), Pitch must be < 35.
-         * Using Width=28 (Along Road), Gap=4 -> Pitch=32.
-         * Total Z = 67 * 32 = 2144 + Gaps for roads. Fits well.
-         */
-        /**
-         * Create Line 1 (Right-most Strip) - CUSTOM DUPLEX LOGIC
-         * - Layout from Image: Two columns (Odd Block Left, Even Block Right).
-         * - Each Block has 2 Houses (A and B).
-         * - Block C: 20 Blocks (40 houses).
-         * - Cluster 8: 15 Blocks (30 houses).
-         * - Cluster 9: 16 Blocks (32 houses).
-         * - Cluster 10: 16 Blocks (32 houses).
-         */
-        /**
-         * Create Line 1 (Right-most Strip) - HORIZONTAL CLUSTER LOGIC
-         * - Based on Image: Clusters 8, 9, 10 are Horizontal Blocks stacked vertically.
-         * - Each Cluster has 2 Rows of Units (Odd Top, Even Bottom).
-         * - Houses face OUTWARDS towards the horizontal roads (P1B, P2B, P3B).
-         * - Sequence (Bottom to Top Z): Block C -> 10 -> 9 -> 8.
-         */
-        /**
-         * Create Line 1 (Right-most Strip) - TOP-DOWN Layout
-         * - Starts from Gate Side (Top/Low Z) and builds Down (High Z).
-         * - Sequence: Cluster 10 -> P1B -> Cluster 9 -> P2B -> Cluster 8 -> P3B -> Block C.
-         * - Horizontal Rows. Odd/Even logic preserved.
-         */
-        /**
-         * Create Line 1 (Right-most Strip) - TOP-DOWN Layout
-         * - Starts from Gate Side (Top/Low Z) and builds Down (High Z).
-         * - Sequence: Cluster 10 -> P1B -> Cluster 9 -> P2B -> Cluster 8 -> P3B -> Block C.
-         */
-        /**
-         * Create Line 1 (Right-most Strip) - FINAL ADJUSTMENTS
-         * - Spacing increased to prevent 1A-2A overlap.
-         * - Left Side Road explicitly drawn/connected.
-         * - Cluster Roads extend to left boundary.
-         */
-        /**
-         * Create Line 1 (Right-most Strip) - BOUNDARY ROADS & CONNECTIONS
-         * - Spacing increased to prevent 1A-2A overlap.
-         * - Left Side Road (Divider with Line 2).
-         * - Right Side Road (Map Edge).
-         * - Cluster Roads connect Left to Right.
-         */
-        /**
-         * Create Line 1 (Right-most Strip) - WIDER LAND & SHORTER ROADS
-         * - Line 1 Width increased (starts earlier).
-         * - Longitudinal Roads cut to half length.
-         * - Clusters re-centered in wider space.
-         */
-        /**
-         * Create Line 1 (Right-most Strip) - AUTO WIDTH & REALISTIC JOIN
-         * - Auto Calculate Line 1 Width based on house total width.
-         * - Horizontal Roads join Line 2's Left Road (approx 1250) to Line 1's Right Road (Map Edge).
-         */
-        function createLine1_Cluster() {
-            // CONSTANTS from User Edits
-            const HOUSE_WIDTH = 64;
-            const HOUSE_DEPTH = 68;
-            const UNIT_GAP = 66;
-            const UNIT_WIDTH = (HOUSE_WIDTH * 2) + UNIT_GAP;
-            const UNIT_X_SPACING = UNIT_WIDTH - 70;
-
-            // AUTO WIDTH CALCULATION
-            // Cluster is 8 units wide.
-            const CLUSTER_HOUSES_TOTAL_WIDTH = 8 * UNIT_X_SPACING;
-            // Add some buffer for the road/edge
-            const LINE1_TOTAL_WIDTH = CLUSTER_HOUSES_TOTAL_WIDTH + 100;
-
-            // Calculate Start X relative to Map Edge
-            // Line 1 ends at MAP_WIDTH. So it starts at MAP_WIDTH - TOTAL_WIDTH.
-            const X_MAX_LINE1 = MAP_WIDTH;
-            const X_MIN_LINE1 = X_MAX_LINE1 - LINE1_TOTAL_WIDTH;
-
-            const X_CENTER = X_MIN_LINE1 + (LINE1_TOTAL_WIDTH / 2);
-
-            // Road Constants
-            const HALF_LENGTH = MAP_LENGTH / 2;
-            const LONG_ROAD_WIDTH = 25;
-            const ROAD_COLOR = 0x515151;
-
-            // 1. Right Side Road (Map Edge)
-            const rightRoad = new THREE.Mesh(
-                new THREE.BoxGeometry(LONG_ROAD_WIDTH, 0.12, HALF_LENGTH),
-                // new THREE.MeshLambertMaterial({ color: ROAD_COLOR })
-                new THREE.MeshBasicMaterial({
-                    color: ROAD_COLOR,
-                    polygonOffset: true,
-                    polygonOffsetFactor: -1,
-                    polygonOffsetUnits: -1
-                })
-            );
-            rightRoad.position.set(X_MAX_LINE1 - LONG_ROAD_WIDTH / 2, 0.12, HALF_LENGTH / 2);
-            mapGroup.add(rightRoad);
-
-            // 2. Connecting Logic
-            // User: "cluster road will be joint in line 1 and line 2 road"
-            // We assume Line 2 is immediately to the LEFT of Line 1.
-            // Let's connect from X_MIN_LINE1 (Line 1 Left / Line 2 Right boundary) to X_MAX_LINE1.
-            // Wait, user previously said "join at line 2 left side road".
-            // Line 2 Left likely sits around MAP_WIDTH / 4 * 2 (1250 in old scale, but MAP_WIDTH is big now).
-            // Let's rely on a fixed "Line 2 Left" anchor or just extend leftwards significantly.
-            // Given "auto width", effectively Line 2 ends where Line 1 begins.
-            // We will draw the horizontal road from [Line 2 Left Road] to [Line 1 Right Road].
-            // Assume Line 2 is roughly same width? Or just use a fixed "Center-Left" point.
-            // Old "Line 2 Left" was colWidth * 2. 
-            // new MAP_WIDTH = 4500. colWidth = 1125. colWidth * 2 = 2250.
-            const X_LINE2_LEFT = (MAP_WIDTH / 8) * 6;
-
-            const CLUSTER_ROAD_GAP = 180;
-            const CLUSTER_INTERNAL_GAP = 60;
-            const BLOCK_HEIGHT = (HOUSE_DEPTH * 1.2) + CLUSTER_INTERNAL_GAP;
-
-            // Start Z position (Gate Side / Top)
-            let currentZ = 250;
-
-            // --- 1. CLUSTER 10 ---
-            // Centered in the specific Line 1 Zone
-            const c10Width = 8 * UNIT_X_SPACING;
-            const xStart10 = X_CENTER - c10Width / 2;
-
-            createHorizontalRow(xStart10, currentZ, 8, "10", 1, 2, "North");
-            createHorizontalRow(xStart10, currentZ + HOUSE_DEPTH + CLUSTER_INTERNAL_GAP, 8, "10", 2, 2, "South");
-
-            currentZ += BLOCK_HEIGHT;
-
-            // ROAD P1B
-            // Connects Line 2 Left (2250) -> Line 1 Right (4500 approx)
-            createConnectingRoad(X_LINE2_LEFT, X_MAX_LINE1, currentZ + CLUSTER_ROAD_GAP / 2);
-            currentZ += CLUSTER_ROAD_GAP;
-
-            // --- 2. CLUSTER 9 ---
-            const c9Width = 8 * UNIT_X_SPACING;
-            const xStart9 = X_CENTER - c9Width / 2;
-
-            createHorizontalRow(xStart9, currentZ, 8, "9", 1, 2, "North");
-            createHorizontalRow(xStart9, currentZ + HOUSE_DEPTH + CLUSTER_INTERNAL_GAP, 8, "9", 2, 2, "South");
-
-            currentZ += BLOCK_HEIGHT;
-
-            // ROAD P2B
-            createConnectingRoad(X_LINE2_LEFT, X_MAX_LINE1, currentZ + CLUSTER_ROAD_GAP / 2);
-            currentZ += CLUSTER_ROAD_GAP;
-
-            // --- 3. CLUSTER 8 ---
-            const c8Width = 8 * UNIT_X_SPACING;
-            const xStart8 = X_CENTER - c8Width / 2;
-
-            createHorizontalRow(xStart8, currentZ, 8, "8", 1, 2, "North");
-            createHorizontalRow(xStart8, currentZ + HOUSE_DEPTH + CLUSTER_INTERNAL_GAP, 7, "8", 2, 2, "South");
-
-            // ROAD P3B (Bottom)
-            // Added explicit road for consistency if desired, or skip if only separator needed.
-            // Logic usually puts road *between* clusters. 
-            // Previous code had P3B after Cluster 8.
-            currentZ += BLOCK_HEIGHT;
-            createConnectingRoad(X_LINE2_LEFT, X_MAX_LINE1, currentZ + CLUSTER_ROAD_GAP / 2);
-
-
-            // --- Helpers ---
-            function createHorizontalRow(startX, z, count, cluster, startIdx, step, facing) {
-                const rotY = facing === "South" ? 0 : Math.PI;
-                for (let i = 0; i < count; i++) {
-                    const unitIdx = startIdx + (i * step);
-                    const x = startX + i * UNIT_X_SPACING;
-                    // A
-                    const hA = createHouseModel(HOUSE_WIDTH / 2 - 2, HOUSE_DEPTH, `${cluster}-${unitIdx}A`);
-                    hA.position.set(x, 0, z);
-                    hA.rotation.y = rotY;
-                    mapGroup.add(hA);
-                    // B
-                    const hB = createHouseModel(HOUSE_WIDTH / 2 - 2, HOUSE_DEPTH, `${cluster}-${unitIdx}B`);
-                    hB.position.set(x + HOUSE_WIDTH / 2 + UNIT_GAP / 2 + 2, 0, z);
-                    hB.rotation.y = rotY;
-                    mapGroup.add(hB);
-                }
-            }
-
-            function createConnectingRoad(xStart, xEnd, z) {
-                const width = xEnd - xStart;
-                const centerX = xStart + width / 2;
-                const road = new THREE.Mesh(
-                    new THREE.BoxGeometry(width, 0.12, 40),
-                    new THREE.MeshBasicMaterial({
-                        color: 0x515151,
-                        polygonOffset: true,
-                        polygonOffsetFactor: -1,
-                        polygonOffsetUnits: -1
-                    })
-                );
-                road.position.set(centerX, 0.12, z);
-                mapGroup.add(road);
-            }
-        }
-
-        /**
-         * Create Line 2 (Center-Right Strip) - CLUSTER BLOCK
-         * Configured for "Cluster 1-7" logic (Rows 0-6)
-         * NOTE: Contains Field 2 (Block 2)
-         */
-        /**
-         * Create Line 2 (Center-Right Strip) - CLUSTERS 1-7
-         * - Matches Line 1 Style (Auto Width, House Size, Roads).
-         * - Sequence: Cluster 7 (Top) -> ... -> Cluster 1 (Bottom).
-         */
-        function createLine2_Cluster() {
-            // CONSTANTS (MATCHING LINE 1)
-            const HOUSE_WIDTH = 64;
-            const HOUSE_DEPTH = 68;
-            const UNIT_GAP = 66;
-            const UNIT_WIDTH = (HOUSE_WIDTH * 2) + UNIT_GAP;
-            const UNIT_X_SPACING = UNIT_WIDTH - 70;
-
-            // AUTO WIDTH CALCULATION
-            const CLUSTER_HOUSES_TOTAL_WIDTH = 8 * UNIT_X_SPACING;
-            const LINE_TOTAL_WIDTH = CLUSTER_HOUSES_TOTAL_WIDTH + 100;
-
-            // X Positioning
-            // Line 1 Start was: MAP_WIDTH - LINE1_WIDTH.
-            // Line 2 ends where Line 1 starts.
-            const X_MAX_LINE2 = MAP_WIDTH - LINE_TOTAL_WIDTH;
-            const X_MIN_LINE2 = X_MAX_LINE2 - LINE_TOTAL_WIDTH;
-            const X_CENTER = X_MIN_LINE2 + (LINE_TOTAL_WIDTH / 2);
-
-            // Connects Line 3 Left (approx) to Line 2 Right (Line 1 Left).
-            // Line 3 Left roughly at MAP_WIDTH/8 * 2 ?
-            // Let's us a dynamic calc:
-            const X_LINE3_LEFT = (MAP_WIDTH / 8) * 2;
-
-            const CLUSTER_ROAD_GAP = 180;
-            const CLUSTER_INTERNAL_GAP = 60;
-            const BLOCK_HEIGHT = (HOUSE_DEPTH * 1.2) + CLUSTER_INTERNAL_GAP;
-
-            // Road Constants
-            const LONG_ROAD_WIDTH = 25;
-            const ROAD_COLOR = 0x333333;
-
-            // Right Side Road (Line 2 Right Boundary) - Full Length
-            const rightRoad = new THREE.Mesh(
-                new THREE.BoxGeometry(LONG_ROAD_WIDTH, 0.12, MAP_LENGTH),
-                new THREE.MeshLambertMaterial({ color: ROAD_COLOR })
-            );
-            rightRoad.position.set(X_MAX_LINE2 - LONG_ROAD_WIDTH / 2, 0.12, MAP_LENGTH / 2);
-            mapGroup.add(rightRoad);
-
-            // Start Z position (Gate Side / Top) - Match Line 1
-            let currentZ = 250;
-
-            // Loop 7 -> 1 (Top -> Bottom)
-            const clusters = ["7", "6", "5", "4", "3", "2", "1"];
-
-            clusters.forEach((clusterNum, index) => {
-                // Determine Units count.
-                // Line 1 clusters were 8 (16 houses).
-                // "cluster will be 1-7". Assume standard 8-unit clusters.
-                const unitsCount = 8;
-
-                const cWidth = unitsCount * UNIT_X_SPACING;
-                const xStart = X_CENTER - cWidth / 2;
-
-                // Houses
-                createHorizontalRow(xStart, currentZ, unitsCount, clusterNum, 1, 2, "North");
-                createHorizontalRow(xStart, currentZ + HOUSE_DEPTH + CLUSTER_INTERNAL_GAP, unitsCount, clusterNum, 2, 2, "South");
-
-                currentZ += BLOCK_HEIGHT;
-
-                // Road (Bottom of cluster)
-                // Road starts from right side of Line 2 and fits cluster width
-                createConnectingRoad(X_MAX_LINE2, cWidth, currentZ + CLUSTER_ROAD_GAP / 2);
-                currentZ += CLUSTER_ROAD_GAP;
-            });
-
-
-            // --- Helpers ---
-            function createHorizontalRow(startX, z, count, cluster, startIdx, step, facing) {
-                const rotY = facing === "South" ? 0 : Math.PI;
-                for (let i = 0; i < count; i++) {
-                    const unitIdx = startIdx + (i * step);
-                    const x = startX + i * UNIT_X_SPACING;
-                    // A
-                    const hA = createHouseModel(HOUSE_WIDTH / 2 - 2, HOUSE_DEPTH, `${cluster}-${unitIdx}A`);
-                    hA.position.set(x, 0, z);
-                    hA.rotation.y = rotY;
-                    mapGroup.add(hA);
-                    // B
-                    const hB = createHouseModel(HOUSE_WIDTH / 2 - 2, HOUSE_DEPTH, `${cluster}-${unitIdx}B`);
-                    hB.position.set(x + HOUSE_WIDTH / 2 + UNIT_GAP / 2 + 2, 0, z);
-                    hB.rotation.y = rotY;
-                    mapGroup.add(hB);
-                }
-            }
-
-            function createConnectingRoad(xRightEdge, clusterWidth, z) {
-                // Road starts from right edge and extends left by cluster width
-                const roadStartX = xRightEdge - clusterWidth;
-                const centerX = roadStartX + clusterWidth / 2;
-                const road = new THREE.Mesh(
-                    new THREE.BoxGeometry(clusterWidth + 140, 0.12, 40),
-                    new THREE.MeshBasicMaterial({
-                        color: 0x515151,
-                        polygonOffset: true,
-                        polygonOffsetFactor: -1,
-                        polygonOffsetUnits: -1
-                    })
-                );
-                road.position.set(centerX - 70, 0.12, z);
-                mapGroup.add(road);
-            }
-        }
-
-        /**
-         * Create Line 3 (Center-Left Strip) - BUNCHES 1-6
-         * - Matches Line 1 & 2 Style (Auto Width, House Size, Roads).
-         * - Sequence: Bunch 6 (Top) -> ... -> Bunch 1 (Bottom).
-         * - House counts: Bunch 1=36, Bunch 2=28, Bunch 3=28, Bunch 4=24, Bunch 5=28, Bunch 6=30
-         */
-        function createLine3_Bunch() {
-            // CONSTANTS (MATCHING LINE 1 & 2)
-            const HOUSE_WIDTH = 64;
-            const HOUSE_DEPTH = 68;
-            const UNIT_GAP = 66;
-            const UNIT_WIDTH = (HOUSE_WIDTH * 2) + UNIT_GAP;
-            const UNIT_X_SPACING = UNIT_WIDTH - 70;
-
-            // Bunch specifications (houses per bunch)
-            const bunchSpecs = [
-                { name: "6", houses: 30, road: "P6A" },
-                { name: "5", houses: 28, road: "P5A" },
-                { name: "4", houses: 24, road: "P4A" },
-                { name: "3", houses: 28, road: "P3A" },
-                { name: "2", houses: 28, road: "P2A" },
-                { name: "1", houses: 36, road: "P1A" }
-            ];
-
-            // Calculate max width needed (Bunch 1 has 36 houses = 18 units)
-            const MAX_UNITS = 18; // 36 houses / 2
-            const CLUSTER_HOUSES_TOTAL_WIDTH = MAX_UNITS * UNIT_X_SPACING;
-            const LINE_TOTAL_WIDTH = CLUSTER_HOUSES_TOTAL_WIDTH + 100;
-
-            // X Positioning
-            // Line 3 ends where Line 2 starts (no gap)
-            // Line 2 ends at: X_MIN_LINE2 = (MAP_WIDTH - LINE_TOTAL_WIDTH) - LINE_TOTAL_WIDTH
-            const LINE2_WIDTH = -120; // Line 2's width (8 units)
-            const X_MAX_LINE3 = MAP_WIDTH - LINE2_WIDTH - LINE_TOTAL_WIDTH;
-            const X_MIN_LINE3 = X_MAX_LINE3 - LINE_TOTAL_WIDTH;
-            const X_CENTER = X_MIN_LINE3 + (LINE_TOTAL_WIDTH / 2);
-
-            // Connects Line 4 Left to Line 3 Right
-            const X_LINE4_LEFT = 0; // Map edge
-
-            const CLUSTER_ROAD_GAP = 180;
-            const CLUSTER_INTERNAL_GAP = 60;
-            const BLOCK_HEIGHT = (HOUSE_DEPTH * 1.2) + CLUSTER_INTERNAL_GAP;
-
-            // Road Constants
-            const LONG_ROAD_WIDTH = 45;
-            const ROAD_COLOR = 0x333333;
-
-            // Right Side Road (Line 3 Right Boundary) - Full Length
-            const rightRoad = new THREE.Mesh(
-                new THREE.BoxGeometry(LONG_ROAD_WIDTH, 0.012, MAP_LENGTH),
-                new THREE.MeshBasicMaterial({
-                    color: 0x515151,
-                    polygonOffset: true,
-                    polygonOffsetFactor: -1,
-                    polygonOffsetUnits: -1
-                })
-            );
-            rightRoad.position.set(X_MAX_LINE3 - LONG_ROAD_WIDTH / 2, 0.012, MAP_LENGTH / 2);
-            mapGroup.add(rightRoad);
-
-            // Start Z position (Gate Side / Top)
-            let currentZ = 250;
-
-            // Collect road endpoints for curved left road
-            const roadEndpoints = [];
-
-            // Loop through bunches (Top -> Bottom)
-            bunchSpecs.forEach((bunch) => {
-                const totalHouses = bunch.houses;
-                const unitsCount = totalHouses / 2; // Each unit has 2 houses (A and B)
-
-                const cWidth = unitsCount * UNIT_X_SPACING;
-                // Position houses from right side (X_MAX_LINE3) extending left
-                const xStart = X_MAX_LINE3 - cWidth;
-
-                // Houses
-                createHorizontalRow(xStart, currentZ, unitsCount, bunch.name, 1, 2, "North");
-                createHorizontalRow(xStart, currentZ + HOUSE_DEPTH + CLUSTER_INTERNAL_GAP, unitsCount, bunch.name, 2, 2, "South");
-
-                currentZ += BLOCK_HEIGHT;
-
-                // Road (Bottom of bunch)
-                const roadZ = currentZ + CLUSTER_ROAD_GAP / 2;
-                createConnectingRoad(X_MAX_LINE3, cWidth, roadZ);
-
-                // Store left endpoint for curved road
-                const leftEndX = X_MAX_LINE3 - cWidth - 140; // Account for road extension
-                roadEndpoints.push({ x: leftEndX, z: roadZ });
-
-                currentZ += CLUSTER_ROAD_GAP;
-            });
-
-            // Create curved left road connecting all endpoints and extending to CHL end point
-            if (roadEndpoints.length > 0) {
-                // CHL end point coordinates (from createResidentialBlocks)
-                const CHL_END_X = MAP_WIDTH - 100;
-                const CHL_END_Z = MAP_LENGTH * 0.85;
-
-                // Add start and end points for full coverage
-                const curvePoints = [
-                    new THREE.Vector3(roadEndpoints[0].x, 0.012, 0), // Start from top
-                    ...roadEndpoints.map(ep => new THREE.Vector3(ep.x, 0.012, ep.z)),
-                    new THREE.Vector3(roadEndpoints[roadEndpoints.length - 1].x, 0.012, roadEndpoints[roadEndpoints.length - 1].z + 200), // Transition point
-                    new THREE.Vector3(CHL_END_X, 0.012, CHL_END_Z + 350) // Connect to CHL end point
+            // --- PORCHES & BALCONIES ---
+            // Main Porch (Ground)
+            const porch = new THREE.Mesh(new THREE.BoxGeometry(houseWidth - 20, 10, 80), new THREE.MeshStandardMaterial({ color: 0xcccccc }));
+            porch.position.set(0, 5, -(houseDepth / 2 + 40) + buildingOffsetZ);
+            building.add(porch);
+
+            // Main Balcony (1st Floor)
+            const balcony = porch.clone(); balcony.position.y = floorH + 5;
+            building.add(balcony);
+
+            // Glass Railing for Main Balcony
+            const railH = 35;
+            const glassRail = new THREE.Mesh(new THREE.BoxGeometry(houseWidth - 20, railH, 2), glassMat);
+            glassRail.position.set(0, floorH + 5 + railH / 2 + 5, -(houseDepth / 2 + 80) + buildingOffsetZ);
+            building.add(glassRail);
+
+            // Side glass railings for Main Balcony
+            const mRailSideL = new THREE.Mesh(new THREE.BoxGeometry(2, railH, 80), glassMat);
+            mRailSideL.position.set(-(houseWidth - 20) / 2, floorH + 5 + railH / 2 + 5, -(houseDepth / 2 + 40) + buildingOffsetZ);
+            building.add(mRailSideL);
+
+            const mRailSideR = new THREE.Mesh(new THREE.BoxGeometry(2, railH, 80), glassMat);
+            mRailSideR.position.set((houseWidth - 20) / 2, floorH + 5 + railH / 2 + 5, -(houseDepth / 2 + 40) + buildingOffsetZ);
+            building.add(mRailSideR);
+
+            // Wing Balcony (1st Floor)
+            const wingBalcony = new THREE.Mesh(new THREE.BoxGeometry(wingLen - 40, 10, 60), new THREE.MeshStandardMaterial({ color: 0xcccccc }));
+            wingBalcony.position.set(-(houseWidth / 2 + wingLen / 2), floorH + 5, houseDepth / 2 - wingW - 30 + buildingOffsetZ);
+            building.add(wingBalcony);
+
+            // Glass Railing for Wing Balcony
+            const wGlassRail = new THREE.Mesh(new THREE.BoxGeometry(wingLen - 40, railH, 2), glassMat);
+            wGlassRail.position.set(-(houseWidth / 2 + wingLen / 2), floorH + 5 + railH / 2 + 5, houseDepth / 2 - wingW - 60 + buildingOffsetZ);
+            building.add(wGlassRail);
+
+            // Side glass railings for Wing Balcony
+            const wRailSideL = new THREE.Mesh(new THREE.BoxGeometry(2, railH, 60), glassMat);
+            wRailSideL.position.set(-(houseWidth / 2 + wingLen / 2) - (wingLen - 40) / 2, floorH + 5 + railH / 2 + 5, houseDepth / 2 - wingW - 30 + buildingOffsetZ);
+            building.add(wRailSideL);
+
+            const wRailSideR = new THREE.Mesh(new THREE.BoxGeometry(2, railH, 60), glassMat);
+            wRailSideR.position.set(-(houseWidth / 2 + wingLen / 2) + (wingLen - 40) / 2, floorH + 5 + railH / 2 + 5, houseDepth / 2 - wingW - 30 + buildingOffsetZ);
+            building.add(wRailSideR);
+
+            // Wing Doors (1st & 2nd Level Access)
+            const wDoor1 = door.clone();
+            wDoor1.position.set(-(houseWidth / 2 + 80), floorH + 37.5, houseDepth / 2 - wingW - 2 + buildingOffsetZ);
+            wDoor1.rotation.y = Math.PI;
+            building.add(wDoor1);
+
+            const wDoor2 = door.clone();
+            wDoor2.position.set(-(houseWidth / 2 + 180), floorH + 37.5, houseDepth / 2 - wingW - 2 + buildingOffsetZ);
+            wDoor2.rotation.y = Math.PI;
+            building.add(wDoor2);
+
+            // Roofs
+            const mRoofS = new THREE.Shape();
+            mRoofS.moveTo(-houseWidth / 2 - 20, 0); mRoofS.lineTo(0, roofH); mRoofS.lineTo(houseWidth / 2 + 20, 0);
+            const mRoof = new THREE.Mesh(new THREE.ExtrudeGeometry(mRoofS, { depth: houseDepth + 40, bevelEnabled: false }), roofMat);
+            mRoof.position.set(0, floorH * 2, -houseDepth / 2 - 20 + buildingOffsetZ);
+            building.add(mRoof);
+
+            const wRoofS = new THREE.Shape();
+            wRoofS.moveTo(-wingW / 2 - 20, 0); wRoofS.lineTo(0, roofH); wRoofS.lineTo(wingW / 2 + 20, 0);
+            const wRoof = new THREE.Mesh(new THREE.ExtrudeGeometry(wRoofS, { depth: wingLen + 130, bevelEnabled: false }), roofMat);
+            wRoof.rotation.y = -Math.PI / 2;
+            // Align precisely with the wing body center and move it further INTO the main body to fill the gap
+            const wingCenterZ = houseDepth / 2 - wingW / 2 + buildingOffsetZ;
+            wRoof.position.set(-(houseWidth / 2 - 112), floorH * 2, wingCenterZ);
+            building.add(wRoof);
+
+            // Beams
+            const beamGeo = new THREE.CylinderGeometry(5, 5, floorH);
+            const b1 = new THREE.Mesh(beamGeo, beamMat);
+            b1.position.set(-(houseWidth / 2 - 30), floorH / 2, -(houseDepth / 2 + 60) + buildingOffsetZ);
+            building.add(b1);
+            const b2 = b1.clone(); b2.position.x = houseWidth / 2 - 30;
+            building.add(b2);
+
+            // Add 2 custom trees at the front corners only (removed back-side trees)
+            try {
+                const plotPadding = 50; // Distance from walls
+                const treeScale = 1 / 0.015; // Compensate for house scaling (66.67x larger)
+                
+                // Define 2 front corner positions only
+                const cornerPositions = [
+                    { x: -plotW / 2 + plotPadding, z: -plotD / 2 + plotPadding }, // Front-Left
+                    { x: plotW / 2 - plotPadding, z: -plotD / 2 + plotPadding }   // Front-Right
                 ];
-
-                // Create smooth curve through all points
-                const curve = new THREE.CatmullRomCurve3(curvePoints);
-
-                // Generate tube geometry along the curve
-                const tubeGeometry = new THREE.TubeGeometry(
-                    curve,
-                    500, // segments for smoothness
-                    LONG_ROAD_WIDTH / 2, // radius
-                    108, // radial segments
-                    false // not closed
-                );
-
-                const curvedRoad = new THREE.Mesh(
-                    tubeGeometry,
-                    new THREE.MeshBasicMaterial({
-                        color: 0x515151, polygonOffset: true,
-                        polygonOffsetFactor: -1,
-                        polygonOffsetUnits: -1
-                    })
-                );
-                mapGroup.add(curvedRoad);
-            }
-
-
-            // --- Helpers ---
-            function createHorizontalRow(startX, z, count, bunch, startIdx, step, facing) {
-                const rotY = facing === "South" ? 0 : Math.PI;
-                for (let i = 0; i < count; i++) {
-                    const unitIdx = startIdx + (i * step);
-                    const x = startX + i * UNIT_X_SPACING;
-                    // A
-                    const hA = createHouseModel(HOUSE_WIDTH / 2 - 2, HOUSE_DEPTH, `${bunch}-${unitIdx}A`);
-                    hA.position.set(x, 0, z);
-                    hA.rotation.y = rotY;
-                    mapGroup.add(hA);
-                    // B
-                    const hB = createHouseModel(HOUSE_WIDTH / 2 - 2, HOUSE_DEPTH, `${bunch}-${unitIdx}B`);
-                    hB.position.set(x + HOUSE_WIDTH / 2 + UNIT_GAP / 2 + 2, 0, z);
-                    hB.rotation.y = rotY;
-                    mapGroup.add(hB);
-                }
-            }
-
-            function createConnectingRoad(xRightEdge, bunchWidth, z) {
-                // Road starts from right edge and extends left by bunch width + extension
-                const roadStartX = xRightEdge - bunchWidth;
-                const centerX = roadStartX + bunchWidth / 2;
-                const road = new THREE.Mesh(
-                    new THREE.BoxGeometry(bunchWidth + 140, 0.12, 40),
-                    new THREE.MeshBasicMaterial({
-                        color: 0x515151,
-                        polygonOffset: true,
-                        polygonOffsetFactor: -1,
-                        polygonOffsetUnits: -1
-                    })
-                );
-                road.position.set(centerX - 70, 0.12, z);
-                mapGroup.add(road);
-            }
-        }
-
-        /**
-         * Create Line 4 (Left-most Strip) - EMPTY BLOCK
-         * Configured to be empty by default (House count override 0 or just logic disabled)
-         */
-        function createLine4_Empty() {
-            const { allXPositions, allZPositions, filteredTransverseZ, Z_MIN_LAND, Z_AMENITY_CUTOFF, Z_MAX_GRID_FILL } = calculateGridCoordinates();
-            const i = 0; // Left-most column index
-
-            // Config - user wants this empty, but wants logic present to "set own amount".
-            // We'll proceed with placing houses but set a "limit" or "enable" flag logic.
-            // USER REQUEST: "line 4 will be empty"
-            const ENABLE_LINE_4 = false; // Set to true to modify amount
-
-            if (!ENABLE_LINE_4) return;
-
-            // Config
-            const HOUSE_WIDTH = 30;
-            const HOUSE_LENGTH = 50;
-            const HOUSE_X_SPACING = HOUSE_WIDTH + 30;
-            const HOUSE_Z_SPACING = HOUSE_LENGTH + 40;
-
-            const xStartRaw = allXPositions[i];
-            const xEndRaw = allXPositions[i + 1];
-            let xStart = xStartRaw + (i > 0 ? ROAD_WIDTH / 2 : 0);
-            let xEnd = xEndRaw - (i < allXPositions.length - 2 ? ROAD_WIDTH / 2 : 0);
-
-            if ((xEnd - xStart) <= HOUSE_WIDTH) return;
-
-            for (let j = 0; j < allZPositions.length - 1; j++) {
-                const zStartRaw = allZPositions[j];
-                const zEndRaw = allZPositions[j + 1];
-
-                // AMENITY EXCLUSION: Field 1 is here
-                if (zStartRaw >= Z_MIN_LAND && zEndRaw <= Z_AMENITY_CUTOFF) continue;
-
-                let zStart = zStartRaw + (filteredTransverseZ.includes(zStartRaw) ? ROAD_WIDTH / 2 : 0);
-                let zEnd = zEndRaw - (filteredTransverseZ.includes(zEndRaw) ? ROAD_WIDTH / 2 : 0);
-
-                if ((zEnd - zStart) <= HOUSE_LENGTH) continue;
-                if (zStartRaw >= Z_MAX_GRID_FILL - 100) continue;
-
-                // Place Houses
-                const housesX = Math.floor((xEnd - xStart) / HOUSE_X_SPACING);
-                const housesZ = Math.floor((zEnd - zStart) / HOUSE_Z_SPACING);
-
-                if (housesX < 1 || housesZ < 1) continue;
-
-                const blockCenterX = (xStart + xEnd) / 2;
-                const blockCenterZ = (zStart + zEnd) / 2;
-                const startOffsetX = -((housesX - 1) * HOUSE_X_SPACING) / 2;
-                const startOffsetZ = -((housesZ - 1) * HOUSE_Z_SPACING) / 2;
-
-                let houseCounter = 1;
-                for (let x = 0; x < housesX; x++) {
-                    for (let z = 0; z < housesZ; z++) {
-                        const houseID = `L4-C${j}-${houseCounter++}`;
-                        const house = createHouseModel(HOUSE_WIDTH, HOUSE_LENGTH, houseID);
-                        const hX = blockCenterX + startOffsetX + x * HOUSE_X_SPACING;
-                        const hZ = blockCenterZ + startOffsetZ + z * HOUSE_Z_SPACING;
-                        house.position.set(hX, 0, hZ);
-                        mapGroup.add(house);
-                    }
-                }
-            }
-        }
-
-        /**
-         * Handles window resizing.
-         */
-        function onWindowResize() {
-            if (camera && renderer) {
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
-            }
-        }
-
-        /**
-         * Handle mouse click/tap event for Raycasting
-         */
-        function onPointerDown(event) {
-            // Calculate mouse position in normalized device coordinates
-            // (-1 to +1) for both components
-            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-            // Update the raycaster with the camera and mouse position
-            raycaster.setFromCamera(mouse, camera);
-
-            // Calculate objects intersecting the picking ray
-            // Intersect recursively with mapGroup children
-            const intersects = raycaster.intersectObjects(mapGroup.children, true);
-
-            if (intersects.length > 0) {
-                // Get the first intersected object (closest to camera)
-                let intersect = intersects[0];
-                let obj = intersect.object;
-
-                // Traverse up to find if we clicked a house group or a house part
-                if (obj.userData.isHousePart || (obj.parent && obj.parent.userData.isHouse)) {
-                    // Find the main group
-                    let houseGroup = null;
-
-                    if (obj.parent && obj.parent.userData.isHouse) {
-                        houseGroup = obj.parent;
-                    } else if (obj.userData.isHousePart && obj.parent) {
-                        houseGroup = obj.parent;
-                    }
-
-                    if (houseGroup) {
-                        selectHouse(houseGroup);
-                    }
-                } else {
-                    // Clicked something else (ground, road, etc.)
-                    deselectHouse(); // Deselect if clicking on empty ground or non-house object
-                }
-            } else {
-                // Clicked sky
-                deselectHouse();
-            }
-        }
-
-        function selectHouse(group) {
-            // If selecting the same house, do nothing
-            if (selectedHouse === group) return;
-
-            // 1. Deselect previous
-            deselectHouse();
-
-            // 2. Select new
-            selectedHouse = group;
-
-            // 3. Highlight ALL parts of the house group
-            group.children.forEach(child => {
-                // Check if the child is a part of the house that should be highlighted
-                // (e.g., body, roof, dormer, door, etc., but not plot lines or trees)
-                if ((child.userData.isHousePart || child.userData.isHouseBody) && child.material) {
-                    // Ensure original color is saved if not already (should be set in createHouseModel)
-                    if (child.userData.originalColor === undefined) {
-                        child.userData.originalColor = child.material.color.getHex();
-                    }
-
-                    // Use the status-specific color stored in the group
-                    child.material.color.setHex(group.userData.statusColor || SELECTED_COLOR);
-                }
-            });
-
-            // 4. Show Popup
-            showPopup(group.userData);
-        }
-
-        function deselectHouse() {
-            if (selectedHouse) {
-                // Restore colors for all children of the previously selected house
-                selectedHouse.children.forEach(child => {
-                    if ((child.userData.isHousePart || child.userData.isHouseBody) && child.userData.originalColor !== undefined && child.material) {
-                        child.material.color.setHex(child.userData.originalColor);
-                    }
+                
+                cornerPositions.forEach(corner => {
+                    const t = createHighQualityTree();
+                    t.position.set(corner.x, 0, corner.z);
+                    t.scale.set(treeScale, treeScale, treeScale); // Scale up to compensate for house scaling
+                    t.traverse(node => { 
+                        if (node.isMesh) { 
+                            node.castShadow = true; 
+                            node.receiveShadow = true; 
+                        } 
+                    });
+                    house.add(t);
                 });
-                selectedHouse = null;
+            } catch (e) {
+                console.warn('Tree placement skipped:', e.message);
             }
-            hidePopup();
+
+            const scale = 0.015;
+            house.scale.set(scale, scale, scale);
+
+            return house;
         }
 
-        let hideTimeout = null;
+        class RiverSystem {
+            constructor(scene, points, options = {}) {
+                this.scene = scene;
+                this.points = points;
+                this.color = new THREE.Color(options.color || 0x0077ff);
+                this.width = options.width || 4.5;
+                this.thickness = options.thickness || 0.1;
+                this.pos = options.position || { x: 0, y: 0, z: 0 };
+                this.rot = options.rotation || { x: 0, y: 0, z: 0 };
 
-        function showPopup(data) {
-            const popup = document.getElementById('house-popup');
-            const title = document.getElementById('popup-title');
-            const idLabel = document.getElementById('popup-id');
-            const statusLabel = document.getElementById('popup-status');
+                this.shaderMaterial = null;
+                this.mesh = null;
+                this.edgeMesh = null;
 
-            // Clear any pending hide timeout to prevent accidental closing
-            if (hideTimeout) {
-                clearTimeout(hideTimeout);
-                hideTimeout = null;
+                this._init();
             }
 
-            // Read data from the house object
-            // data contains { id, status, statusColor, ... }
-            const status = data.status || 'Available';
-            const colorHex = data.statusColor ? '#' + data.statusColor.toString(16).padStart(6, '0') : '#000000';
+            _init() {
+                // High-quality centripetal curve for smooth turns
+                const curve = new THREE.CatmullRomCurve3(this.points, false, 'centripetal');
+                const tubeGeometry = new THREE.TubeGeometry(curve, 512, this.width, 16, false);
 
-            title.innerText = `House ${data.id}`;
-            idLabel.innerText = `ID: #${data.id}`;
-            statusLabel.innerText = status;
+                const vertexShader = `
+                    varying vec2 vUv;
+                    uniform float uTime;
+                    void main() {
+                        vUv = uv;
+                        vec3 pos = position;
+                        // Animated water vertical movement
+                        float wave = sin(pos.x * 0.15 + uTime * 2.5) * 0.4;
+                        pos.y += wave;
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+                    }
+                `;
 
-            // Set status text color to match the status highlight
-            statusLabel.style.color = colorHex;
-            statusLabel.className = "text-lg font-bold uppercase";
+                const fragmentShader = `
+                    uniform vec3 uColor;
+                    uniform float uTime;
+                    varying vec2 vUv;
+                    void main() {
+                        // High-quality scrolling ripples from the image
+                        float ripple = sin((vUv.x * 20.0) - (uTime * 2.5)) * 0.5 + 0.5;
+                        
+                        // Center-to-edge glow like the reference image
+                        float centerDist = abs(vUv.y - 0.5) * 2.0; 
+                        float highlight = pow(1.0 - centerDist, 4.0);
+                        
+                        vec3 baseColor = mix(uColor * 0.6, uColor + vec3(0.2, 0.4, 0.6), highlight);
+                        baseColor += ripple * 0.15 * highlight; 
+                        
+                        gl_FragColor = vec4(baseColor, 1.0); // Full opacity for city visibility
+                    }
+                `;
 
-            // Show
-            popup.classList.remove('hidden');
-            // Small timeout to allow display:block to apply before transition
-            setTimeout(() => {
-                popup.classList.remove('translate-x-full');
-            }, 10);
+                this.shaderMaterial = new THREE.ShaderMaterial({
+                    uniforms: {
+                        uTime: { value: 0 },
+                        uColor: { value: this.color }
+                    },
+                    vertexShader: vertexShader,
+                    fragmentShader: fragmentShader,
+                    transparent: false // Make it solid for better visibility
+                });
+
+                this.mesh = new THREE.Mesh(tubeGeometry, this.shaderMaterial);
+                this.mesh.scale.set(1, this.thickness, 1);
+                this.mesh.position.set(this.pos.x, this.pos.y, this.pos.z);
+                this.mesh.rotation.set(this.rot.x, this.rot.y, this.rot.z);
+
+                this.scene.add(this.mesh);
+            }
+
+            update(time) {
+                if (this.shaderMaterial && this.shaderMaterial.uniforms) {
+                    this.shaderMaterial.uniforms.uTime.value = time;
+                }
+            }
+
+            dispose() {
+                this.scene.remove(this.mesh);
+                if (this.edgeMesh) this.scene.remove(this.edgeMesh);
+                this.mesh.geometry.dispose();
+                this.shaderMaterial.dispose();
+            }
         }
 
-        function hidePopup() {
-            const popup = document.getElementById('house-popup');
-            popup.classList.add('translate-x-full');
 
-            // Clear existing timeout if any
-            if (hideTimeout) {
-                clearTimeout(hideTimeout);
+        /**
+         * Creates a bunch of houses organized in two serial blocks (Odd & Even).
+         * Each serial comes in a pair (A & B).
+         */
+        function createHouseBunch(parent, options) {
+            const houseScale = 0.015;
+            const {
+                serialCount = 10,
+                startX = 0,
+                startZ = 0,
+                plotWidth = 900, // Pre-scaled dimension
+                plotDepth = 1200, // Pre-scaled dimension
+                unitSpacing = (plotWidth * houseScale),
+                rowSpacing = plotDepth * houseScale,
+                houseGap = unitSpacing * 0.35,
+                // New Padding and Thickness defaults
+                paddingLeft = 2,
+                paddingRight = 2,
+                paddingTop = 2,
+                paddingBottom = 2,
+                landThickness = 3.5,
+                startId = 1,
+                clusterName = "CLUSTER-6"
+            } = options;
+
+            const bunchGroup = new THREE.Group();
+            bunchGroup.position.set(startX, 0, startZ);
+            parent.add(bunchGroup);
+
+            // Calculate Bunch Land Size including padding
+            const totalUnits = Math.ceil(serialCount / 2);
+            const landWidth = totalUnits * unitSpacing + paddingLeft + paddingRight;
+            const landDepth = (2 * rowSpacing) + paddingTop + paddingBottom;
+
+            // Create Bunch Land Area as a 3D Box
+            const landGeo = new THREE.BoxGeometry(landWidth, landThickness, landDepth);
+            const landMat = new THREE.MeshBasicMaterial({
+                color: 0xA9DA3F,
+                // color: 0xc1d86c,
+                polygonOffset: true,
+                polygonOffsetFactor: 3,
+                polygonOffsetUnits: 3
+            });
+            const landMesh = new THREE.Mesh(landGeo, landMat);
+
+            // Positioning the land box
+            const centerX = ((totalUnits - 1) * unitSpacing) / 2 + (paddingRight - paddingLeft) / 2;
+            const centerZ = (rowSpacing / 2) + (paddingBottom - paddingTop) / 2;
+            landMesh.position.set(centerX, -landThickness / 2 + 0.01, centerZ);
+            bunchGroup.add(landMesh);
+
+            const oddRow = new THREE.Group();
+            const evenRow = new THREE.Group();
+            evenRow.position.z = rowSpacing;
+
+            bunchGroup.add(oddRow);
+            bunchGroup.add(evenRow);
+
+            // Add Cluster Label in the middle
+            if (clusterName) {
+                const labelCanvas = document.createElement('canvas');
+                labelCanvas.width = 512; labelCanvas.height = 128;
+                const lctx = labelCanvas.getContext('2d');
+                lctx.fillStyle = 'rgba(255, 255, 0, 0.8)'; // Yellow background
+                lctx.fillRect(0, 0, 512, 128);
+                lctx.fillStyle = '#000000';
+                lctx.font = 'bold 80px Arial';
+                lctx.textAlign = 'center'; lctx.textBaseline = 'middle';
+                lctx.fillText(clusterName, 256, 64);
+
+                const labelTex = new THREE.CanvasTexture(labelCanvas);
+                const labelGeo = new THREE.PlaneGeometry(6, 1.5);
+                const labelMat = new THREE.MeshBasicMaterial({ map: labelTex, transparent: true });
+                const label = new THREE.Mesh(labelGeo, labelMat);
+                label.rotation.x = -Math.PI / 2;
+                label.position.set(((totalUnits - 1) * unitSpacing) / 2, 0.05, rowSpacing / 2);
+                bunchGroup.add(label);
             }
 
-            // Wait for transition to finish before hiding
-            hideTimeout = setTimeout(() => {
-                popup.classList.add('hidden');
-                hideTimeout = null;
-            }, 300);
+            for (let i = 0; i < serialCount; i++) {
+                const serialNum = startId + i;
+                const formattedId = "H-" + serialNum.toString().padStart(2, '0');
+                const unitGroup = new THREE.Group();
+
+                // Position the unit in two rows (Odd/Even)
+                const localIdx = Math.floor(i / 2);
+                unitGroup.position.x = localIdx * unitSpacing;
+
+                // Create Single House
+                const house = createHouse(formattedId, plotWidth, plotDepth);
+                unitGroup.add(house);
+
+                if (serialNum % 2 !== 0) {
+                    unitGroup.rotation.y = Math.PI; // Face the opposite direction
+                    oddRow.add(unitGroup);
+                } else {
+                    evenRow.add(unitGroup);
+                }
+
+                // Add tree at the front side of the house area
+                const tree = createTree();
+                // Front side of row. 
+                const treeZ = (serialNum % 2 !== 0) ? -rowSpacing * 0.4 : rowSpacing + rowSpacing * 0.4;
+                tree.position.set(unitGroup.position.x + 2.5, 0, treeZ);
+                bunchGroup.add(tree);
+            }
+
+            return bunchGroup;
         }
-        function animate() {
-            // Only continue the loop if the renderer exists
-            if (!renderer) return;
+        function createHouseCluster(parent, options) {
+            const houseScale = 0.015;
+            const {
+                serialCount = 10,
+                startX = 0,
+                startZ = 0,
+                plotWidth = 900, // Pre-scaled dimension
+                plotDepth = 1000, // Pre-scaled dimension
+                unitSpacing = (plotWidth * houseScale),
+                rowSpacing = plotDepth * houseScale,
+                houseGap = unitSpacing * 0.35,
+                // New Padding and Thickness defaults
+                paddingLeft = 2,
+                paddingRight = 2,
+                paddingTop = 2,
+                paddingBottom = 2,
+                landThickness = 3.5,
+                startId = 1,
+                clusterName = "CLUSTER-6"
+            } = options;
 
-            requestAnimationFrame(animate);
+            const clusterGroup = new THREE.Group();
+            clusterGroup.position.set(startX, 0, startZ);
+            parent.add(clusterGroup);
 
-            // Update controls only if they exist
-            if (controls) {
-                controls.update(); // Update controls in the loop
+            // Calculate Bunch Land Size including padding
+            const totalUnits = Math.ceil(serialCount / 2);
+            const landWidth = totalUnits * unitSpacing + paddingLeft + paddingRight;
+            const landDepth = (2 * rowSpacing) + paddingTop + paddingBottom;
+
+            // Create Bunch Land Area as a 3D Box
+            const landGeo = new THREE.BoxGeometry(landWidth, landThickness, landDepth);
+            const landMat = new THREE.MeshBasicMaterial({
+                color: 0xA9DA3F,
+                // color: 0xc1d86c,
+                polygonOffset: true,
+                polygonOffsetFactor: 3,
+                polygonOffsetUnits: 3
+            });
+            const landMesh = new THREE.Mesh(landGeo, landMat);
+
+            // Positioning the land box
+            const centerX = ((totalUnits - 1) * unitSpacing) / 2 + (paddingRight - paddingLeft) / 2;
+            const centerZ = (rowSpacing / 2) + (paddingBottom - paddingTop) / 2;
+            landMesh.position.set(centerX, -landThickness / 2 + 0.01, centerZ);
+            clusterGroup.add(landMesh);
+
+            const oddRow = new THREE.Group();
+            const evenRow = new THREE.Group();
+            evenRow.position.z = rowSpacing;
+
+            clusterGroup.add(oddRow);
+            clusterGroup.add(evenRow);
+
+            // Add Cluster Label in the middle
+            if (clusterName) {
+                const labelCanvas = document.createElement('canvas');
+                labelCanvas.width = 512; labelCanvas.height = 128;
+                const lctx = labelCanvas.getContext('2d');
+                lctx.fillStyle = 'rgba(255, 255, 0, 0.8)'; // Yellow background
+                lctx.fillRect(0, 0, 512, 128);
+                lctx.fillStyle = '#000000';
+                lctx.font = 'bold 80px Arial';
+                lctx.textAlign = 'center'; lctx.textBaseline = 'middle';
+                lctx.fillText(clusterName, 256, 64);
+
+                const labelTex = new THREE.CanvasTexture(labelCanvas);
+                const labelGeo = new THREE.PlaneGeometry(6, 1.5);
+                const labelMat = new THREE.MeshBasicMaterial({ map: labelTex, transparent: true });
+                const label = new THREE.Mesh(labelGeo, labelMat);
+                label.rotation.x = -Math.PI / 2;
+                label.position.set(((totalUnits - 1) * unitSpacing) / 2, 0.05, rowSpacing / 2);
+                clusterGroup.add(label);
             }
 
-            renderer.render(scene, camera);
+            for (let i = 0; i < serialCount; i++) {
+                const serialNum = startId + i;
+                const formattedId = "H-" + serialNum.toString().padStart(2, '0');
+                const unitGroup = new THREE.Group();
+
+                // Position the unit in two rows (Odd/Even)
+                const localIdx = Math.floor(i / 2);
+                unitGroup.position.x = localIdx * unitSpacing;
+
+                // Create Single House
+                const house = createHouse(formattedId, plotWidth, plotDepth);
+                unitGroup.add(house);
+
+                if (serialNum % 2 !== 0) {
+                    unitGroup.rotation.y = Math.PI; // Face the opposite direction
+                    oddRow.add(unitGroup);
+                } else {
+                    evenRow.add(unitGroup);
+                }
+
+                // Add tree at the front side of the house area
+                const tree = createTree();
+                // Front side of row. 
+                const treeZ = (serialNum % 2 !== 0) ? -rowSpacing * 0.4 : rowSpacing + rowSpacing * 0.4;
+                tree.position.set(unitGroup.position.x + 2.5, 0, treeZ);
+                clusterGroup.add(tree);
+            }
+
+            return clusterGroup;
         }
 
-        // --- Start the application on window load ---
-        window.onload = function () {
-
-            init();
-
-            // If init() succeeded, hide the overlay. If it failed, the error handler updated the overlay.
-            if (renderer) {
-                document.getElementById('loading-overlay').classList.add('hidden');
-            }
-        };
-
+        window.onload = init
     </script>
+
 
 </body>
 
