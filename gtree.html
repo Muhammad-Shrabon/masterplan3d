@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Procedural Forest - Interactive Growth</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- OrbitControls is needed for smooth moving and zooming -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #050505; }
+        canvas { display: block; }
+        .vignette {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.6) 100%);
+        }
+    </style>
+</head>
+<body class="font-sans text-white">
+
+    <!-- UI Overlay -->
+    <div class="absolute top-8 left-8 z-10 pointer-events-none">
+        <h1 class="text-4xl font-light tracking-tighter mb-2 opacity-90">
+            MODULAR <span class="font-bold text-green-400">FOREST</span>
+        </h1>
+        <p class="text-xs uppercase tracking-widest text-gray-500 mb-6">Multi-Tree Procedural System</p>
+        
+        <div class="flex gap-8 border-l border-gray-800 pl-4">
+            <div>
+                <div id="branch-count" class="text-2xl font-mono text-amber-700">0</div>
+                <div class="text-[10px] uppercase text-gray-500">Structure Nodes</div>
+            </div>
+            <div>
+                <div id="leaf-count" class="text-2xl font-mono text-green-400">0</div>
+                <div class="text-[10px] uppercase text-gray-500">Leaf Units</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="absolute bottom-8 right-8 z-10 text-[10px] uppercase tracking-widest text-gray-500 bg-black/50 p-4 rounded-lg border border-white/10 backdrop-blur-md">
+        <div class="flex flex-col gap-1">
+            <span>• Left Click: Orbit</span>
+            <span>• Right Click: Pan</span>
+            <span>• Scroll: Zoom</span>
+        </div>
+    </div>
+
+    <div class="vignette"></div>
+
+    <script>
+        let scene, camera, renderer, controls, branchCount = 0, leafCount = 0;
+
+        // Shared Materials
+        const barkMaterial = new THREE.MeshStandardMaterial({ color: '#3d2b1f', roughness: 0.9 });
+        const leafMaterial = new THREE.MeshStandardMaterial({ 
+            color: '#22c55e', 
+            emissive: '#064e3b',
+            transparent: true,
+            opacity: 0.85
+        });
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color('#050505');
+            
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+            camera.position.set(0, 40, 100);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.shadowMap.enabled = true;
+            document.body.appendChild(renderer.domElement);
+
+            // Setup OrbitControls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.minDistance = 5;
+            controls.maxDistance = 500;
+            controls.target.set(0, 15, 0);
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+            scene.add(ambientLight);
+
+            const sunLight = new THREE.DirectionalLight(0xffffff, 1.0);
+            sunLight.position.set(50, 100, 50);
+            sunLight.castShadow = true;
+            scene.add(sunLight);
+
+            // Ground
+            const groundGeo = new THREE.PlaneGeometry(1000, 1000);
+            const groundMat = new THREE.MeshStandardMaterial({ color: '#080808' });
+            const ground = new THREE.Mesh(groundGeo, groundMat);
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            scene.add(ground);
+
+            /**
+             * COMPONENT: Foliage Bunch
+             */
+            function createFoliageBunch(radius) {
+                const bunchGroup = new THREE.Group();
+                const subBranchGeo = new THREE.CylinderGeometry(radius * 0.5, radius * 0.8, radius * 8, 6);
+                const subBranch = new THREE.Mesh(subBranchGeo, barkMaterial);
+                subBranch.position.y = radius * 4;
+                bunchGroup.add(subBranch);
+
+                const leafDensity = 8;
+                for (let i = 0; i < leafDensity; i++) {
+                    const leafSize = radius * (3 + Math.random() * 3);
+                    const leafGeo = new THREE.SphereGeometry(leafSize, 6, 6);
+                    const leaf = new THREE.Mesh(leafGeo, leafMaterial);
+                    
+                    leaf.position.set(
+                        (Math.random() - 0.5) * radius * 12,
+                        (radius * 6) + (Math.random() * radius * 8),
+                        (Math.random() - 0.5) * radius * 12
+                    );
+                    
+                    leaf.userData.originalPos = leaf.position.clone();
+                    bunchGroup.add(leaf);
+                    leafCount++;
+                }
+                return bunchGroup;
+            }
+
+            /**
+             * COMPONENT: Roots
+             */
+            function buildRoots(baseRadius, treeGroup) {
+                const numRoots = 6;
+                for (let i = 0; i < numRoots; i++) {
+                    const rootAngle = (i / numRoots) * Math.PI * 2 + (Math.random() * 0.5);
+                    const rootLength = baseRadius * 15;
+                    const rootSegments = 4;
+                    
+                    let lastX = 0, lastY = 0.2, lastZ = 0;
+                    
+                    for (let j = 1; j <= rootSegments; j++) {
+                        const segLength = (rootLength / rootSegments) * (1 + Math.random() * 0.5);
+                        const radiusTop = baseRadius * 0.8 * (1 - j/rootSegments);
+                        const radiusBottom = baseRadius * 0.8 * (1 - (j-1)/rootSegments);
+                        
+                        const rootGeo = new THREE.CylinderGeometry(radiusTop, radiusBottom, segLength, 6);
+                        const rootPart = new THREE.Mesh(rootGeo, barkMaterial);
+                        
+                        const nextX = lastX + Math.cos(rootAngle) * segLength * 0.8;
+                        const nextZ = lastZ + Math.sin(rootAngle) * segLength * 0.8;
+                        const nextY = (Math.random() - 0.6) * baseRadius * 2; 
+
+                        rootPart.position.set((lastX + nextX)/2, (lastY + nextY)/2, (lastZ + nextZ)/2);
+                        rootPart.lookAt(nextX, nextY, nextZ);
+                        rootPart.rotateX(Math.PI / 2);
+                        
+                        treeGroup.add(rootPart);
+                        lastX = nextX; lastY = nextY; lastZ = nextZ;
+                    }
+                }
+            }
+
+            /**
+             * CORE: Recursive Branching
+             */
+            function buildMainStructure(parentGroup, height, radius, depth) {
+                branchCount++;
+                const geometry = new THREE.CylinderGeometry(radius * 0.7, radius, height, 8);
+                const segment = new THREE.Mesh(geometry, barkMaterial);
+                segment.castShadow = true;
+                segment.position.y = height / 2;
+                parentGroup.add(segment);
+
+                if (depth === 0) {
+                    const bunch = createFoliageBunch(radius);
+                    bunch.position.y = height;
+                    parentGroup.add(bunch);
+                } else {
+                    const numChildren = depth > 3 ? 2 : 3;
+                    for (let i = 0; i < numChildren; i++) {
+                        const nextGroup = new THREE.Group();
+                        nextGroup.position.y = height;
+                        const spread = 0.8;
+                        nextGroup.rotation.x = (Math.random() - 0.5) * spread;
+                        nextGroup.rotation.z = (Math.random() - 0.5) * spread;
+                        nextGroup.rotation.y = (Math.random() * Math.PI * 2);
+                        parentGroup.add(nextGroup);
+                        buildMainStructure(nextGroup, height * 0.75, radius * 0.7, depth - 1);
+                    }
+                }
+            }
+
+            /**
+             * PARENT FUNCTION: Spawns a complete tree entity
+             * @param {number} x - X position
+             * @param {number} z - Z position
+             * @param {number} scale - Size multiplier
+             */
+            function spawnTree(x, z, scale = 1.0) {
+                const treeGroup = new THREE.Group();
+                treeGroup.position.set(x, 0, z);
+                treeGroup.scale.set(scale, scale, scale);
+                scene.add(treeGroup);
+
+                const initialRadius = 1.0;
+                const initialHeight = 10;
+                
+                // Add structure
+                buildMainStructure(treeGroup, initialHeight, initialRadius, 5);
+                // Add roots
+                buildRoots(initialRadius, treeGroup);
+            }
+
+            // SYSTEM CALL: Spawn as many trees as needed
+            spawnTree(0, 0, 1.2);      // Main Center Tree
+            spawnTree(40, -30, 0.8);   // Secondary
+            spawnTree(-50, 20, 0.6);   // Tertiary
+            spawnTree(320, 360, 2);    // Background
+            
+            // Update UI
+            document.getElementById('branch-count').innerText = branchCount;
+            document.getElementById('leaf-count').innerText = leafCount;
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+
+            const time = Date.now() * 0.001;
+            scene.traverse((child) => {
+                if (child.isMesh && child.geometry.type === 'SphereGeometry' && child.userData.originalPos) {
+                    child.position.x = child.userData.originalPos.x + Math.sin(time + child.id) * 0.3;
+                    child.position.y = child.userData.originalPos.y + Math.cos(time * 0.8 + child.id) * 0.3;
+                }
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>

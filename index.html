@@ -135,6 +135,15 @@
             {
                 width: 10,
                 points: [
+              
+                    new THREE.Vector3(-530, 0, 580),
+                    new THREE.Vector3(-530, 0, 400),
+                    new THREE.Vector3(-480, 0, 350),
+                    new THREE.Vector3(-480, 0, 18),
+                    new THREE.Vector3(-480, 0, 8),
+                    new THREE.Vector3(-480, 0, 4),
+                    new THREE.Vector3(-10, 0, 4),
+                    new THREE.Vector3(0, 0, 4),
                     new THREE.Vector3(0, 0, 0),
                     new THREE.Vector3(0, 0, -2600)
                 ],
@@ -142,12 +151,14 @@
                 position: { x: -34, y: 0, z: 428 },
                 rotation: { x: 0, y: 0, z: 0 }
             },
+            // NORTH SOUTH ROAD + RIVER CROSSING
             {
                 width: 10,
                 points: [
+                    new THREE.Vector3(550, 0, 150),
+                    new THREE.Vector3(10, 0, 150),
+                    new THREE.Vector3(0, 0, 150),
                     new THREE.Vector3(0, 0, 0),
-                    // new THREE.Vector3(0, 0, -1000),
-                    // new THREE.Vector3(0, 0, -1150),
                     new THREE.Vector3(0, 0, -1150),
                     new THREE.Vector3(0, 0, -1150),
                     new THREE.Vector3(800, 0, -800),
@@ -158,13 +169,22 @@
                     new THREE.Vector3(700, 0, -100),
                     new THREE.Vector3(670, 0, -30),
                     new THREE.Vector3(700, 0, 30 ),
-                    // new THREE.Vector3(1200, 0, -2150),
-                    // new THREE.Vector3(1200, 0, -550),
-                    // new THREE.Vector3(1200, 0, 0),
-                    // new THREE.Vector3(1200, 0, -650),
                 ],
                 segments: 2000,
                 position: { x: -334, y: 0, z: 427 },
+                rotation: { x: 0, y: 0, z: 0 }
+            },
+            // ROAD #3 & NORTH SOUTH ROAD
+            {
+                width: 10,
+                points: [
+                    new THREE.Vector3(-170, 0, 150),
+                    new THREE.Vector3(-10, 0, 150),
+                    new THREE.Vector3(0, 0, 150),
+                    new THREE.Vector3(0, 0, 0),
+                ],
+                segments: 2000,
+                position: { x: -334, y: 0, z: 577 },
                 rotation: { x: 0, y: 0, z: 0 }
             },
             {
@@ -428,21 +448,45 @@
                 width: 4,
                 points: [
                     new THREE.Vector3(0, 0, 0),
-                    new THREE.Vector3(0, 0, 292)
-                ],
-                segments: 2000,
-                position: { x: -330, y: 0, z: 425 },
-                rotation: { x: 0, y: -11, z: 0 },
-            },
-            {
-                width: 4,
-                points: [
-                    new THREE.Vector3(0, 0, 0),
                     new THREE.Vector3(0, 0, 100)
                 ],
                 segments: 2000,
                 position: { x: -175, y: 0, z: 328 },
                 rotation: { x: 0, y: 0, z: 0 },
+            },
+            {
+                width: 12,
+                points: [
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(0, 0, -2600)
+                ],
+                segments: 2000,
+                position: { x: -550, y: 0, z: -2820 },
+                rotation: { x: 0, y: 0, z: 0 },
+            },
+            // DHAKA ARICHA HIGHWAY 
+            {
+                width: 10,
+                points: [
+                    new THREE.Vector3(0, 0, -422),
+                    new THREE.Vector3(-50, 0, 0),
+                    new THREE.Vector3(0, 0, 980)
+                ],
+                segments: 2000,
+                position: { x: -330, y: 0, z: 995 },
+                rotation: { x: 0, y: -11, z: 0 },
+            },
+            // DHAKA ARICHA HIGHWAY 
+            {
+                width: 10,
+                points: [
+                    new THREE.Vector3(20, 0, -422),
+                    new THREE.Vector3(-50, 0, 0),
+                    new THREE.Vector3(50, 0, 980)
+                ],
+                segments: 2000,
+                position: { x: -330, y: 0, z: 990 },
+                rotation: { x: 0, y: -11, z: 0 },
             },
         ];
 
@@ -456,7 +500,7 @@
 
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 14000);
 
-            camera.position.z = 200;
+            camera.position.z = 0;
             camera.position.y = 0;
             camera.position.x = 0;
             camera.lookAt(0, 0, 0);
@@ -932,6 +976,11 @@
                 rotation: { x: 0, y: 0, z: 0 }
             });
 
+            // --- Initialize Metro ---
+            buildInfra();
+            createTrain({ posX: -700, posY: 22, posZ: 999, rotY: 0, count: 12 });
+            createTrain({ posX: 600, posY: 22, posZ: 1003, rotY: 180, count: 12 });
+
             requestAnimationFrame(sceneRender);
         }
 
@@ -1132,6 +1181,7 @@
 
                 if (fogRevealStartTime === null) {
                     fogRevealStartTime = currentTime;
+                    // fogRevealStartTime = currentTime - 5000; // Start 5 seconds earlier for testing
                     initialCameraY = camera.position.y; // Store initial Y position
                 }
 
@@ -1144,7 +1194,7 @@
                     : 1 - Math.pow(-2 * progress + 2, 3) / 2;
 
                 // Interpolate fog density with smooth curve
-                // const currentDensity = initialFogDensity - (initialFogDensity - finalFogDensity) * (easedProgress + 0.090) ;
+                // const currentDensity = initialFogDensity - (initialFogDensity - finalFogDensity) * (easedProgress + 0.020) ;
                 const currentDensity = initialFogDensity - (initialFogDensity - finalFogDensity) * easedProgress ;
                 scene.fog.density = currentDensity; // Slight offset to avoid zero density
 
@@ -1989,6 +2039,122 @@
             }
 
             return clusterGroup;
+        }
+
+        // --- METRO MATERIALS ---
+        const infraMat = new THREE.MeshPhongMaterial({ color: 0xb9b9b9 });
+        const roofMat = new THREE.MeshPhongMaterial({ color: 0xDAD3C9 });
+        const greenMat = new THREE.MeshPhongMaterial({ color: 0x22c55e });
+        const wheelMat = new THREE.MeshPhongMaterial({ color: 0x14532d });
+        const redGlassMat = new THREE.MeshPhongMaterial({ 
+            color: 0xef4444, 
+            emissive: 0x440000,
+            shininess: 100 
+        });
+        const skyGlassMat = new THREE.MeshPhongMaterial({ 
+            color: 0xaaddff, 
+            shininess: 120, 
+            opacity: 0.6, 
+            transparent: true,
+            emissive: 0x224466,
+            emissiveIntensity: 0.2
+        });
+
+        // --- METRO INFRASTRUCTURE ---
+        function buildInfra() {
+            const group = new THREE.Group();
+            const L = 1500; // Increased length for longer metro road
+            
+            const deck = new THREE.Mesh(new THREE.BoxGeometry(L, 1.8, 12), infraMat);
+            deck.position.y = -0.6;
+            group.add(deck);
+
+            for (let i = -L/2; i <= L/2; i += 60) {
+                const pier = new THREE.Mesh(new THREE.BoxGeometry(6, 60, 6), infraMat);
+                pier.position.set(i, -30, 0);
+                group.add(pier);
+            }
+
+            const wallLeft = new THREE.Mesh(new THREE.BoxGeometry(L, 2, 0.5), infraMat);
+            wallLeft.position.set(0, 0.9, -5.8);
+            const wallRight = wallLeft.clone(); wallRight.position.z = 5.8;
+            group.add(wallLeft, wallRight);
+
+            const railMat = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8 });
+            [-3.2, -1.2, 1.2, 3.2].forEach(z => {
+                const r = new THREE.Mesh(new THREE.BoxGeometry(L, 0.2, 0.2), railMat);
+                r.position.set(0, 0.45, z);
+                group.add(r);
+            });
+
+            group.position.set(-100, 20, 1000);
+            group.rotation.set(0, 0, 0); // No rotation - straight track
+            scene.add(group);
+        }
+
+        // --- METRO TRAIN BUILDER ---
+        function createTrain(config) {
+            const trainGroup = new THREE.Group();
+            
+            for (let i = 0; i < config.count; i++) {
+                const carriage = new THREE.Group();
+                
+                const body = new THREE.Mesh(new THREE.BoxGeometry(6, 1.5, 3.0), roofMat); // Increased height and depth
+                body.position.y = 0.9; // Adjusted position
+                carriage.add(body);
+
+                const roofL = new THREE.Mesh(new THREE.BoxGeometry(6, 0.4, 0.8), roofMat);
+                roofL.position.set(0, 1.5, -1.0); // Adjusted for new depth
+                carriage.add(roofL);
+
+                const roofR = roofL.clone();
+                roofR.position.z = 1.0; // Adjusted for new depth
+                carriage.add(roofR);
+
+                const front = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1.5, 3.0), roofMat); // Increased height and depth
+                front.position.x = 3.2;
+                carriage.add(front);
+
+                const back = front.clone();
+                back.position.x = -3.2;
+                carriage.add(back);
+
+                const greenChassis = new THREE.Mesh(new THREE.BoxGeometry(6.4, 0.4, 3.2), greenMat); // Increased depth
+                greenChassis.position.y = -0.2;
+                carriage.add(greenChassis);
+
+                const redGlass = new THREE.Mesh(new THREE.BoxGeometry(6.4, 0.8, 0.1), redGlassMat);
+                redGlass.position.set(0, 0.9, -1.55); // Adjusted for new depth
+                carriage.add(redGlass);
+
+                const skyGlass = new THREE.Mesh(new THREE.BoxGeometry(6.4, 0.8, 0.1), skyGlassMat);
+                skyGlass.position.set(0, 1.5, 0); // Adjusted for new height
+                carriage.add(skyGlass);
+
+                const wheel1 = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.2), wheelMat);
+                wheel1.rotation.z = Math.PI / 2;
+                wheel1.position.set(-2.5, -0.4, -1.6); // Adjusted for new depth
+                carriage.add(wheel1);
+
+                const wheel2 = wheel1.clone();
+                wheel2.position.z = 1.6; // Adjusted for new depth
+                carriage.add(wheel2);
+
+                const wheel3 = wheel1.clone();
+                wheel3.position.x = 2.5;
+                carriage.add(wheel3);
+
+                const wheel4 = wheel3.clone();
+                wheel4.position.z = 1.6; // Adjusted for new depth
+                carriage.add(wheel4);
+
+                carriage.position.x = i * 7;
+                trainGroup.add(carriage);
+            }
+
+            trainGroup.position.set(config.posX, config.posY, config.posZ);
+            trainGroup.rotation.y = config.rotY * Math.PI / 180;
+            scene.add(trainGroup);
         }
 
         window.onload = init

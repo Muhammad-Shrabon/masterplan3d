@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metro Train System - 3D Raw</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #050505; }
+        canvas { display: block; }
+        .cursor-grab { cursor: grab; }
+        .cursor-grabbing { cursor: grabbing; }
+    </style>
+</head>
+<body class="bg-black">
+
+    <!-- UI Overlay -->
+    <div class="fixed inset-0 pointer-events-none z-10 p-8">
+        <div class="space-y-2">
+            <h1 class="text-white text-6xl font-black tracking-tighter italic leading-none">
+                METRO<span class="text-red-500">RAW</span>
+            </h1>
+            <div class="h-1 w-24 bg-green-500"></div>
+            <p class="text-zinc-400 font-mono text-xs uppercase tracking-widest pt-2">
+                System Status: <span class="text-green-400">Operational</span>
+            </p>
+        </div>
+
+        <div class="mt-12 space-y-4 max-w-xs">
+            <div class="p-4 bg-black/60 border-l-2 border-[#DAD3C9] backdrop-blur-md">
+                <h2 class="text-[#DAD3C9] font-bold text-sm uppercase">Sky Glassing</h2>
+                <p class="text-zinc-500 text-xs mt-1">Carriage roof units fitted with panoramic transparency modules.</p>
+            </div>
+            
+            <div class="p-4 bg-black/60 border-l-2 border-red-500 backdrop-blur-md">
+                <h2 class="text-red-500 font-bold text-sm uppercase">Red Visuals</h2>
+                <p class="text-zinc-500 text-xs mt-1">Side and front optics optimized for high-intensity red spectrum.</p>
+            </div>
+
+            <div class="p-4 bg-black/60 border-l-2 border-green-500 backdrop-blur-md">
+                <h2 class="text-green-500 font-bold text-sm uppercase">Green Chassis</h2>
+                <p class="text-zinc-500 text-xs mt-1">Lower aerodynamic fairings and wheel bogies in distinctive green.</p>
+            </div>
+        </div>
+
+        <div class="absolute bottom-8 right-8 text-zinc-600 font-mono text-[10px] tracking-widest uppercase">
+            Drag to Rotate • Scroll to Zoom • Three.js Engine
+        </div>
+    </div>
+
+    <!-- 3D Container -->
+    <div id="canvas-container" class="fixed inset-0 w-full h-full cursor-grab"></div>
+
+    <script>
+        // Configuration
+        const params = {
+            train1: { posX: -30, posY: 1.9, posZ: -2.2, rotY: 0, count: 5 },
+            train2: { posX: 30, posY: 1.9, posZ: 2.2, rotY: 180, count: 5 },
+            roadLength: 3000,
+        };
+
+        // --- INITIALIZATION ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x050505);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 5000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        container.appendChild(renderer.domElement);
+
+        // --- LIGHTING ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+
+        const mainLight = new THREE.SpotLight(0xffffff, 1.2);
+        mainLight.position.set(100, 400, 100);
+        mainLight.castShadow = true;
+        scene.add(mainLight);
+
+        camera.position.set(60, 45, 60);
+        camera.lookAt(0, 0, 0);
+
+        // --- MATERIALS ---
+        const infraMat = new THREE.MeshPhongMaterial({ color: 0xb9b9b9 });
+        const roofMat = new THREE.MeshPhongMaterial({ color: 0xDAD3C9 });
+        const greenMat = new THREE.MeshPhongMaterial({ color: 0x22c55e });
+        const wheelMat = new THREE.MeshPhongMaterial({ color: 0x14532d });
+        const redGlassMat = new THREE.MeshPhongMaterial({ 
+            color: 0xef4444, 
+            emissive: 0x440000,
+            shininess: 100 
+        });
+        const skyGlassMat = new THREE.MeshPhongMaterial({ 
+            color: 0xaaddff, 
+            shininess: 120, 
+            opacity: 0.6, 
+            transparent: true,
+            emissive: 0x224466,
+            emissiveIntensity: 0.2
+        });
+
+        // --- INFRASTRUCTURE ---
+        function buildInfra() {
+            const group = new THREE.Group();
+            const L = params.roadLength;
+            
+            const deck = new THREE.Mesh(new THREE.BoxGeometry(L, 1.8, 12), infraMat);
+            deck.position.y = -0.6;
+            group.add(deck);
+
+            for (let i = -L/2; i <= L/2; i += 60) {
+                const pier = new THREE.Mesh(new THREE.BoxGeometry(6, 60, 6), infraMat);
+                pier.position.set(i, -30, 0);
+                group.add(pier);
+            }
+
+            const wallLeft = new THREE.Mesh(new THREE.BoxGeometry(L, 2, 0.5), infraMat);
+            wallLeft.position.set(0, 0.9, -5.8);
+            const wallRight = wallLeft.clone(); wallRight.position.z = 5.8;
+            group.add(wallLeft, wallRight);
+
+            const railMat = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8 });
+            [-3.2, -1.2, 1.2, 3.2].forEach(z => {
+                const r = new THREE.Mesh(new THREE.BoxGeometry(L, 0.2, 0.2), railMat);
+                r.position.set(0, 0.45, z);
+                group.add(r);
+            });
+
+            scene.add(group);
+        }
+
+        // --- TRAIN BUILDER ---
+        function createTrain(config) {
+            const trainGroup = new THREE.Group();
+            
+            for (let i = 0; i < config.count; i++) {
+                const carriage = new THREE.Group();
+                
+                const body = new THREE.Mesh(new THREE.BoxGeometry(6, 1.0, 2.6), roofMat);
+                body.position.y = 0.2;
+                carriage.add(body);
+
+                const roofL = new THREE.Mesh(new THREE.BoxGeometry(6, 0.4, 0.8), roofMat);
+                roofL.position.set(0, 1.2, -0.9);
+                const roofR = roofL.clone(); roofR.position.z = 0.9;
+                carriage.add(roofL, roofR);
+
+                const skylight = new THREE.Mesh(new THREE.BoxGeometry(5.8, 0.1, 1.0), skyGlassMat);
+                skylight.position.set(0, 1.35, 0);
+                carriage.add(skylight);
+
+                const base = new THREE.Mesh(new THREE.BoxGeometry(6, 0.8, 2.6), greenMat);
+                base.position.y = -0.7;
+                carriage.add(base);
+
+                const wGeo = new THREE.CylinderGeometry(0.35, 0.35, 0.3, 16);
+                [[-2, -1.2, -1.2], [2, -1.2, -1.2], [-2, -1.2, 1.2], [2, -1.2, 1.2]].forEach(p => {
+                    const w = new THREE.Mesh(wGeo, wheelMat);
+                    w.rotation.z = Math.PI / 2;
+                    w.position.set(p[0], p[1], p[2]);
+                    carriage.add(w);
+                });
+
+                const sWin = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.8, 2.7), redGlassMat);
+                [-1.8, 0, 1.8].forEach(x => {
+                    const w = sWin.clone(); w.position.set(x, 0.5, 0);
+                    carriage.add(w);
+                });
+
+                if (i === 0) {
+                    const frontWindow = new THREE.Mesh(new THREE.BoxGeometry(0.15, 1.4, 2.2), redGlassMat);
+                    frontWindow.position.set(3, 0.3, 0);
+                    carriage.add(frontWindow);
+
+                    const light = new THREE.Mesh(new THREE.SphereGeometry(0.18), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+                    light.position.set(3, -0.7, 0.8);
+                    const l2 = light.clone(); l2.position.z = -0.8;
+                    carriage.add(light, l2);
+                }
+
+                carriage.position.x = -i * 6.5;
+                trainGroup.add(carriage);
+            }
+            
+            trainGroup.position.set(config.posX, config.posY, config.posZ);
+            trainGroup.rotation.y = THREE.MathUtils.degToRad(config.rotY);
+            scene.add(trainGroup);
+        }
+
+        // --- INTERACTION ---
+        let isDragging = false;
+        let prevMouse = { x: 0, y: 0 };
+        
+        container.addEventListener('mousedown', (e) => { 
+            isDragging = true; 
+            prevMouse = { x: e.clientX, y: e.clientY };
+            container.classList.add('cursor-grabbing');
+        });
+        
+        window.addEventListener('mouseup', () => { 
+            isDragging = false; 
+            container.classList.remove('cursor-grabbing');
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            camera.position.x += (e.clientX - prevMouse.x) * 0.15;
+            camera.position.y -= (e.clientY - prevMouse.y) * 0.15;
+            camera.lookAt(0, 0, 0);
+            prevMouse = { x: e.clientX, y: e.clientY };
+        });
+
+        window.addEventListener('wheel', (e) => {
+            camera.position.multiplyScalar(1 + e.deltaY * 0.0005);
+        });
+
+        // --- ANIMATION ---
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+
+        // --- START ---
+        buildInfra();
+        createTrain(params.train1);
+        createTrain(params.train2);
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
