@@ -17,7 +17,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Load Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <!-- Load OrbitControls (Requires THREE global object) -->
+    <!-- Load OrbitControls -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script>
         let scene, camera, renderer, controls, flagObj, lakeObj, river;
@@ -27,13 +27,15 @@
         const sharedMaterials = {};
         const sharedGeometries = {};
 
-        // --- Fog Reveal Animation Variables ---
+        // --- Fog Reveal Animation Variables (Aggressively Optimized) ---
         let fogRevealStartTime = null;
-        let fogRevealDuration = 8000; // 8 seconds for smoother, more realistic reveal
-        let initialFogDensity = 0.18; // Very dense fog
+        let fogRevealDuration = 3000; // 3 seconds for instant impact
+        let initialFogDensity = 0.005; // Slightly dense for reveal (reduced from 0.18)
         let finalFogDensity = 0.0005; // Clear visibility (matches existing fog)
         let fogRevealComplete = false;
         let initialCameraY = null; // Store initial camera Y position
+
+
 
         class CartoonRiver {
             constructor(scene, config) {
@@ -106,11 +108,8 @@
                     new THREE.Vector3(0, 0, -740),
                     new THREE.Vector3(-20, 0, -760),
                     new THREE.Vector3(-110, 0, -830),
-                    // new THREE.Vector3(-80, 0, -840),
-                    // new THREE.Vector3(-90, 0, -800),
-                    // new THREE.Vector3(-100, 0, -800),
                 ],
-                segments: 2000,
+                segments: 800, // Balanced for performance/quality
                 position: { x: -550, y: 0, z: -220 },
                 rotation: { x: 0, y: 11, z: 0 }
             },
@@ -118,8 +117,6 @@
             {
                 width: 10,
                 points: [
-                    // new THREE.Vector3(300, 0, 300),
-                    // new THREE.Vector3(0, 0, 0),
                     new THREE.Vector3(-55, 0, 160),
                     new THREE.Vector3(-100, 0, 80),
                     new THREE.Vector3(-75, 0, 0),
@@ -132,7 +129,7 @@
                     new THREE.Vector3(0, 0, -610),
                     new THREE.Vector3(-695, 0, -850),
                 ],
-                segments: 2000,
+                segments: 800, // Balanced
                 position: { x: 360, y: 0, z: 330 },
                 rotation: { x: 0, y: 0, z: 0 }
             },
@@ -520,7 +517,36 @@
             ]
         };
 
+        function createFlag(scene, pos) {
+            const group = new THREE.Group();
+            const mastGeo = new THREE.CylinderGeometry(0.5, 0.5, 60, 12);
+            const mastMat = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.8, roughness: 0.2 });
+            const mast = new THREE.Mesh(mastGeo, mastMat);
+            mast.position.y = 30; mast.castShadow = true; group.add(mast);
+
+            const flagGeo = new THREE.PlaneGeometry(24, 16, 20, 20);
+            const flagMat = new THREE.MeshStandardMaterial({ color: 0xff0000, side: THREE.DoubleSide, roughness: 0.5 });
+            const flag = new THREE.Mesh(flagGeo, flagMat);
+            flag.position.set(12, 50, 0); flag.castShadow = true; group.add(flag);
+
+            group.position.set(pos.x, pos.y, pos.z);
+            scene.add(group);
+
+            return {
+                animateFlag: (time) => {
+                    const pos = flag.geometry.attributes.position;
+                    for (let i = 0; i < pos.count; i++) {
+                        const px = pos.getX(i);
+                        const py = pos.getY(i);
+                        pos.setZ(i, Math.sin(px * 0.3 + time * 0.003) * 1.5 + Math.cos(py * 0.1 + time * 0.002) * 0.8);
+                    }
+                    pos.needsUpdate = true;
+                }
+            };
+        }
+
         function init() {
+            console.log("Initializing 3D Masterplan...");
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x87ceeb);
             flagObj = createFlag(scene, { x: 10, y: 0, z: -5 });
@@ -530,9 +556,7 @@
 
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 14000);
 
-            camera.position.z = 0;
-            camera.position.y = 0;
-            camera.position.x = 0;
+            camera.position.set(0, 500, 1800); // Set camera to a viewing distance
             camera.lookAt(0, 0, 0);
 
             scene.add(camera)
@@ -569,15 +593,15 @@
             // const grid = new THREE.GridHelper(1510, 80, 0x697565, 0x697565);
             // scene.add(grid);
 
-            // Orbit Controls
+            // Orbit Controls (Lightning Fast Interaction)
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
-            controls.dampingFactor = 0.05;
-            controls.rotateSpeed = 0.08; // Less rotation speed
-            controls.zoomSpeed = 1.8;   // Less zoom speed
-            controls.panSpeed = 0.8;    // Less panning speed
+            controls.dampingFactor = 0.85; // Fast response
+            controls.rotateSpeed = 1.9;   // Very fast rotation
+            controls.zoomSpeed = 1.9;     // Very fast zoom
+            controls.panSpeed = 1.9;      // Very fast move
             controls.minDistance = 0.1;
-            controls.maxDistance = 3000;
+            controls.maxDistance = 10000; // Allow much further exploration
             controls.maxPolarAngle = Math.PI / 2.1;
             controls.screenSpacePanning = true;
 
@@ -754,206 +778,28 @@
             cityBlocks.add(subGreenLandCL10);
 
 
-            // Multiple Bunch Calls with refined serial pairing
-            createHouseBunch(subGreenLand6, {
-                serialCount: 30, // Numbers 1 to 20, each with A/B
-                startX: 0,
-                startZ: 5,
-                unitSpacing: 16,
-                houseGap: 280,
-                rowSpacing: 25,
-                startId: 1,
-                clusterName: "BUNCH-6"
-            });
-            createHouseBunch(subGreenLand5, {
-                serialCount: 28, // Numbers 1 to 20, each with A/B
-                startX: 0,
-                startZ: 60,
-                unitSpacing: 16,
-                houseGap: 280,
-                rowSpacing: 25,
-                startId: 2,
-                clusterName: "BUNCH-5"
-            });
-            createHouseBunch(subGreenLand4, {
-                serialCount: 24, // Numbers 1 to 20, each with A/B
-                startX: 0,
-                startZ: 115,
-                unitSpacing: 16,
-                houseGap: 280,
-                rowSpacing: 25,
-                startId: 2,
-                clusterName: "BUNCH-4"
-            });
-            createHouseBunch(subGreenLand3, {
-                serialCount: 27, // Numbers 1 to 20, each with A/B
-                startX: 0,
-                startZ: 170,
-                unitSpacing: 16,
-                houseGap: 280,
-                rowSpacing: 25,
-                startId: 2,
-                clusterName: "BUNCH-3"
-            });
-            createHouseBunch(subGreenLand2, {
-                serialCount: 28, // Numbers 1 to 20, each with A/B
-                startX: 0,
-                startZ: 225,
-                unitSpacing: 16,
-                houseGap: 280,
-                rowSpacing: 25,
-                startId: 2,
-                clusterName: "BUNCH-2"
-            });
-            createHouseBunch(subGreenLand1, {
-                serialCount: 36,
-                startX: 0,
-                startZ: 280,
-                unitSpacing: 16,
-                houseGap: 280,
-                rowSpacing: 25,
-                startId: 2,
-                clusterName: "BUNCH-1"
-            });
+            // Create House Bunches and Clusters synchronously for guaranteed visibility
+            createHouseBunch(subGreenLand6, { serialCount: 30, startX: 0, startZ: 5, unitSpacing: 16, houseGap: 280, rowSpacing: 25, startId: 1, clusterName: "BUNCH-6" });
+            createHouseBunch(subGreenLand5, { serialCount: 28, startX: 0, startZ: 60, unitSpacing: 16, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-5" });
+            createHouseBunch(subGreenLand4, { serialCount: 24, startX: 0, startZ: 115, unitSpacing: 16, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-4" });
+            createHouseBunch(subGreenLand3, { serialCount: 27, startX: 0, startZ: 170, unitSpacing: 16, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-3" });
+            createHouseBunch(subGreenLand2, { serialCount: 28, startX: 0, startZ: 225, unitSpacing: 16, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-2" });
+            createHouseBunch(subGreenLand1, { serialCount: 36, startX: 0, startZ: 280, unitSpacing: 16, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-1" });
 
-            // CLUSTER 1
-            createHouseCluster(subGreenLandCL1, {
-                serialCount: 36,
-                startX: 0,
-                startZ: 210,
-                unitSpacing: 16,
-                houseGap: 280,
-                rowSpacing: 21,
-                startId: 2,
-                clusterName: "CLUSTER-1"
-            });
-            // CLUSTER 2
-            createHouseCluster(subGreenLandCL2, {
-                serialCount: 36,
-                startX: 0,
-                startZ: 210,
-                unitSpacing: 16,
-                houseGap: 280,
-                rowSpacing: 20,
-                startId: 2,
-                clusterName: "CLUSTER-2"
-            });
-            // CLUSTER 3
-            createHouseCluster(subGreenLandCL3, {
-                serialCount: 36,
-                startX: 0,
-                startZ: 210,
-                unitSpacing: 16,
-                houseGap: 280,
-                rowSpacing: 20,
-                startId: 2,
-                clusterName: "CLUSTER-3"
-            });
-            // CLUSTER 4
-            createHouseCluster(subGreenLandCL4, {
-                serialCount: 36,
-                startX: 0,
-                startZ: 210,
-                unitSpacing: 16,
-                houseGap: 280,
-                rowSpacing: 20,
-                startId: 2,
-                clusterName: "CLUSTER-4"
-            });
-            // CLUSTER 5
-            createHouseCluster(subGreenLandCL5, {
-                serialCount: 36,
-                startX: 0,
-                startZ: 210,
-                unitSpacing: 16,
-                houseGap: 280,
-                rowSpacing: 20,
-                startId: 2,
-                clusterName: "CLUSTER-5"
-            });
-            // CLUSTER 6
-            createHouseCluster(subGreenLandCL6, {
-                serialCount: 36,
-                startX: 0,
-                startZ: 210,
-                unitSpacing: 16,
-                houseGap: 280,
-                rowSpacing: 22,
-                startId: 2,
-                clusterName: "CLUSTER-6"
-            });
-            // CLUSTER 7
-            createHouseCluster(subGreenLandCL7, {
-                serialCount: 36,
-                startX: 0,
-                startZ: 210,
-                unitSpacing: 16,
-                houseGap: 280,
-                rowSpacing: 22,
-                startId: 2,
-                clusterName: "CLUSTER-7"
-            });
-            // CLUSTER 8
-            createHouseCluster(subGreenLandCL8, {
-                serialCount: 36,
-                startX: 0,
-                startZ: 210,
-                unitSpacing: 16,
-                houseGap: 280,
-                rowSpacing: 22,
-                startId: 2,
-                clusterName: "CLUSTER-8"
-            });
-            // CLUSTER 9
-            createHouseCluster(subGreenLandCL9, {
-                serialCount: 36,
-                startX: 0,
-                startZ: 210,
-                unitSpacing: 16,
-                houseGap: 280,
-                rowSpacing: 22,
-                startId: 2,
-                clusterName: "CLUSTER-9"
-            });
-            // CLUSTER 10
-            createHouseCluster(subGreenLandCL10, {
-                serialCount: 36,
-                startX: 0,
-                startZ: 210,
-                unitSpacing: 16,
-                houseGap: 280,
-                rowSpacing: 22,
-                startId: 2,
-                clusterName: "CLUSTER-10"
-            });
+            createHouseCluster(subGreenLandCL1, { serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 21, startId: 2, clusterName: "CLUSTER-1" });
+            createHouseCluster(subGreenLandCL2, { serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 20, startId: 2, clusterName: "CLUSTER-2" });
+            createHouseCluster(subGreenLandCL3, { serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 20, startId: 2, clusterName: "CLUSTER-3" });
+            createHouseCluster(subGreenLandCL4, { serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 20, startId: 2, clusterName: "CLUSTER-4" });
+            createHouseCluster(subGreenLandCL5, { serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 20, startId: 2, clusterName: "CLUSTER-5" });
+            createHouseCluster(subGreenLandCL6, { serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-6" });
+            createHouseCluster(subGreenLandCL7, { serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-7" });
+            createHouseCluster(subGreenLandCL8, { serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-8" });
+            createHouseCluster(subGreenLandCL9, { serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-9" });
+            createHouseCluster(subGreenLandCL10, { serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-10" });
 
-            // createHouseBunch(subGreenLand2, {
-            //     serialCount: 10, // Numbers 101 to 110, each with A/B
-            //     startX: 0,
-            //     startZ: 0,
-            //     unitSpacing: 7,
-            //     houseGap: 3,
-            //     rowSpacing: 12,
-            //     startId: 101,
-            //     clusterName: "CLUSTER-7"
-            // });
-            const asphaltBaseMat = new THREE.MeshStandardMaterial({
-                color: 0x222222,
-                roughness: 0.9,
-                polygonOffset: true,
-                polygonOffsetFactor: 1,
-                polygonOffsetUnits: 1
-            });
-
-            const markingsMat = new THREE.MeshStandardMaterial({
-                map: createMarkingsTexture(),
-                transparent: true,
-                depthWrite: false,
-                blending: THREE.NormalBlending,
-                polygonOffset: true,
-                polygonOffsetFactor: -2,
-                polygonOffsetUnits: -2
-            });
+            // Shared materials for all roads
+            const asphaltBaseMat = getSharedMaterial('asphaltBase', () => new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.9, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 }));
+            const markingsMat = getSharedMaterial('roadMarkings', () => new THREE.MeshStandardMaterial({ map: createMarkingsTexture(), transparent: true, depthWrite: false, blending: THREE.NormalBlending, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
 
             ROAD_CONFIGS.forEach(config => {
                 const curve = new THREE.CatmullRomCurve3(config.points);
@@ -1018,6 +864,7 @@
             sr_waterTexture = sr_createWaterTexture();
             sr_createRiverAndBanks(SR_LAKE_CONFIG);
 
+            console.log("Masterplan Initialization Complete. Rendering started.");
             requestAnimationFrame(sceneRender);
         }
 
@@ -1441,8 +1288,22 @@
             ctx.strokeRect(495, -10, 2, 1044);
             const texture = new THREE.CanvasTexture(canvas);
             texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-            texture.anisotropy = 16;
+            texture.anisotropy = 4; // Reduced from 16 for better performance
             return texture;
+        }
+
+        // --- RESOURCE CACHE FOR OPTIMIZED PERFORMANCE ---
+        const geometryCache = {};
+        const materialCache = {};
+
+        function getSharedGeometry(key, factory) {
+            if (!geometryCache[key]) geometryCache[key] = factory();
+            return geometryCache[key];
+        }
+
+        function getSharedMaterial(key, factory) {
+            if (!materialCache[key]) materialCache[key] = factory();
+            return materialCache[key];
         }
 
 
@@ -1478,58 +1339,28 @@
         function createHighQualityTree() {
             const treeGroup = new THREE.Group();
 
-            // Trunk - Simple dark wood
-            const trunkGeometry = new THREE.CylinderGeometry(0.15, 0.2, 1.0, 6);
-            const trunkMaterial = new THREE.MeshStandardMaterial({
-                color: 0x654321,
-                roughness: 0.88,
-                metalness: 0.0
-            });
-            const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
-            trunk.castShadow = true;
-            trunk.receiveShadow = true;
-            trunk.position.y = 0.5;
+            const trunkGeo = getSharedGeometry('treeTrunk', () => new THREE.CylinderGeometry(0.15, 0.2, 1.0, 6));
+            const trunkMat = getSharedMaterial('treeTrunkMat', () => new THREE.MeshStandardMaterial({ color: 0x654321, roughness: 0.88, metalness: 0.0 }));
+            const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+            trunk.castShadow = true; trunk.receiveShadow = true; trunk.position.y = 0.5;
             treeGroup.add(trunk);
 
-            // Simple foliage - green palette
-            const foliageMaterial1 = new THREE.MeshStandardMaterial({
-                color: 0x2E7D32,  // Dark green
-                roughness: 0.76,
-                metalness: 0.0
-            });
+            const foliageMat1 = getSharedMaterial('foliageMat1', () => new THREE.MeshStandardMaterial({ color: 0x2E7D32, roughness: 0.76 }));
+            const foliageMat2 = getSharedMaterial('foliageMat2', () => new THREE.MeshStandardMaterial({ color: 0x43A047, roughness: 0.78 }));
+            const foliageMat3 = getSharedMaterial('foliageMat3', () => new THREE.MeshStandardMaterial({ color: 0x66BB6A, roughness: 0.82 }));
 
-            const foliageMaterial2 = new THREE.MeshStandardMaterial({
-                color: 0x43A047,  // Medium green
-                roughness: 0.78,
-                metalness: 0.0
-            });
+            const baseGeo = getSharedGeometry('treeBase', () => new THREE.SphereGeometry(0.7, 8, 8)); // Segments reduced
+            const midGeo = getSharedGeometry('treeMid', () => new THREE.SphereGeometry(0.6, 8, 8));
+            const topGeo = getSharedGeometry('treeTop', () => new THREE.SphereGeometry(0.45, 8, 8));
 
-            const foliageMaterial3 = new THREE.MeshStandardMaterial({
-                color: 0x66BB6A,  // Light green
-                roughness: 0.82,
-                metalness: 0.0
-            });
+            const baseSphere = new THREE.Mesh(baseGeo, foliageMat1);
+            baseSphere.position.set(0, 1.0, 0); baseSphere.castShadow = true; treeGroup.add(baseSphere);
 
-            // Bottom sphere - main foliage
-            const baseSphere = new THREE.Mesh(new THREE.SphereGeometry(0.7, 12, 12), foliageMaterial1);
-            baseSphere.position.set(0, 1.0, 0);
-            baseSphere.castShadow = true;
-            baseSphere.receiveShadow = true;
-            treeGroup.add(baseSphere);
+            const midSphere = new THREE.Mesh(midGeo, foliageMat2);
+            midSphere.position.set(0, 1.6, 0); midSphere.castShadow = true; treeGroup.add(midSphere);
 
-            // Middle sphere - overlapping
-            const midSphere = new THREE.Mesh(new THREE.SphereGeometry(0.6, 12, 12), foliageMaterial2);
-            midSphere.position.set(0, 1.6, 0);
-            midSphere.castShadow = true;
-            midSphere.receiveShadow = true;
-            treeGroup.add(midSphere);
-
-            // Top sphere - accent
-            const topSphere = new THREE.Mesh(new THREE.SphereGeometry(0.45, 10, 10), foliageMaterial3);
-            topSphere.position.set(0, 2.05, 0);
-            topSphere.castShadow = true;
-            topSphere.receiveShadow = true;
-            treeGroup.add(topSphere);
+            const topSphere = new THREE.Mesh(topGeo, foliageMat3);
+            topSphere.position.set(0, 2.05, 0); topSphere.castShadow = true; treeGroup.add(topSphere);
 
             return treeGroup;
         }
@@ -1542,251 +1373,153 @@
          * Creates the new L-Wing house model including a stylish boundary wall and gate.
          */
         function createHouse(id, plotW = 500, plotD = 600, skipWall = null) {
-            const CONFIG = {
-                houseWidth: 220,
-                houseDepth: 280,
-                wingLen: 260,
-                floorH: 100,
-                wingW: 100,
-                roofH: 80
-            };
-
+            const CONFIG = { houseWidth: 220, houseDepth: 280, wingLen: 260, floorH: 100, wingW: 100, roofH: 80 };
             const house = new THREE.Group();
 
-            // Materials
-            const bodyMat = new THREE.MeshStandardMaterial({ color: 0xe8e4d9 });
-            const roofMat = new THREE.MeshStandardMaterial({ color: 0xC47460 });
-            const winMat = new THREE.MeshStandardMaterial({ color: 0xadd8e6, emissive: 0x111111 });
-            const woodMat = new THREE.MeshStandardMaterial({ color: 0x8b4513 });
-            const beamMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
-            const baseMat = new THREE.MeshStandardMaterial({ color: 0x555555 });
-            const wallMat = new THREE.MeshBasicMaterial({ color: 0xeeeeee });
-            const gateMat = new THREE.MeshBasicMaterial({ color: 0x222222 }); // Dark stylish gate
-            const glassMat = new THREE.MeshStandardMaterial({ color: 0x88ccff, transparent: true, opacity: 0.5 }); // New Glass Material
+            // Materials (Shared/Cached)
+            const bodyMat = getSharedMaterial('houseBody', () => new THREE.MeshStandardMaterial({ color: 0xe8e4d9, roughness: 0.8 }));
+            const roofMat = getSharedMaterial('houseRoof', () => new THREE.MeshStandardMaterial({ color: 0xC47460, roughness: 0.7 }));
+            const winMat = getSharedMaterial('houseWin', () => new THREE.MeshStandardMaterial({ color: 0xadd8e6, emissive: 0x111111 }));
+            const wallMat = getSharedMaterial('houseWall', () => new THREE.MeshBasicMaterial({ color: 0xeeeeee }));
+            const gateMat = getSharedMaterial('houseGate', () => new THREE.MeshBasicMaterial({ color: 0x222222 }));
+            const glassMat = getSharedMaterial('houseGlass', () => new THREE.MeshStandardMaterial({ color: 0x88ccff, transparent: true, opacity: 0.5 }));
+            const beamMat = getSharedMaterial('houseBeam', () => new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5 }));
 
             const { houseWidth, houseDepth, wingLen, floorH, wingW, roofH } = CONFIG;
+            const wallH = 30; const wallT = 8; const gateW = 100;
 
-            // --- Full Land Boundary Wall & Stylish Gate ---
-            const wallH = 30;
-            const wallT = 8;
-            const gateW = 100;
+            // Shared geometries
+            const backWallGeo = getSharedGeometry('backWall_' + plotW, () => new THREE.BoxGeometry(plotW, wallH, wallT));
+            const sideWallGeo = getSharedGeometry('sideWall_' + plotD, () => new THREE.BoxGeometry(wallT, wallH, plotD));
 
-            // Back Wall
-            const backWall = new THREE.Mesh(new THREE.BoxGeometry(plotW, wallH, wallT), wallMat);
-            backWall.position.set(0, wallH / 2, plotD / 2 - wallT / 2);
-            house.add(backWall);
+            const bw = new THREE.Mesh(backWallGeo, wallMat); bw.position.set(0, wallH / 2, plotD / 2 - wallT / 2); house.add(bw);
 
-            // Left Wall (Skip if requested to avoid "double wall")
             if (skipWall !== 'left') {
-                const leftWall = new THREE.Mesh(new THREE.BoxGeometry(wallT, wallH, plotD), wallMat);
-                leftWall.position.set(-plotW / 2 + wallT / 2, wallH / 2, 0);
-                house.add(leftWall);
+                const lw = new THREE.Mesh(sideWallGeo, wallMat); lw.position.set(-plotW / 2 + wallT / 2, wallH / 2, 0); house.add(lw);
             }
-
-            // Right Wall (Skip if requested to avoid "double wall")
             if (skipWall !== 'right') {
-                const rightWall = new THREE.Mesh(new THREE.BoxGeometry(wallT, wallH, plotD), wallMat);
-                rightWall.position.set(plotW / 2 - wallT / 2, wallH / 2, 0);
-                house.add(rightWall);
+                const rw = new THREE.Mesh(sideWallGeo, wallMat); rw.position.set(plotW / 2 - wallT / 2, wallH / 2, 0); house.add(rw);
             }
 
-            // Front Wall with Stylish Gate
             const frontSegW = (plotW - gateW) / 2;
-            const frontWallL = new THREE.Mesh(new THREE.BoxGeometry(frontSegW, wallH, wallT), wallMat);
-            frontWallL.position.set(-plotW / 2 + frontSegW / 2, wallH / 2, -plotD / 2 + wallT / 2);
-            house.add(frontWallL);
+            const frontWallGeo = getSharedGeometry('frontWallSeg_' + frontSegW, () => new THREE.BoxGeometry(frontSegW, wallH, wallT));
+            const fwL = new THREE.Mesh(frontWallGeo, wallMat); fwL.position.set(-plotW / 2 + frontSegW / 2, wallH / 2, -plotD / 2 + wallT / 2); house.add(fwL);
+            const fwR = new THREE.Mesh(frontWallGeo, wallMat); fwR.position.set(plotW / 2 - frontSegW / 2, wallH / 2, -plotD / 2 + wallT / 2); house.add(fwR);
 
-            const frontWallR = new THREE.Mesh(new THREE.BoxGeometry(frontSegW, wallH, wallT), wallMat);
-            frontWallR.position.set(plotW / 2 - frontSegW / 2, wallH / 2, -plotD / 2 + wallT / 2);
-            house.add(frontWallR);
+            const pillarGeo = getSharedGeometry('gatePillar', () => new THREE.BoxGeometry(15, wallH + 15, 15));
+            const pL = new THREE.Mesh(pillarGeo, gateMat); pL.position.set(-gateW / 2, (wallH + 15) / 2, -plotD / 2 + wallT / 2); house.add(pL);
+            const pR = new THREE.Mesh(pillarGeo, gateMat); pR.position.set(gateW / 2, (wallH + 15) / 2, -plotD / 2 + wallT / 2); house.add(pR);
 
-            // --- Stylish Gate Pillars ---
-            const pillarGeo = new THREE.BoxGeometry(15, wallH + 15, 15);
-            const pLeft = new THREE.Mesh(pillarGeo, gateMat);
-            pLeft.position.set(-gateW / 2, (wallH + 15) / 2, -plotD / 2 + wallT / 2);
-            house.add(pLeft);
+            const building = new THREE.Group(); building.position.x = 200; house.add(building);
+            const offsetZ = 120;
 
-            const pRight = new THREE.Mesh(pillarGeo, gateMat);
-            pRight.position.set(gateW / 2, (wallH + 15) / 2, -plotD / 2 + wallT / 2);
-            house.add(pRight);
+            const mainBodyGeo = getSharedGeometry('mainBody', () => new THREE.BoxGeometry(houseWidth, floorH * 2, houseDepth));
+            const mb = new THREE.Mesh(mainBodyGeo, bodyMat); mb.position.set(0, floorH, offsetZ); mb.castShadow = true; building.add(mb);
 
-            // --- Gate Bars ---
-            for (let i = 0; i < 5; i++) {
-                const bar = new THREE.Mesh(new THREE.BoxGeometry(gateW, 3, 3), gateMat);
-                bar.position.set(0, 5 + (i * 10), -plotD / 2 + wallT / 2);
-                house.add(bar);
-            }
+            const wingBodyGeo = getSharedGeometry('wingBody', () => new THREE.BoxGeometry(wingLen, floorH * 2, wingW));
+            const wb = new THREE.Mesh(wingBodyGeo, bodyMat); wb.position.set(-(houseWidth / 2 + wingLen / 2), floorH, houseDepth / 2 - wingW / 2 + offsetZ);
+            wb.castShadow = true; building.add(wb);
 
-            // --- Building Group for easy shifting ---
-            const building = new THREE.Group();
-            building.position.x = 200; // Move right side total 300px (100 + 200)
-            house.add(building);
-
-            // --- Building Components (Main Body, Wing, Roof, door, etc.) shifted back for front space ---
-            const buildingOffsetZ = 120;
-
-            // Main Structure
-            const mainBody = new THREE.Mesh(new THREE.BoxGeometry(houseWidth, floorH * 2, houseDepth), bodyMat);
-            mainBody.position.set(0, floorH, buildingOffsetZ);
-            mainBody.castShadow = true;
-            building.add(mainBody);
-
-            // L-Wing Extension
-            const wingBody = new THREE.Mesh(new THREE.BoxGeometry(wingLen, floorH * 2, wingW), bodyMat);
-            wingBody.position.set(-(houseWidth / 2 + wingLen / 2), floorH, houseDepth / 2 - wingW / 2 + buildingOffsetZ);
-            wingBody.castShadow = true;
-            building.add(wingBody);
-
-            // DOORS with IDs
-            const doorCanvas = document.createElement('canvas');
-            doorCanvas.width = 64; doorCanvas.height = 128;
-            const dctx = doorCanvas.getContext('2d');
-            dctx.fillStyle = '#8b4513'; dctx.fillRect(0, 0, 64, 128);
-            dctx.fillStyle = '#FFFFFF'; dctx.font = 'bold 30px Arial';
-            dctx.textAlign = 'center'; dctx.textBaseline = 'middle';
-            dctx.fillText(id, 32, 40);
-            const doorTex = new THREE.CanvasTexture(doorCanvas);
-
-            // Plain door for 1st floor (no number)
-            const plainDoorCanvas = document.createElement('canvas');
-            plainDoorCanvas.width = 64; plainDoorCanvas.height = 128;
-            const pdctx = plainDoorCanvas.getContext('2d');
-            pdctx.fillStyle = '#8b4513'; pdctx.fillRect(0, 0, 64, 128);
-            const plainDoorTex = new THREE.CanvasTexture(plainDoorCanvas);
-
-            const door = new THREE.Mesh(new THREE.BoxGeometry(45, 75, 5), new THREE.MeshStandardMaterial({ map: doorTex }));
-            door.position.set(0, 37.5, -(houseDepth / 2 + 2) + buildingOffsetZ);
-            building.add(door);
-
-            // Balcony Doors (plain, no numbers)
-            const plainDoorMat = new THREE.MeshStandardMaterial({ map: plainDoorTex });
-            const bDoor1 = new THREE.Mesh(new THREE.BoxGeometry(45, 75, 5), plainDoorMat);
-            bDoor1.position.set(-60, floorH + 37.5, -(houseDepth / 2 + 2) + buildingOffsetZ);
-            const bDoor2 = new THREE.Mesh(new THREE.BoxGeometry(45, 75, 5), plainDoorMat);
-            bDoor2.position.set(60, floorH + 37.5, -(houseDepth / 2 + 2) + buildingOffsetZ);
-            building.add(bDoor1); building.add(bDoor2);
-
-            // Windows
-            const winGeo = new THREE.PlaneGeometry(40, 50);
-            [-(houseWidth / 2 + 80), -(houseWidth / 2 + 220)].forEach(x => {
-                const w1 = new THREE.Mesh(winGeo, winMat);
-                w1.position.set(x, 45, houseDepth / 2 - wingW - 1.5 + buildingOffsetZ);
-                w1.rotation.y = Math.PI;
-                building.add(w1);
-                const w2 = w1.clone(); w2.position.y = floorH + 45;
-                building.add(w2);
+            // Doors (Ground and 1st Floor)
+            const doorGeo = getSharedGeometry('houseDoor', () => new THREE.BoxGeometry(45, 75, 5));
+            const doorMat = getSharedMaterial('doorMat_' + id, () => {
+                const canvas = document.createElement('canvas'); canvas.width = 64; canvas.height = 128;
+                const ctx = canvas.getContext('2d'); ctx.fillStyle = '#8b4513'; ctx.fillRect(0, 0, 64, 128);
+                ctx.fillStyle = '#FFF'; ctx.font = 'bold 30px Arial'; ctx.textAlign = 'center'; ctx.fillText(id, 32, 40);
+                return new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(canvas) });
             });
 
-            // --- PORCHES & BALCONIES ---
-            // Main Porch (Ground)
-            const porch = new THREE.Mesh(new THREE.BoxGeometry(houseWidth - 20, 10, 80), new THREE.MeshStandardMaterial({ color: 0xcccccc }));
-            porch.position.set(0, 5, -(houseDepth / 2 + 40) + buildingOffsetZ);
-            building.add(porch);
+            const doorGround = new THREE.Mesh(doorGeo, doorMat);
+            doorGround.position.set(0, 37.5, -(houseDepth / 2 + 2) + offsetZ);
+            building.add(doorGround);
 
-            // Main Balcony (1st Floor)
-            const balcony = porch.clone(); balcony.position.y = floorH + 5;
-            building.add(balcony);
+            const doorFirst = new THREE.Mesh(doorGeo, doorMat);
+            doorFirst.position.set(0, floorH + 37.5, -(houseDepth / 2 + 2) + offsetZ);
+            building.add(doorFirst);
 
-            // Glass Railing for Main Balcony
+            const porchGeo = getSharedGeometry('housePorch', () => new THREE.BoxGeometry(houseWidth - 20, 10, 80));
+            const porchMat = getSharedMaterial('porchMat', () => new THREE.MeshStandardMaterial({ color: 0xcccccc }));
+            const p1 = new THREE.Mesh(porchGeo, porchMat); p1.position.set(0, 5, -(houseDepth / 2 + 40) + offsetZ); building.add(p1);
+            const p2 = p1.clone(); p2.position.y = floorH + 5; building.add(p2);
+
+            const winGeo = getSharedGeometry('houseWin', () => new THREE.PlaneGeometry(40, 50));
+            [-(houseWidth / 2 + 80), -(houseWidth / 2 + 220)].forEach(x => {
+                const w = new THREE.Mesh(winGeo, winMat); w.position.set(x, 45, houseDepth / 2 - wingW - 1.5 + offsetZ);
+                w.rotation.y = Math.PI; building.add(w);
+                const wTop = w.clone(); wTop.position.y = floorH + 45; building.add(wTop);
+            });
+
+            // Glass Railing for Balcony (above door)
             const railH = 35;
-            const glassRail = new THREE.Mesh(new THREE.BoxGeometry(houseWidth - 20, railH, 2), glassMat);
-            glassRail.position.set(0, floorH + 5 + railH / 2 + 5, -(houseDepth / 2 + 80) + buildingOffsetZ);
-            building.add(glassRail);
+            const glassGeoFront = getSharedGeometry('glassFront', () => new THREE.BoxGeometry(houseWidth - 20, railH, 2));
+            const glassGeoSide = getSharedGeometry('glassSide', () => new THREE.BoxGeometry(2, railH, 80));
 
-            // Side glass railings for Main Balcony
-            const mRailSideL = new THREE.Mesh(new THREE.BoxGeometry(2, railH, 80), glassMat);
-            mRailSideL.position.set(-(houseWidth - 20) / 2, floorH + 5 + railH / 2 + 5, -(houseDepth / 2 + 40) + buildingOffsetZ);
-            building.add(mRailSideL);
+            const gFront = new THREE.Mesh(glassGeoFront, glassMat);
+            gFront.position.set(0, floorH + 5 + railH / 2 + 5, -(houseDepth / 2 + 80) + offsetZ);
+            building.add(gFront);
 
-            const mRailSideR = new THREE.Mesh(new THREE.BoxGeometry(2, railH, 80), glassMat);
-            mRailSideR.position.set((houseWidth - 20) / 2, floorH + 5 + railH / 2 + 5, -(houseDepth / 2 + 40) + buildingOffsetZ);
-            building.add(mRailSideR);
+            const gL = new THREE.Mesh(glassGeoSide, glassMat);
+            gL.position.set(-(houseWidth - 20) / 2, floorH + 5 + railH / 2 + 5, -(houseDepth / 2 + 40) + offsetZ);
+            building.add(gL);
 
-            // Wing Balcony (1st Floor)
-            const wingBalcony = new THREE.Mesh(new THREE.BoxGeometry(wingLen - 40, 10, 60), new THREE.MeshStandardMaterial({ color: 0xcccccc }));
-            wingBalcony.position.set(-(houseWidth / 2 + wingLen / 2), floorH + 5, houseDepth / 2 - wingW - 30 + buildingOffsetZ);
-            building.add(wingBalcony);
+            const gR = new THREE.Mesh(glassGeoSide, glassMat);
+            gR.position.set((houseWidth - 20) / 2, floorH + 5 + railH / 2 + 5, -(houseDepth / 2 + 40) + offsetZ);
+            building.add(gR);
 
-            // Glass Railing for Wing Balcony
-            const wGlassRail = new THREE.Mesh(new THREE.BoxGeometry(wingLen - 40, railH, 2), glassMat);
-            wGlassRail.position.set(-(houseWidth / 2 + wingLen / 2), floorH + 5 + railH / 2 + 5, houseDepth / 2 - wingW - 60 + buildingOffsetZ);
-            building.add(wGlassRail);
-
-            // Side glass railings for Wing Balcony
-            const wRailSideL = new THREE.Mesh(new THREE.BoxGeometry(2, railH, 60), glassMat);
-            wRailSideL.position.set(-(houseWidth / 2 + wingLen / 2) - (wingLen - 40) / 2, floorH + 5 + railH / 2 + 5, houseDepth / 2 - wingW - 30 + buildingOffsetZ);
-            building.add(wRailSideL);
-
-            const wRailSideR = new THREE.Mesh(new THREE.BoxGeometry(2, railH, 60), glassMat);
-            wRailSideR.position.set(-(houseWidth / 2 + wingLen / 2) + (wingLen - 40) / 2, floorH + 5 + railH / 2 + 5, houseDepth / 2 - wingW - 30 + buildingOffsetZ);
-            building.add(wRailSideR);
-
-            // Wing Doors (1st & 2nd Level Access)
-            const wDoor1 = new THREE.Mesh(new THREE.BoxGeometry(45, 75, 5), plainDoorMat);
-            wDoor1.position.set(-(houseWidth / 2 + 80), floorH + 37.5, houseDepth / 2 - wingW - 2 + buildingOffsetZ);
-            wDoor1.rotation.y = Math.PI;
-            building.add(wDoor1);
-
-            const wDoor2 = new THREE.Mesh(new THREE.BoxGeometry(45, 75, 5), plainDoorMat);
-            wDoor2.position.set(-(houseWidth / 2 + 180), floorH + 37.5, houseDepth / 2 - wingW - 2 + buildingOffsetZ);
-            wDoor2.rotation.y = Math.PI;
-            building.add(wDoor2);
-
-            // Roofs
-            const mRoofS = new THREE.Shape();
-            mRoofS.moveTo(-houseWidth / 2 - 20, 0); mRoofS.lineTo(0, roofH); mRoofS.lineTo(houseWidth / 2 + 20, 0);
-            const mRoof = new THREE.Mesh(new THREE.ExtrudeGeometry(mRoofS, { depth: houseDepth + 40, bevelEnabled: false }), roofMat);
-            mRoof.position.set(0, floorH * 2, -houseDepth / 2 - 20 + buildingOffsetZ);
-            building.add(mRoof);
-
-            const wRoofS = new THREE.Shape();
-            wRoofS.moveTo(-wingW / 2 - 20, 0); wRoofS.lineTo(0, roofH); wRoofS.lineTo(wingW / 2 + 20, 0);
-            const wRoof = new THREE.Mesh(new THREE.ExtrudeGeometry(wRoofS, { depth: wingLen + 130, bevelEnabled: false }), roofMat);
-            wRoof.rotation.y = -Math.PI / 2;
-            // Align precisely with the wing body center and move it further INTO the main body to fill the gap
-            const wingCenterZ = houseDepth / 2 - wingW / 2 + buildingOffsetZ;
-            wRoof.position.set(-(houseWidth / 2 - 112), floorH * 2, wingCenterZ);
-            building.add(wRoof);
-
-            // Beams
-            const beamGeo = new THREE.CylinderGeometry(5, 5, floorH);
+            // Beams (connecting structures - GROUND to 1st FLOOR BALCONY)
+            const beamGeo = getSharedGeometry('houseBeam', () => new THREE.CylinderGeometry(5, 5, floorH));
             const b1 = new THREE.Mesh(beamGeo, beamMat);
-            b1.position.set(-(houseWidth / 2 - 30), floorH / 2, -(houseDepth / 2 + 60) + buildingOffsetZ);
+            b1.position.set(-(houseWidth / 2 - 30), floorH / 2, -(houseDepth / 2 + 60) + offsetZ);
             building.add(b1);
             const b2 = b1.clone(); b2.position.x = houseWidth / 2 - 30;
             building.add(b2);
 
-            // Add 2 custom trees at the front corners only (removed back-side trees)
-            try {
-                const plotPadding = 50; // Distance from walls
-                const treeScale = 1 / 0.015; // Compensate for house scaling (66.67x larger)
+            // --- WING BALCONY (for the "L" extension) ---
+            const wingBalconyGeo = getSharedGeometry('wingBalcony', () => new THREE.BoxGeometry(wingLen - 40, 10, 60));
+            const wbFloor = new THREE.Mesh(wingBalconyGeo, porchMat);
+            wbFloor.position.set(-(houseWidth / 2 + wingLen / 2), floorH + 5, houseDepth / 2 - wingW - 30 + offsetZ);
+            building.add(wbFloor);
 
-                // Define 2 front corner positions only
-                const cornerPositions = [
-                    { x: -plotW / 2 + plotPadding, z: -plotD / 2 + plotPadding }, // Front-Left
-                    { x: plotW / 2 - plotPadding, z: -plotD / 2 + plotPadding }   // Front-Right
-                ];
+            const wingGlassFrontGeo = getSharedGeometry('wingGlassFront', () => new THREE.BoxGeometry(wingLen - 40, railH, 2));
+            const wgFront = new THREE.Mesh(wingGlassFrontGeo, glassMat);
+            wgFront.position.set(-(houseWidth / 2 + wingLen / 2), floorH + 5 + railH / 2 + 5, houseDepth / 2 - wingW - 60 + offsetZ);
+            building.add(wgFront);
 
-                cornerPositions.forEach(corner => {
-                    const t = createHighQualityTree();
-                    t.position.set(corner.x, 0, corner.z);
-                    t.scale.set(treeScale, treeScale, treeScale); // Scale up to compensate for house scaling
-                    t.traverse(node => {
-                        if (node.isMesh) {
-                            node.castShadow = true;
-                            node.receiveShadow = true;
-                        }
-                    });
-                    house.add(t);
-                });
-            } catch (e) {
-                console.warn('Tree placement skipped:', e.message);
+            const wingGlassSideGeo = getSharedGeometry('wingGlassSide', () => new THREE.BoxGeometry(2, railH, 60));
+            const wgL = new THREE.Mesh(wingGlassSideGeo, glassMat);
+            wgL.position.set(-(houseWidth / 2 + wingLen / 2) - (wingLen - 40) / 2, floorH + 5 + railH / 2 + 5, houseDepth / 2 - wingW - 30 + offsetZ);
+            building.add(wgL);
+
+            const wgR = new THREE.Mesh(wingGlassSideGeo, glassMat);
+            wgR.position.set(-(houseWidth / 2 + wingLen / 2) + (wingLen - 40) / 2, floorH + 5 + railH / 2 + 5, houseDepth / 2 - wingW - 30 + offsetZ);
+            building.add(wgR);
+
+            // Wing Door for Balcony Access
+            const wingDoor = new THREE.Mesh(doorGeo, doorMat);
+            wingDoor.position.set(-(houseWidth / 2 + 80), floorH + 37.5, houseDepth / 2 - wingW - 2 + offsetZ);
+            wingDoor.rotation.y = Math.PI;
+            building.add(wingDoor);
+
+            // Roofs (Optimized)
+            if (!geometryCache.mainRoof) {
+                const s = new THREE.Shape(); s.moveTo(-houseWidth / 2 - 20, 0); s.lineTo(0, roofH); s.lineTo(houseWidth / 2 + 20, 0);
+                geometryCache.mainRoof = new THREE.ExtrudeGeometry(s, { depth: houseDepth + 40, bevelEnabled: false });
             }
+            const mR = new THREE.Mesh(geometryCache.mainRoof, roofMat); mR.position.set(0, floorH * 2, -houseDepth / 2 - 20 + offsetZ); building.add(mR);
 
-            const scale = 0.015;
-            house.scale.set(scale, scale, scale);
-            house.rotation.y = Math.PI; // Rotate 180 degrees
+            if (!geometryCache.wingRoof) {
+                const s = new THREE.Shape(); s.moveTo(-wingW / 2 - 20, 0); s.lineTo(0, roofH); s.lineTo(wingW / 2 + 20, 0);
+                geometryCache.wingRoof = new THREE.ExtrudeGeometry(s, { depth: wingLen + 130, bevelEnabled: false });
+            }
+            const wR = new THREE.Mesh(geometryCache.wingRoof, roofMat); wR.rotation.y = -Math.PI / 2;
+            wR.position.set(-(houseWidth / 2 - 112), floorH * 2, houseDepth / 2 - wingW / 2 + offsetZ); building.add(wR);
 
+            const treeScale = 66.67;
+            [{ x: -plotW / 2 + 50, z: -plotD / 2 + 50 }, { x: plotW / 2 - 50, z: -plotD / 2 + 50 }].forEach(pos => {
+                const t = createHighQualityTree(); t.position.set(pos.x, 0, pos.z); t.scale.set(treeScale, treeScale, treeScale); house.add(t);
+            });
+
+            house.scale.set(0.015, 0.015, 0.015); house.rotation.y = Math.PI;
             return house;
         }
 
@@ -2409,7 +2142,9 @@
             }, 100); // Throttle to 100ms
         });
 
-        window.onload = init
+        window.onload = () => {
+            init();
+        }
     </script>
 
 
