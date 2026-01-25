@@ -21,6 +21,11 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script>
         let scene, camera, renderer, controls, flagObj, lakeObj, river;
+        let sr_riverMesh, sr_bankMesh, sr_waterTexture, sr_treeGroup; // Small river (lake) variables
+
+        // Performance optimization: Shared materials cache
+        const sharedMaterials = {};
+        const sharedGeometries = {};
 
         // --- Fog Reveal Animation Variables ---
         let fogRevealStartTime = null;
@@ -135,7 +140,7 @@
             {
                 width: 10,
                 points: [
-              
+
                     new THREE.Vector3(-530, 0, 580),
                     new THREE.Vector3(-530, 0, 400),
                     new THREE.Vector3(-480, 0, 350),
@@ -168,7 +173,7 @@
                     new THREE.Vector3(700, 0, -200),
                     new THREE.Vector3(700, 0, -100),
                     new THREE.Vector3(670, 0, -30),
-                    new THREE.Vector3(700, 0, 30 ),
+                    new THREE.Vector3(700, 0, 30),
                 ],
                 segments: 2000,
                 position: { x: -334, y: 0, z: 427 },
@@ -490,6 +495,31 @@
             },
         ];
 
+        // Small River (Lake) Configuration
+        const SR_LAKE_CONFIG = {
+            width: 15,
+            segments: 300,
+            treeCount: 30,
+            position: { x: 350, y: 0, z: 957 },
+            rotation: { x: 0, y: 0, z: 0 },
+            // Define river path using explicit points (like ROAD_CONFIGS)
+            points: [
+                new THREE.Vector3(-670, 0, -240),
+                new THREE.Vector3(-630, 0, -200),
+                new THREE.Vector3(-590, 0, -300),
+                new THREE.Vector3(-490, 0, -200),
+                new THREE.Vector3(-390, 0, -300),
+                new THREE.Vector3(-280, 0, -250),
+                new THREE.Vector3(-200, 0, -320),
+                new THREE.Vector3(-160, 0, -304),
+                new THREE.Vector3(-150, 0, -304),
+                new THREE.Vector3(-150, 0, -300),
+                new THREE.Vector3(-200, 0, -200),
+                new THREE.Vector3(-100, 0, -60),
+                new THREE.Vector3(0, 0, 0),
+            ]
+        };
+
         function init() {
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x87ceeb);
@@ -500,7 +530,7 @@
 
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 14000);
 
-            camera.position.z = 0;
+            camera.position.z = 1800;
             camera.position.y = 0;
             camera.position.x = 0;
             camera.lookAt(0, 0, 0);
@@ -523,12 +553,15 @@
 
             renderer = new THREE.WebGLRenderer({
                 antialias: true,
-                logarithmicDepthBuffer: true // Prevents flickering at far distances/large scales
+                logarithmicDepthBuffer: true, // Prevents flickering at far distances/large scales
+                powerPreference: "high-performance", // Request high-performance GPU
+                precision: "highp" // High precision for quality
             });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Cap at 2x for performance
             renderer.shadowMap.enabled = true; // Enable shadows
             renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Smoother shadows
+            renderer.shadowMap.autoUpdate = false; // Only update shadows when needed (performance boost)
             // Removed ACESFilmicToneMapping and sRGBEncoding to restore original color vibrancy
             document.body.appendChild(renderer.domElement)
 
@@ -981,6 +1014,10 @@
             createTrain({ posX: -700, posY: 22, posZ: 999, rotY: 0, count: 12 });
             createTrain({ posX: 600, posY: 22, posZ: 1003, rotY: 180, count: 12 });
 
+            // --- Initialize Small River (Lake) ---
+            sr_waterTexture = sr_createWaterTexture();
+            sr_createRiverAndBanks(SR_LAKE_CONFIG);
+
             requestAnimationFrame(sceneRender);
         }
 
@@ -1172,7 +1209,12 @@
         function sceneRender(time) {
             requestAnimationFrame(sceneRender);
             const t = time * 0.001;
-            controls.update();
+
+            // Only update controls if damping is enabled (performance)
+            if (controls.enableDamping) {
+                controls.update();
+            }
+
             flagObj.animateFlag(time);
 
             // --- Fog Reveal Animation ---
@@ -1195,30 +1237,32 @@
 
                 // Interpolate fog density with smooth curve
                 // const currentDensity = initialFogDensity - (initialFogDensity - finalFogDensity) * (easedProgress + 0.020) ;
-                const currentDensity = initialFogDensity - (initialFogDensity - finalFogDensity) * easedProgress ;
+                const currentDensity = initialFogDensity - (initialFogDensity - finalFogDensity) * easedProgress;
                 scene.fog.density = currentDensity; // Slight offset to avoid zero density
 
                 // Subtle camera height adjustment for cinematic reveal (rises slightly as fog clears)
                 const cameraLift = 20; // Subtle 20 unit lift
-                camera.position.y = initialCameraY + (cameraLift * easedProgress) ;
+                camera.position.y = initialCameraY + (cameraLift * easedProgress);
 
                 if (progress >= 1.0) {
                     fogRevealComplete = true;
                     console.log('City fog reveal animation complete!');
+                    // Update shadows once after fog reveal (performance)
+                    renderer.shadowMap.needsUpdate = true;
                 }
-            }  
+            }
 
             // Update River animation
 
             // --- Lake Water Animation ---
             if (lakeObj) {
-                // 1. Flowing Texture
+                // 1. Flowing Texture (optimized - only update offset)
                 if (lakeObj.material.map) {
                     lakeObj.material.map.offset.y = -t * 0.08;
                     lakeObj.material.map.offset.x = Math.sin(t * 0.5) * 0.02;
                 }
 
-                // 2. Vertex Wave Effect
+                // 2. Vertex Wave Effect (expensive - consider reducing frequency)
                 const pos = lakeObj.geometry.attributes.position;
                 for (let i = 0; i < pos.count; i++) {
                     const mod6 = i % 6;
@@ -1240,6 +1284,13 @@
 
             // Update River animation
             if (river) river.update(time);
+
+            // Small river texture animation (optimized)
+            if (sr_waterTexture) {
+                sr_waterTexture.offset.y -= 0.00278; // 6-second flow cycle
+            }
+
+            // Removed ripple animation to prevent zigzagging/blinking
 
             renderer.render(scene, camera)
         }
@@ -1429,7 +1480,7 @@
 
             // Trunk - Simple dark wood
             const trunkGeometry = new THREE.CylinderGeometry(0.15, 0.2, 1.0, 6);
-            const trunkMaterial = new THREE.MeshStandardMaterial({ 
+            const trunkMaterial = new THREE.MeshStandardMaterial({
                 color: 0x654321,
                 roughness: 0.88,
                 metalness: 0.0
@@ -1441,19 +1492,19 @@
             treeGroup.add(trunk);
 
             // Simple foliage - green palette
-            const foliageMaterial1 = new THREE.MeshStandardMaterial({ 
+            const foliageMaterial1 = new THREE.MeshStandardMaterial({
                 color: 0x2E7D32,  // Dark green
                 roughness: 0.76,
                 metalness: 0.0
             });
 
-            const foliageMaterial2 = new THREE.MeshStandardMaterial({ 
+            const foliageMaterial2 = new THREE.MeshStandardMaterial({
                 color: 0x43A047,  // Medium green
                 roughness: 0.78,
                 metalness: 0.0
             });
 
-            const foliageMaterial3 = new THREE.MeshStandardMaterial({ 
+            const foliageMaterial3 = new THREE.MeshStandardMaterial({
                 color: 0x66BB6A,  // Light green
                 roughness: 0.82,
                 metalness: 0.0
@@ -1465,14 +1516,14 @@
             baseSphere.castShadow = true;
             baseSphere.receiveShadow = true;
             treeGroup.add(baseSphere);
-            
+
             // Middle sphere - overlapping
             const midSphere = new THREE.Mesh(new THREE.SphereGeometry(0.6, 12, 12), foliageMaterial2);
             midSphere.position.set(0, 1.6, 0);
             midSphere.castShadow = true;
             midSphere.receiveShadow = true;
             treeGroup.add(midSphere);
-            
+
             // Top sphere - accent
             const topSphere = new THREE.Mesh(new THREE.SphereGeometry(0.45, 10, 10), foliageMaterial3);
             topSphere.position.set(0, 2.05, 0);
@@ -1709,22 +1760,22 @@
             try {
                 const plotPadding = 50; // Distance from walls
                 const treeScale = 1 / 0.015; // Compensate for house scaling (66.67x larger)
-                
+
                 // Define 2 front corner positions only
                 const cornerPositions = [
                     { x: -plotW / 2 + plotPadding, z: -plotD / 2 + plotPadding }, // Front-Left
                     { x: plotW / 2 - plotPadding, z: -plotD / 2 + plotPadding }   // Front-Right
                 ];
-                
+
                 cornerPositions.forEach(corner => {
                     const t = createHighQualityTree();
                     t.position.set(corner.x, 0, corner.z);
                     t.scale.set(treeScale, treeScale, treeScale); // Scale up to compensate for house scaling
-                    t.traverse(node => { 
-                        if (node.isMesh) { 
-                            node.castShadow = true; 
-                            node.receiveShadow = true; 
-                        } 
+                    t.traverse(node => {
+                        if (node.isMesh) {
+                            node.castShadow = true;
+                            node.receiveShadow = true;
+                        }
                     });
                     house.add(t);
                 });
@@ -2046,15 +2097,15 @@
         const roofMat = new THREE.MeshPhongMaterial({ color: 0xDAD3C9 });
         const greenMat = new THREE.MeshPhongMaterial({ color: 0x22c55e });
         const wheelMat = new THREE.MeshPhongMaterial({ color: 0x14532d });
-        const redGlassMat = new THREE.MeshPhongMaterial({ 
-            color: 0xef4444, 
+        const redGlassMat = new THREE.MeshPhongMaterial({
+            color: 0xef4444,
             emissive: 0x440000,
-            shininess: 100 
+            shininess: 100
         });
-        const skyGlassMat = new THREE.MeshPhongMaterial({ 
-            color: 0xaaddff, 
-            shininess: 120, 
-            opacity: 0.6, 
+        const skyGlassMat = new THREE.MeshPhongMaterial({
+            color: 0xaaddff,
+            shininess: 120,
+            opacity: 0.6,
             transparent: true,
             emissive: 0x224466,
             emissiveIntensity: 0.2
@@ -2064,12 +2115,12 @@
         function buildInfra() {
             const group = new THREE.Group();
             const L = 1500; // Increased length for longer metro road
-            
+
             const deck = new THREE.Mesh(new THREE.BoxGeometry(L, 1.8, 12), infraMat);
             deck.position.y = -0.6;
             group.add(deck);
 
-            for (let i = -L/2; i <= L/2; i += 60) {
+            for (let i = -L / 2; i <= L / 2; i += 60) {
                 const pier = new THREE.Mesh(new THREE.BoxGeometry(6, 60, 6), infraMat);
                 pier.position.set(i, -30, 0);
                 group.add(pier);
@@ -2095,10 +2146,10 @@
         // --- METRO TRAIN BUILDER ---
         function createTrain(config) {
             const trainGroup = new THREE.Group();
-            
+
             for (let i = 0; i < config.count; i++) {
                 const carriage = new THREE.Group();
-                
+
                 const body = new THREE.Mesh(new THREE.BoxGeometry(6, 1.5, 3.0), roofMat); // Increased height and depth
                 body.position.y = 0.9; // Adjusted position
                 carriage.add(body);
@@ -2156,6 +2207,207 @@
             trainGroup.rotation.y = config.rotY * Math.PI / 180;
             scene.add(trainGroup);
         }
+
+
+        // Helper function to dispose of geometries and materials
+        function disposeObject(obj) {
+            if (obj.geometry) {
+                obj.geometry.dispose();
+            }
+            if (obj.material) {
+                if (Array.isArray(obj.material)) {
+                    obj.material.forEach(material => material.dispose());
+                } else {
+                    obj.material.dispose();
+                }
+            }
+            if (obj.children) {
+                obj.children.forEach(child => disposeObject(child));
+            }
+        }
+
+        // --- Small River (Lake) Helper Functions ---
+        // Create a procedural texture for water movement (optimized)
+        function sr_createWaterTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;  // Reduced from 512 for better performance
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d', { alpha: false }); // Disable alpha for performance
+
+            ctx.fillStyle = '#0077be';
+            ctx.fillRect(0, 0, 256, 256);
+
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 30; i++) {
+                ctx.beginPath();
+                ctx.moveTo(Math.random() * 256, Math.random() * 256);
+                ctx.lineTo(Math.random() * 256, Math.random() * 256);
+                ctx.stroke();
+            }
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set(1, 6);
+            texture.generateMipmaps = true; // Enable mipmaps for better performance at distance
+            texture.minFilter = THREE.LinearMipmapLinearFilter;
+            return texture;
+        }
+
+        // Helper to create a simple tree for the small river (optimized with shared geometries)
+        function sr_createTree() {
+            const group = new THREE.Group();
+
+            // Trunk - reuse geometry if available
+            const TRUNK_COLOR = 0x3d2b1f;
+            if (!sharedGeometries.treeTrunk) {
+                sharedGeometries.treeTrunk = new THREE.CylinderGeometry(0.5, 0.7, 4, 8);
+            }
+            if (!sharedMaterials.treeTrunk) {
+                sharedMaterials.treeTrunk = new THREE.MeshStandardMaterial({ color: TRUNK_COLOR });
+            }
+            const trunk = new THREE.Mesh(sharedGeometries.treeTrunk, sharedMaterials.treeTrunk);
+            trunk.position.y = 2;
+            group.add(trunk);
+
+            // Foliage - reuse geometries
+            const LEAF_COLORS = [0x2d4c1e, 0x3a5a2a, 0x4b6f3a];
+            const leafColor = LEAF_COLORS[Math.floor(Math.random() * LEAF_COLORS.length)];
+
+            // Create or reuse leaf material
+            const leafMatKey = 'treeLeaf_' + leafColor;
+            if (!sharedMaterials[leafMatKey]) {
+                sharedMaterials[leafMatKey] = new THREE.MeshStandardMaterial({ color: leafColor });
+            }
+
+            for (let i = 0; i < 3; i++) {
+                const leafGeoKey = 'treeLeaf_' + i;
+                if (!sharedGeometries[leafGeoKey]) {
+                    sharedGeometries[leafGeoKey] = new THREE.ConeGeometry(2.5 - (i * 0.5), 4, 8);
+                }
+                const leaves = new THREE.Mesh(sharedGeometries[leafGeoKey], sharedMaterials[leafMatKey]);
+                leaves.position.y = 4 + (i * 2);
+                group.add(leaves);
+            }
+
+            const scale = 0.5 + Math.random() * 1.5;
+            group.scale.set(scale, scale, scale);
+            return group;
+        }
+
+        function sr_createRiverAndBanks(config) {
+            if (sr_riverMesh) scene.remove(sr_riverMesh);
+            if (sr_bankMesh) scene.remove(sr_bankMesh);
+            if (sr_treeGroup) scene.remove(sr_treeGroup);
+
+            sr_treeGroup = new THREE.Group();
+
+            // Generate curve from the config's points array
+            const curve = new THREE.CatmullRomCurve3(config.points);
+
+            // Calculate river length from the curve
+            const riverLength = curve.getLength();
+
+            // Create geometries based on curve length
+            const riverGeo = new THREE.PlaneBufferGeometry(config.width, riverLength, 40, config.segments);
+            const bankGeo = new THREE.PlaneBufferGeometry(config.width + 12, riverLength, 40, config.segments);
+
+            const transformGeo = (geo, yOffset) => {
+                const posAttr = geo.attributes.position;
+                const tmpVec = new THREE.Vector3();
+
+                for (let i = 0; i < posAttr.count; i++) {
+                    const x = posAttr.getX(i);
+                    const y = posAttr.getY(i);
+                    const t = (y / riverLength) + 0.5;
+                    const point = curve.getPointAt(Math.max(0, Math.min(1, t)));
+                    const tangent = curve.getTangentAt(Math.max(0, Math.min(1, t)));
+                    const up = new THREE.Vector3(0, 1, 0);
+                    const side = new THREE.Vector3().crossVectors(tangent, up).normalize();
+
+                    tmpVec.copy(point).addScaledVector(side, x);
+                    posAttr.setXYZ(i, tmpVec.x, tmpVec.y + yOffset, tmpVec.z);
+                }
+                posAttr.needsUpdate = true;
+                geo.computeVertexNormals();
+            };
+
+            transformGeo(riverGeo, 1.5);  // Raised higher to prevent z-fighting
+            transformGeo(bankGeo, 0.8);   // Banks slightly lower than water
+
+            const WATER_COLOR = 0xc8ffff;  // Lighter, brighter water color
+            const SOIL_COLOR = 0x3d2b1f;
+
+            const riverMat = new THREE.MeshStandardMaterial({
+                color: WATER_COLOR,
+                map: sr_waterTexture,
+                roughness: 0.05,      // Lower roughness for more shine
+                metalness: 0.6,       // Higher metalness for more reflective water
+                transparent: true,
+                opacity: 0.85,        // Slightly more transparent for lighter appearance
+                side: THREE.DoubleSide,
+                depthWrite: true,
+                polygonOffset: true,
+                polygonOffsetFactor: -1,
+                polygonOffsetUnits: -1,
+                emissive: 0x88ddff,   // Add subtle glow for brighter appearance
+                emissiveIntensity: 0.15
+            });
+
+            const bankMat = new THREE.MeshStandardMaterial({
+                color: SOIL_COLOR,
+                roughness: 1.0,
+                side: THREE.DoubleSide,
+                polygonOffset: true,
+                polygonOffsetFactor: 1,
+                polygonOffsetUnits: 1
+            });
+
+            sr_riverMesh = new THREE.Mesh(riverGeo, riverMat);
+            sr_bankMesh = new THREE.Mesh(bankGeo, bankMat);
+
+            // TREE PLACEMENT ALONG BANK
+            const treeCount = config.treeCount;
+            for (let i = 0; i < treeCount; i++) {
+                const t = Math.random();
+                const point = curve.getPointAt(t);
+                const tangent = curve.getTangentAt(t);
+                const side = new THREE.Vector3().crossVectors(tangent, new THREE.Vector3(0, 1, 0)).normalize();
+
+                const tree = sr_createTree();
+
+                // Position trees randomly on left or right bank
+                const sideOffset = (Math.random() > 0.5 ? 1 : -1) * (config.width / 2 + 4 + Math.random() * 4);
+                tree.position.copy(point).addScaledVector(side, sideOffset);
+
+                // Random rotation
+                tree.rotation.y = Math.random() * Math.PI * 2;
+
+                sr_treeGroup.add(tree);
+            }
+
+            const group = new THREE.Group();
+            group.add(sr_riverMesh);
+            group.add(sr_bankMesh);
+            group.add(sr_treeGroup);
+
+            group.position.set(config.position.x, config.position.y, config.position.z);
+            group.rotation.set(config.rotation.x, config.rotation.y, config.rotation.z);
+
+            scene.add(group);
+        }
+
+        // Optimized window resize handler with throttling
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            }, 100); // Throttle to 100ms
+        });
 
         window.onload = init
     </script>
