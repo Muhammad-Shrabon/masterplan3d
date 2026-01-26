@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Character - Shortened Torso</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #0f0f0f;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            background: rgba(0,0,0,0.7);
+            padding: 15px;
+            border-radius: 10px;
+            pointer-events: none;
+            z-index: 10;
+            border-left: 4px solid #4a5568;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+<div id="ui">
+    <h2 style="margin: 0 0 5px 0; font-size: 18px;">Compressed Torso</h2>
+    <p style="margin: 0; font-size: 12px; opacity: 0.8;">Reduced body height from the pelvic connection.</p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+<script>
+/* ---------------- SCENE SETUP ---------------- */
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0f0f0f);
+
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+camera.position.set(3, 2, 5); 
+
+/* ---------------- RENDERER ---------------- */
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.appendChild(renderer.domElement);
+
+/* ---------------- CONTROLS ---------------- */
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.target.set(0, 1.5, 0);
+
+/* ---------------- LIGHTING ---------------- */
+scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+const mainLight = new THREE.DirectionalLight(0xffffff, 0.8);
+mainLight.position.set(5, 10, 7.5);
+mainLight.castShadow = true;
+scene.add(mainLight);
+
+/* ---------------- MATERIALS ---------------- */
+const skinMaterial = new THREE.MeshStandardMaterial({ color: 0xd9a68c, roughness: 0.5 });
+const clothMaterial = new THREE.MeshStandardMaterial({ color: 0x2d3748, roughness: 0.7 }); 
+const shirtMaterial = new THREE.MeshStandardMaterial({ color: 0xf0f0f0, roughness: 0.6 });
+const beltMaterial = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.3 });
+const shoeMaterial = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.2, metalness: 0.3 });
+
+/* ---------------- GEOMETRY HELPERS ---------------- */
+function createCapsule(radius, height, material, segments = 24) {
+    const group = new THREE.Group();
+    const cylinderHeight = height - (radius * 2);
+    if (cylinderHeight > 0) {
+        const cyl = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, cylinderHeight, segments), material);
+        group.add(cyl);
+        const sphereTop = new THREE.Mesh(new THREE.SphereGeometry(radius, segments, segments), material);
+        sphereTop.position.y = cylinderHeight / 2;
+        group.add(sphereTop);
+        const sphereBottom = new THREE.Mesh(new THREE.SphereGeometry(radius, segments, segments), material);
+        sphereBottom.position.y = -cylinderHeight / 2;
+        group.add(sphereBottom);
+    } else {
+        group.add(new THREE.Mesh(new THREE.SphereGeometry(radius, segments, segments), material));
+    }
+    return group;
+}
+
+/* ---------------- CHARACTER BUILDER ---------------- */
+const character = new THREE.Group();
+const WAIST_RADIUS = 0.53;
+
+// --- UPPER BODY ---
+const upperBody = new THREE.Group();
+// Shifted further down from 2.3 to 2.15 to shorten the gap from pelvis
+upperBody.position.y = 2.15; 
+
+// FIX: Shortened the shirt height from 1.1 to 0.85
+const shirtMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.53, WAIST_RADIUS - 0.05, 0.85, 32), shirtMaterial);
+shirtMesh.position.y = 0.5; 
+upperBody.add(shirtMesh);
+
+// Chest positioned lower on the shirt
+const chest = new THREE.Mesh(new THREE.SphereGeometry(0.53, 32, 32), shirtMaterial);
+chest.position.y = 0.85;
+chest.scale.set(1.05, 0.85, 0.9);
+upperBody.add(chest);
+
+const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.3, 16), skinMaterial);
+neck.position.y = 1.2;
+upperBody.add(neck);
+
+const head = new THREE.Mesh(new THREE.SphereGeometry(0.28, 32, 32), skinMaterial);
+head.position.y = 1.55;
+upperBody.add(head);
+
+// Arms (Adjusted pivot to match lower chest)
+function createArm(isLeft = false) {
+    const pivot = new THREE.Group();
+    pivot.position.set(isLeft ? -0.55 : 0.55, 0.95, 0);
+    pivot.add(new THREE.Mesh(new THREE.SphereGeometry(0.18, 24, 24), shirtMaterial));
+    const upperArm = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.12, 0.7, 24), shirtMaterial);
+    upperArm.position.y = -0.3;
+    pivot.add(upperArm);
+    const elbowPivot = new THREE.Group();
+    elbowPivot.position.y = -0.65;
+    pivot.add(elbowPivot);
+    elbowPivot.add(new THREE.Mesh(new THREE.SphereGeometry(0.11, 24, 24), shirtMaterial));
+    const lowerArm = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.1, 0.6, 24), shirtMaterial);
+    lowerArm.position.y = -0.25;
+    elbowPivot.add(lowerArm);
+    const handGroup = new THREE.Group();
+    handGroup.position.y = -0.6;
+    elbowPivot.add(handGroup);
+    const palm = new THREE.Mesh(new THREE.SphereGeometry(0.08, 32, 32), skinMaterial);
+    palm.scale.set(1.4, 1.1, 0.7);
+    handGroup.add(palm);
+    const fingerSpacing = 0.035;
+    const fingerSizes = [0.016, 0.015, 0.015, 0.014, 0.012]; 
+    const fingerLengths = [0.06, 0.1, 0.11, 0.09, 0.07];
+    for (let i = 0; i < 5; i++) {
+        const fingerPivot = new THREE.Group();
+        let xOffset = isLeft ? (i === 0 ? 0.09 : 0.06 - (i * fingerSpacing)) : (i === 0 ? -0.09 : -0.06 + (i * fingerSpacing));
+        fingerPivot.position.set(xOffset, -0.05, 0);
+        const finger = createCapsule(fingerSizes[i], fingerLengths[i], skinMaterial, 12);
+        finger.position.y = -fingerLengths[i] / 2;
+        fingerPivot.add(finger);
+        handGroup.add(fingerPivot);
+    }
+    return { pivot, elbowPivot };
+}
+const armL = createArm(true);
+const armR = createArm(false);
+upperBody.add(armL.pivot, armR.pivot);
+character.add(upperBody);
+
+// --- LOWER BODY ---
+const lowerBody = new THREE.Group();
+
+const pantWaist = new THREE.Mesh(new THREE.CylinderGeometry(WAIST_RADIUS + 0.01, WAIST_RADIUS + 0.02, 0.4, 32), clothMaterial);
+pantWaist.position.y = 2.65; 
+lowerBody.add(pantWaist);
+
+const beltMesh = new THREE.Mesh(new THREE.TorusGeometry(WAIST_RADIUS + 0.03, 0.05, 16, 64), beltMaterial);
+beltMesh.position.y = 2.85; 
+beltMesh.rotation.x = Math.PI/2;
+lowerBody.add(beltMesh);
+
+const pelvis = new THREE.Mesh(new THREE.SphereGeometry(0.5, 32, 32), clothMaterial);
+pelvis.position.y = 2.5; 
+pelvis.scale.set(1.15, 0.35, 1.15); 
+lowerBody.add(pelvis);
+
+function createLeg(isLeft = false) {
+    const hipPivot = new THREE.Group(); 
+    hipPivot.position.set(isLeft ? -0.28 : 0.28, 2.4, 0);
+    hipPivot.add(new THREE.Mesh(new THREE.SphereGeometry(0.3, 32, 32), clothMaterial));
+    const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.28, 1.1, 32), clothMaterial);
+    upper.position.y = -0.45;
+    hipPivot.add(upper);
+    const kneePivot = new THREE.Group();
+    kneePivot.position.y = -1.0;
+    hipPivot.add(kneePivot);
+    kneePivot.add(new THREE.Mesh(new THREE.SphereGeometry(0.26, 32, 32), clothMaterial));
+    const calf = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.25, 1.1, 32), clothMaterial);
+    calf.position.y = -0.45;
+    kneePivot.add(calf);
+    const anklePivot = new THREE.Group();
+    anklePivot.position.y = -1.0;
+    kneePivot.add(anklePivot);
+    const shoeGroup = new THREE.Group();
+    shoeGroup.position.y = -0.05;
+    anklePivot.add(shoeGroup);
+    const shoeBody = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.45), shoeMaterial);
+    shoeBody.position.set(0, -0.05, 0.15);
+    shoeGroup.add(shoeBody);
+    const sole = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.05, 0.48), shoeMaterial);
+    sole.position.set(0, -0.12, 0.15);
+    shoeGroup.add(sole);
+    const heel = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.1, 0.15), shoeMaterial);
+    heel.position.set(0, -0.15, -0.02);
+    shoeGroup.add(heel);
+    const toeTip = new THREE.Mesh(new THREE.SphereGeometry(0.11, 16, 16), shoeMaterial);
+    toeTip.scale.set(1, 0.7, 1);
+    toeTip.position.set(0, -0.07, 0.38);
+    shoeGroup.add(toeTip);
+    return { hipPivot, kneePivot, anklePivot };
+}
+const legL = createLeg(true);
+const legR = createLeg(false);
+lowerBody.add(legL.hipPivot, legR.hipPivot);
+character.add(lowerBody);
+scene.add(character);
+
+/* ---------------- ENVIRONMENT ---------------- */
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), new THREE.MeshStandardMaterial({ color: 0x1a1a1a }));
+floor.rotation.x = -Math.PI / 2;
+floor.position.y = -1.5;
+floor.receiveShadow = true;
+scene.add(floor);
+
+/* ---------------- ANIMATION LOOP ---------------- */
+function animate() {
+    requestAnimationFrame(animate);
+    const time = Date.now() * 0.003;
+    const speed = 1.2;
+    const walkCycle = Math.sin(time * speed);
+    legR.hipPivot.rotation.x = walkCycle * 0.4;
+    legL.hipPivot.rotation.x = -walkCycle * 0.4;
+    armR.pivot.rotation.x = -walkCycle * 0.5;
+    armL.pivot.rotation.x = walkCycle * 0.5;
+    upperBody.rotation.z = walkCycle * 0.04;
+    character.position.y = 0.1 + Math.abs(walkCycle) * 0.08;
+    controls.update();
+    renderer.render(scene, camera);
+}
+window.onload = animate;
+window.addEventListener("resize", () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+</body>
+</html>

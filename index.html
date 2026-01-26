@@ -97,21 +97,41 @@
         }
         // Configuration from road.html
         const ROAD_CONFIGS = [
+            // Lake Near HOUSES PATH
+            {
+                width: 0, 
+                points: [
+                    new THREE.Vector3(460, 0, 920),
+                    new THREE.Vector3(320, 0, 780),
+                    new THREE.Vector3(320, 0, 780),
+                    new THREE.Vector3(320, 0, 104),
+                    new THREE.Vector3(320, 0, 100),
+                    new THREE.Vector3(0, 0, 100),
+                    new THREE.Vector3(0, 0, 90),
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(0, 0, 0),
+                ],
+                segments: 800, // Balanced for perfomance/quality
+                position: { x: -590, y: 0, z: 150 },
+                rotation: { x: 0, y: -11, z: 0 }
+            },
             // Lake Near Road
             {
                 width: 10,
                 points: [
-                    new THREE.Vector3(300, 0, 90),
-                    new THREE.Vector3(300, 0, 50),
-                    new THREE.Vector3(300, 0, 0),
+                    new THREE.Vector3(437, 0, 920),
+                    new THREE.Vector3(320, 0, 804),
+                    new THREE.Vector3(320, 0, 804),
+                    new THREE.Vector3(320, 0, 104),
+                    new THREE.Vector3(320, 0, 100),
+                    new THREE.Vector3(0, 0, 100),
+                    new THREE.Vector3(0, 0, 90),
                     new THREE.Vector3(0, 0, 0),
-                    new THREE.Vector3(0, 0, -740),
-                    new THREE.Vector3(-20, 0, -760),
-                    new THREE.Vector3(-110, 0, -830),
+                    new THREE.Vector3(0, 0, 0),
                 ],
                 segments: 800, // Balanced for performance/quality
-                position: { x: -550, y: 0, z: -220 },
-                rotation: { x: 0, y: 11, z: 0 }
+                position: { x: -640, y: 0, z: 100 },
+                rotation: { x: 0, y: -11, z: 0 }
             },
             // River Near Road
             {
@@ -147,7 +167,7 @@
                     new THREE.Vector3(-10, 0, 4),
                     new THREE.Vector3(0, 0, 4),
                     new THREE.Vector3(0, 0, 0),
-                    new THREE.Vector3(0, 0, -2600)
+                    new THREE.Vector3(0, 0, -2000)
                 ],
                 segments: 2000,
                 position: { x: -34, y: 0, z: 428 },
@@ -499,7 +519,6 @@
             treeCount: 30,
             position: { x: 350, y: 0, z: 957 },
             rotation: { x: 0, y: 0, z: 0 },
-            // Define river path using explicit points (like ROAD_CONFIGS)
             points: [
                 new THREE.Vector3(-670, 0, -240),
                 new THREE.Vector3(-630, 0, -200),
@@ -516,34 +535,67 @@
                 new THREE.Vector3(0, 0, 0),
             ]
         };
+        const SR_LAKE_CONFIG_BUNCH = {
+            width: 15,
+            segments: 300,
+            treeCount: 10,
+            position: { x: 420, y: 10, z: 700 },
+            rotation: { x: 0, y: 0, z: 0 },
+            points: [
+                new THREE.Vector3(0, 0, -220),
+                new THREE.Vector3(-150, 0, -100),
+                new THREE.Vector3(0, 0, 0),
+                new THREE.Vector3(-217, 0, -35),
+            ]
+        };
+        const SR_LAKE_CONFIG_MAIN_RIVER = {
+            width: 80,
+            segments: 400,
+            treeCount: 10,
+            position: { x: 620, y: 10, z: 400 },
+            rotation: { x: 0, y: Math.PI / 2, z: 0 },
+            points: [
+                new THREE.Vector3(1400, 0, -1400),
+                new THREE.Vector3(1200, 0, -1000),
+                new THREE.Vector3(900, 0, -200),
+                new THREE.Vector3(760, 0, -70),
+                new THREE.Vector3(660, 0, -100),
+                new THREE.Vector3(560, 0, -70),
+                new THREE.Vector3(460, 0, -70),
+                new THREE.Vector3(360, 0, -110),
+                new THREE.Vector3(280, 0, -185),
+                new THREE.Vector3(100, 0, -200),
+                new THREE.Vector3(70, 0, -200),
+                new THREE.Vector3(-30, 0, -220),
+                new THREE.Vector3(-40, 0, -200),
+                new THREE.Vector3(-40, 0, -140),
+                new THREE.Vector3(0, 0, 0),
+                new THREE.Vector3(-40, 0, 4),
+                new THREE.Vector3(0, 0, 8),
+            ]
+        };
+        const SR_LAKE_CONFIG_CENTER_LAKE = {
+            width: 15,
+            segments: 400,
+            treeCount: 10,
+            position: { x: -660, y: 2, z: 165 },
+            rotation: { x: 0, y: Math.PI / 2, z: 0 },
+            points: [
 
-        function createFlag(scene, pos) {
-            const group = new THREE.Group();
-            const mastGeo = new THREE.CylinderGeometry(0.5, 0.5, 60, 12);
-            const mastMat = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.8, roughness: 0.2 });
-            const mast = new THREE.Mesh(mastGeo, mastMat);
-            mast.position.y = 30; mast.castShadow = true; group.add(mast);
+                new THREE.Vector3(610, 0, 1100),
+                new THREE.Vector3(300, 0, 850),
+                new THREE.Vector3(300, 0, 684),
+                new THREE.Vector3(300, 0, 284),
+                new THREE.Vector3(300, 0, 204),
+                new THREE.Vector3(300, 0, 200),
+                new THREE.Vector3(200, 0, 200),
+                new THREE.Vector3(0, 0, 204),
+                new THREE.Vector3(0, 0, 204),
+                new THREE.Vector3(0, 0, 0),
+            ]
+        };
 
-            const flagGeo = new THREE.PlaneGeometry(24, 16, 20, 20);
-            const flagMat = new THREE.MeshStandardMaterial({ color: 0xff0000, side: THREE.DoubleSide, roughness: 0.5 });
-            const flag = new THREE.Mesh(flagGeo, flagMat);
-            flag.position.set(12, 50, 0); flag.castShadow = true; group.add(flag);
 
-            group.position.set(pos.x, pos.y, pos.z);
-            scene.add(group);
-
-            return {
-                animateFlag: (time) => {
-                    const pos = flag.geometry.attributes.position;
-                    for (let i = 0; i < pos.count; i++) {
-                        const px = pos.getX(i);
-                        const py = pos.getY(i);
-                        pos.setZ(i, Math.sin(px * 0.3 + time * 0.003) * 1.5 + Math.cos(py * 0.1 + time * 0.002) * 0.8);
-                    }
-                    pos.needsUpdate = true;
-                }
-            };
-        }
 
         function init() {
             console.log("Initializing 3D Masterplan...");
@@ -601,7 +653,7 @@
             controls.zoomSpeed = 1.9;     // Very fast zoom
             controls.panSpeed = 1.9;      // Very fast move
             controls.minDistance = 0.1;
-            controls.maxDistance = 10000; // Allow much further exploration
+            controls.maxDistance = 1700; // Allow much further exploration
             controls.maxPolarAngle = Math.PI / 2.1;
             controls.screenSpacePanning = true;
 
@@ -809,7 +861,16 @@
                 const roadGroup = new THREE.Group();
                 scene.add(roadGroup);
 
-                const baseMesh = new THREE.Mesh(roadGeo, asphaltBaseMat);
+                // Check if elevated
+                const isElevated = (config.position && config.position.y > 5);
+
+                let localBaseMat = asphaltBaseMat;
+                if (isElevated) {
+                    localBaseMat = asphaltBaseMat.clone();
+                    localBaseMat.polygonOffset = false; // Trust true depth for elevated roads
+                }
+
+                const baseMesh = new THREE.Mesh(roadGeo, localBaseMat);
                 baseMesh.position.y = 0.05; // Lift up slightly to avoid Z-fighting with city land
                 baseMesh.receiveShadow = true;
                 roadGroup.add(baseMesh);
@@ -831,29 +892,7 @@
                 // createCityBuildings(curve, config.width);
             });
 
-            // --- Initialize Cartoon River ---
-            const riverPoints = [
-                // new THREE.Vector3(-100, 0, -60),
-                new THREE.Vector3(-680, 0, 350),
-                new THREE.Vector3(-480, 0, 330),
-                new THREE.Vector3(-480, 0, 140),
-                new THREE.Vector3(-340, 0, 40),
-                new THREE.Vector3(0, 0, 40),
-                new THREE.Vector3(100, 0, 40),
-                new THREE.Vector3(200, 0, 40),
-                new THREE.Vector3(400, 0, -240),
-                new THREE.Vector3(600, 0, -540),
-                new THREE.Vector3(1080, 0, -1400),
-            ];
 
-            river = new CartoonRiver(scene, {
-                points: riverPoints,
-                width: 20,
-                thickness: 0.8,
-                color: 0x33ccff,
-                position: { x: 0, y: 0.2, z: -180 },
-                rotation: { x: 0, y: 0, z: 0 }
-            });
 
             // --- Initialize Metro ---
             buildInfra();
@@ -863,6 +902,17 @@
             // --- Initialize Small River (Lake) ---
             sr_waterTexture = sr_createWaterTexture();
             sr_createRiverAndBanks(SR_LAKE_CONFIG);
+            sr_createRiverAndBanks(SR_LAKE_CONFIG_BUNCH);
+            sr_createRiverAndBanks(SR_LAKE_CONFIG_MAIN_RIVER);
+            sr_createRiverAndBanks(SR_LAKE_CONFIG_CENTER_LAKE);
+
+            // --- Fill Empty Curved Area with Houses ---
+            createCurveHouseBunch(scene, ROAD_CONFIGS[0], {
+                houseSpacing: 18,
+                offsetDistance: 15,
+                landWidth: 65,
+                startId: 500
+            });
 
             console.log("Masterplan Initialization Complete. Rendering started.");
             requestAnimationFrame(sceneRender);
@@ -1189,19 +1239,27 @@
             const canvas = document.createElement("canvas");
             canvas.width = 1024;
             canvas.height = 512;
-
             const ctx = canvas.getContext("2d");
 
             // Background
-            ctx.fillStyle = "#ffffff"; // Bangladesh green
+            ctx.fillStyle = "#ffffff";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+            // Draw Logo from assets/images/bbl.png
+            const logo = new Image();
+            logo.src = 'assets/images/bbl.png';
+            logo.onload = () => {
+                const logoSize = 200;
+                ctx.drawImage(logo, (canvas.width - logoSize) / 2, (canvas.height / 2) - logoSize + 20, logoSize, logoSize);
+                flagTexture.needsUpdate = true;
+            };
+
             // Text
-            ctx.font = "bold 80px Arial";
-            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 60px Arial";
+            ctx.fillStyle = "#006a4e"; // Green text for contrast
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
-            ctx.fillText("Bangla Bosoti Square", canvas.width / 2, canvas.height / 2);
+            ctx.fillText("Bangla Bosoti Square", canvas.width / 2, canvas.height / 2 + 100);
 
             const flagTexture = new THREE.CanvasTexture(canvas);
             const flagGeometry = new THREE.PlaneGeometry(6, 3, 8, 8);
@@ -1372,7 +1430,7 @@
         /**
          * Creates the new L-Wing house model including a stylish boundary wall and gate.
          */
-        function createHouse(id, plotW = 500, plotD = 600, skipWall = null) {
+        function createHouse(id, plotW = 500, plotD = 600, skipWall = null, hasPool = false, carCount = 0) {
             const CONFIG = { houseWidth: 220, houseDepth: 280, wingLen: 260, floorH: 100, wingW: 100, roofH: 80 };
             const house = new THREE.Group();
 
@@ -1489,6 +1547,54 @@
             const wgL = new THREE.Mesh(wingGlassSideGeo, glassMat);
             wgL.position.set(-(houseWidth / 2 + wingLen / 2) - (wingLen - 40) / 2, floorH + 5 + railH / 2 + 5, houseDepth / 2 - wingW - 30 + offsetZ);
             building.add(wgL);
+
+            // --- ADDED SWIMMING POOL ---
+            if (hasPool) {
+                const poolGroup = new THREE.Group();
+                const poolW = 200, poolD = 350, poolH = 10;
+
+                const poolGeo = getSharedGeometry('poolBody', () => new THREE.BoxGeometry(poolW, poolH, poolD));
+                const poolMat = getSharedMaterial('poolMat', () => new THREE.MeshStandardMaterial({ color: 0x00aaff, roughness: 0.1, metalness: 0.5, transparent: true, opacity: 0.8 }));
+                const pool = new THREE.Mesh(poolGeo, poolMat);
+                pool.position.set(-plotW / 4, 0.5, -plotD / 4);
+                poolGroup.add(pool);
+
+                const borderGeo = getSharedGeometry('poolBorder', () => new THREE.BoxGeometry(poolW + 20, 5, poolD + 20));
+                const borderMat = getSharedMaterial('poolBorderMat', () => new THREE.MeshStandardMaterial({ color: 0xdddddd }));
+                const border = new THREE.Mesh(borderGeo, borderMat);
+                border.position.set(-plotW / 4, 0.1, -plotD / 4);
+                poolGroup.add(border);
+
+                house.add(poolGroup);
+            }
+
+            // --- ADDED CARS (PARKING) ---
+            for (let i = 0; i < carCount; i++) {
+                const car = new THREE.Group();
+                const bodyGeo = getSharedGeometry('carBody', () => new THREE.BoxGeometry(80, 40, 160));
+                const carColors = [0xff0000, 0x0000ff, 0x333333, 0xffffff, 0xaaaaaa];
+                const carMat = new THREE.MeshStandardMaterial({ color: carColors[Math.floor(Math.random() * carColors.length)] });
+                const body = new THREE.Mesh(bodyGeo, carMat);
+                body.position.y = 25;
+                car.add(body);
+
+                const cabinGeo = getSharedGeometry('carCabin', () => new THREE.BoxGeometry(70, 30, 90));
+                const cabin = new THREE.Mesh(cabinGeo, new THREE.MeshStandardMaterial({ color: 0x111111, transparent: true, opacity: 0.7 }));
+                cabin.position.y = 55; cabin.position.z = -10;
+                car.add(cabin);
+
+                const wheelGeo = getSharedGeometry('carWheel', () => new THREE.CylinderGeometry(15, 15, 10, 8));
+                const wheelMat = getSharedMaterial('carWheelMat', () => new THREE.MeshStandardMaterial({ color: 0x111111 }));
+                [[-45, 15, 60], [45, 15, 60], [-45, 15, -60], [45, 15, -60]].forEach(pos => {
+                    const w = new THREE.Mesh(wheelGeo, wheelMat);
+                    w.rotation.z = Math.PI / 2; w.position.set(pos[0], pos[1], pos[2]);
+                    car.add(w);
+                });
+
+                car.position.set(plotW / 2 - 120 - (i * 100), 0, -plotD / 2 + 150);
+                car.rotation.y = Math.PI / 2;
+                house.add(car);
+            }
 
             const wgR = new THREE.Mesh(wingGlassSideGeo, glassMat);
             wgR.position.set(-(houseWidth / 2 + wingLen / 2) + (wingLen - 40) / 2, floorH + 5 + railH / 2 + 5, houseDepth / 2 - wingW - 30 + offsetZ);
@@ -2043,7 +2149,7 @@
 
             // Create geometries based on curve length
             const riverGeo = new THREE.PlaneBufferGeometry(config.width, riverLength, 40, config.segments);
-            const bankGeo = new THREE.PlaneBufferGeometry(config.width + 12, riverLength, 40, config.segments);
+            const bankGeo = new THREE.PlaneBufferGeometry(config.width + 13, riverLength, 40, config.segments);
 
             const transformGeo = (geo, yOffset) => {
                 const posAttr = geo.attributes.position;
@@ -2069,9 +2175,9 @@
             transformGeo(bankGeo, 0.8);   // Banks slightly lower than water
 
             const WATER_COLOR = 0xc8ffff;  // Lighter, brighter water color
-            const SOIL_COLOR = 0x3d2b1f;
+            const SOIL_COLOR = 0x768c4b;
 
-            const riverMat = new THREE.MeshStandardMaterial({
+            const riverMat = new THREE.MeshBasicMaterial({
                 color: WATER_COLOR,
                 map: sr_waterTexture,
                 roughness: 0.05,      // Lower roughness for more shine
@@ -2128,6 +2234,73 @@
             group.rotation.set(config.rotation.x, config.rotation.y, config.rotation.z);
 
             scene.add(group);
+        }
+
+        /**
+         * Creates a curved cluster of houses along a provided path.
+         */
+        function createCurveHouseBunch(parent, config, options = {}) {
+            const { points, position, rotation } = config;
+            const {
+                houseSpacing = 16.5,
+                offsetDistance = 14,
+                landWidth = 32,
+                startId = 800
+            } = options;
+
+            const curve = new THREE.CatmullRomCurve3(points);
+            const totalLen = curve.getLength();
+            const houseCount = Math.floor(totalLen / houseSpacing);
+
+            const group = new THREE.Group();
+            group.position.set(position.x || 0, position.y || 0, position.z || 0);
+            group.rotation.set(rotation.x || 0, rotation.y || 0, rotation.z || 0);
+            parent.add(group);
+
+            // Create curved land strip
+            const offsetPoints = [];
+            for (let i = 0; i <= 100; i++) {
+                const t = i / 100;
+                const p = curve.getPointAt(t);
+                const tangent = curve.getTangentAt(t).normalize();
+                const normal = new THREE.Vector3(0, 1, 0);
+                const binormal = new THREE.Vector3().crossVectors(tangent, normal).normalize();
+                offsetPoints.push(p.clone().add(binormal.multiplyScalar(offsetDistance)));
+            }
+            const offsetCurve = new THREE.CatmullRomCurve3(offsetPoints);
+            const landGeo = createRoadGeometry(offsetCurve, landWidth, 100);
+            const landMat = new THREE.MeshBasicMaterial({
+                color: 0xA9DA3F,
+                polygonOffset: true,
+                polygonOffsetFactor: -3,
+                polygonOffsetUnits: -3
+            });
+            const landMesh = new THREE.Mesh(landGeo, landMat);
+            landMesh.position.y = 0.10;
+            group.add(landMesh);
+
+            // Place houses and trees
+            for (let i = 0; i < houseCount; i++) {
+                const t = (i + 0.5) / houseCount;
+                const p = curve.getPointAt(t);
+                const tangent = curve.getTangentAt(t).normalize();
+                const normal = new THREE.Vector3(0, 1, 0);
+                const binormal = new THREE.Vector3().crossVectors(tangent, normal).normalize();
+
+                const housePos = p.clone().add(binormal.clone().multiplyScalar(offsetDistance));
+                const formattedId = "CH-" + (startId + i);
+                // Increased plot size: 1200 x 1500, Added Pool, and 1-2 Cars
+                const carQty = (i % 3 === 0) ? 2 : 1;
+                const house = createHouse(formattedId, 1200, 1500, null, true, carQty);
+                house.position.copy(housePos);
+                house.position.y = 0.2; // Increased to prevent Z-fighting
+
+                // Orientation: face the road
+                const angle = Math.atan2(tangent.x, tangent.z);
+                house.rotation.y = angle + Math.PI / 2;
+                group.add(house);
+            }
+            return group;
         }
 
         // Optimized window resize handler with throttling
