@@ -1,0 +1,2550 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Masterplan | 6 Zone Layout</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="index.css">
+    <style>
+
+    </style>
+</head>
+
+<body>
+
+    <div class="nav-ui">
+        <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 mb-1">Masterplan</h1>
+        <p class="text-slate-500 font-medium">6 Zonal Division Display</p>
+
+        <div class="space-y-1 mt-4">
+            <div class="legend-item">
+                <div class="dot bg-emerald-500"></div>
+                <span class="text-sm font-semibold text-slate-700">Residential Block</span>
+            </div>
+            <div class="legend-item">
+                <div class="dot bg-slate-600"></div>
+                <span class="text-sm font-semibold text-slate-700">Access Roads</span>
+            </div>
+        </div>
+
+        <div class="instruction">
+            <p><strong>Move:</strong> Click & Drag</p>
+            <p><strong>Zoom:</strong> Mouse Wheel</p>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button onclick="resetView()" class="btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor"
+                stroke-width="2" viewBox="0 0 24 24">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8m0-5v5h5" />
+            </svg>
+            Reset Camera
+        </button>
+        <button onclick="toggleTilt()" class="btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor"
+                stroke-width="2" viewBox="0 0 24 24">
+                <path
+                    d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+            </svg>
+            Tilt View
+        </button>
+    </div>
+
+    <div id="viewport">
+        <div id="cameraRig">
+            <div id="masterPlan">
+                <!-- Master Green Land -->
+                <!-- <div class="master-land" style="width: 10460px; height: 18000px; left: -230px; top: 0px;"></div> -->
+
+                <!-- Scene Content for generated houses -->
+                <!-- <div id="sceneContent"></div> -->
+
+                <!-- Roads -->
+                <!-- Big Roads  (Distance: X - 1800px   & Y - -0-) -->
+                <div class="road road-v" style="height:9700px;top: -4700px; left: 2460px;"></div>
+                <div class="road road-v" style="top: -5000px; left: 700px;"></div>
+                <div class="road road-v" style="height:10300px;top: -5300px; left: -1150px;"></div>
+                <div class="road road-v" style="height: 5780px;top: -780px; left: -3000px;"></div>
+                <!-- Small Roads -->
+
+                <!-- CLUSTER ROADS START  (Distance: X - 1800px   & Y - 800px) -->
+                <div class="road road-h" style="top: -4660px; left: -1000px;"></div>
+                <div class="road road-h" style="top: -3860px; left: -1000px;"></div>
+                <div class="road road-h" style="top: -3060px; left: -1000px;"></div>
+                <div class="road road-h" style="top: -2260px; left: -1000px;"></div>
+                <div class="road road-h" style="top: -1460px; left: -1000px;"></div>
+                <!-- HALF MAP HERE -->
+                <div class="road road-h" style="top: -660px; left: -1000px;"></div>
+                <div class="road road-h" style="top: 140px; left: -1000px;"></div>
+                <div class="road road-h" style="top: 940px; left: -1000px;"></div>
+                <div class="road road-h" style="top: 1740px; left: -1000px;"></div>
+                <div class="road road-h" style="top: 2540px; left: -1000px;"></div>
+                <div class="road road-h" style="top: 3340px; left: -1000px;"></div>
+                <div class="road road-h" style="top: 4140px; left: -1000px;"></div>
+                <div class="road road-h" style="top: 4940.2px; left: -1000px;"></div>
+
+                <!-- CLUSTER LEFT ROADS START  (Distance: X - 1800px   & Y - 800px) -->
+                <div class="road road-h" style="top: 2540px; left: -2840px;"></div>
+                <div class="road road-h" style="top: 3340px; left: -2840px;"></div>
+                <div class="road road-h" style="top: 4140px; left: -2840px;"></div>
+                <div class="road road-h" style="top: 4940.2px; left: -2840px;"></div>
+
+                <!-- BUNCH RIGHT ROADS START (Distance: X - 1800px   & Y - 934px) -->
+                <div class="road road-h" style="top: -4400px; left: 800px;"></div>
+                <div class="road road-h" style="top: -3470px; left: 800px;"></div>
+                <div class="road road-h" style="top: -2534px; left: 800px;"></div>
+                <div class="road road-h" style="top: -1600px; left: 800px;"></div>
+                <!-- HALF MAP HERE -->
+                <div class="road road-h" style="top: -660px; left: 800px;"></div>
+                <div class="road road-h" style="top: 270px; left: 800px;"></div>
+                <div class="road road-h" style="top: 1204px; left: 800px;"></div>
+                <div class="road road-h" style="top: 2138px; left: 800px;"></div>
+                <div class="road road-h" style="top: 3072px; left: 800px;"></div>
+                <div class="road road-h" style="top: 4006px; left: 800px;"></div>
+                <div class="road road-h" style="top: 4940.2px; left: 800px"></div>
+
+                <div class="road rotate_25 road-h" style="width: 10020px;top: -7100px; left: -3800px;"></div>
+                <div class="road rotate_25 road-h" style="width: 8500px;top: -5100px; left: -3800px;"></div>
+                <div class="road road-v" style="height: 11000px;top: -4350px; left: 4460px;"></div>
+                <div class="road road-v" style="height: 14000px;top: -6228px; left: 5980px;"></div>
+
+                <!-- NEW LIGHT GREEN ZONE -->
+
+                <div class="zone-light" style="top: -4600px; left: -1000px; width: 1765px; height: 700px;">
+                    <span class="prefix-label">ZONE_LIGHT_02</span>
+                        <div style="width: 1700px;" class="row_block w-full">
+                            <div class="bl_odd w-full">
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                            </div> 
+                            <div class="bl_even">
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                            </div> 
+                        </div>
+            
+                </div>
+                <div class="zone-light" style="top: -3800px; left: -1000px; width: 1765px; height: 700px;">
+                    <span class="prefix-label">ZONE_LIGHT_02</span>
+                        <div style="width: 1700px;" class="row_block w-full">
+                            <div class="bl_odd w-full">
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                            </div> 
+                            <div class="bl_even">
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                            </div> 
+                        </div>
+            
+                </div>
+                <div class="zone-light" style="top: -3000px; left: -1000px; width: 1765px; height: 700px;">
+                    <span class="prefix-label">ZONE_LIGHT_02</span>
+                        <div style="width: 1700px;" class="row_block w-full">
+                            <div class="bl_odd w-full">
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                            </div> 
+                            <div class="bl_even">
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                            </div> 
+                        </div>
+            
+                </div>
+                <div class="zone-light" style="top: -2200px; left: -1000px; width: 1765px; height: 700px;">
+                    <span class="prefix-label">ZONE_LIGHT_02</span>
+                        <div style="width: 1700px;" class="row_block w-full">
+                            <div class="bl_odd w-full">
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                            </div> 
+                            <div class="bl_even">
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                            </div> 
+                        </div>
+            
+                </div>
+                <div class="zone-light" style="top: -1400px; left: -1000px; width: 1765px; height: 700px;">
+                    <span class="prefix-label">ZONE_LIGHT_02</span>
+                        <div style="width: 1700px;" class="row_block w-full">
+                            <div class="bl_odd w-full">
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                            </div> 
+                            <div class="bl_even">
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                            </div> 
+                        </div>
+            
+                </div>
+                <div class="zone-light" style="top: -600px; left: -1000px; width: 1765px; height: 700px;">
+                    <span class="prefix-label">ZONE_LIGHT_02</span>
+                        <div style="width: 1700px;" class="row_block w-full">
+                            <div class="bl_odd w-full">
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                            </div> 
+                            <div class="bl_even">
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                            </div> 
+                        </div>
+            
+                </div>
+                <div class="zone-light" style="top: 200px; left: -1000px; width: 1765px; height: 700px;">
+                    <span class="prefix-label">ZONE_LIGHT_02</span>
+                        <div style="width: 1700px;" class="row_block w-full">
+                            <div class="bl_odd w-full">
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                            </div> 
+                            <div class="bl_even">
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                            </div> 
+                        </div>
+            
+                </div>
+                <div class="zone-light" style="top: 1000px; left: -1000px; width: 1765px; height: 700px;">
+                    <span class="prefix-label">ZONE_LIGHT_02</span>
+                        <div style="width: 1700px;" class="row_block w-full">
+                            <div class="bl_odd w-full">
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                            </div> 
+                            <div class="bl_even">
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                            </div> 
+                        </div>
+            
+                </div>
+                <div class="zone-light" style="top: 1800px; left: -1000px; width: 1765px; height: 700px;">
+                    <span class="prefix-label">ZONE_LIGHT_02</span>
+                        <div style="width: 1700px;" class="row_block w-full">
+                            <div class="bl_odd w-full">
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                            </div> 
+                            <div class="bl_even">
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                            </div> 
+                        </div>
+            
+                </div>
+                <div class="zone-light" style="top: 2600px; left: -1000px; width: 1765px; height: 700px;">
+                    <span class="prefix-label">ZONE_LIGHT_02</span>
+                        <div style="width: 1700px;" class="row_block w-full">
+                            <div class="bl_odd w-full">
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                            </div> 
+                            <div class="bl_even">
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                            </div> 
+                        </div>
+            
+                </div>
+                <div class="zone-light" style="top: 3400px; left: -1000px; width: 1765px; height: 700px;">
+                    <span class="prefix-label">ZONE_LIGHT_02</span>
+                        <div style="width: 1700px;" class="row_block w-full">
+                            <div class="bl_odd w-full">
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                            </div> 
+                            <div class="bl_even">
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                            </div> 
+                        </div>
+            
+                </div>
+                <div class="zone-light" style="top: 4200px; left: -1000px; width: 1765px; height: 700px;">
+                    <span class="prefix-label">ZONE_LIGHT_02</span>
+                        <div style="width: 1700px;" class="row_block w-full">
+                            <div class="bl_odd w-full">
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                            </div> 
+                            <div class="bl_even">
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                                <div class="house-block" style="position: relative;">
+                                <!-- SHB Prefix Sub Block -->
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_001</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 1">
+                                    </div>
+
+                                    <div class="sub-house-block" style="position: relative;">
+                                        <span class="prefix-label">SHB_002</span>
+                                        <img src="https://via.placeholder.com/100?text=House" class="house-image" alt="House 2">
+                                    </div>
+                                </div>
+                            </div> 
+                        </div>
+            
+                </div>
+
+
+
+            </div>
+        </div>
+    </div>
+    <script src="./index.js"></script>
+</body>
+
+</html>

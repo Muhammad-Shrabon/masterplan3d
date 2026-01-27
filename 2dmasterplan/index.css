@@ -1,0 +1,339 @@
+:root {
+    --bg-color: #f8fafc;
+    --land-green: #22c55e;
+    --road-grey: #334155;
+    --house-color: #ffffff;
+    --house-accent: #3b82f6;
+    --road-marking: rgba(255, 255, 255, 0.4);
+}
+
+body {
+    background-color: var(--bg-color);
+    color: #1e293b;
+    font-family: 'Outfit', sans-serif;
+    margin: 0;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+}
+
+/* The Viewport is the window through which we see the map */
+#viewport {
+    width: 100vw;
+    height: 100vh;
+    perspective: 2000px;
+    overflow: hidden;
+    cursor: grab;
+    background: #259c53;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#viewport:active {
+    cursor: grabbing;
+}
+
+/* The Camera Rig handles rotation and perspective */
+#cameraRig {
+    transform-style: preserve-3d;
+    transition: transform 0.1s ease-out;
+    will-change: transform;
+}
+
+/* The Master Plan containing all elements */
+#masterPlan {
+    position: relative;
+    width: 0;
+    height: 0;
+    transform-style: preserve-3d;
+    background: #259c53 !important;
+}
+
+.land-container {
+    position: absolute;
+    transform: translate3d(-50%, -50%, 0);
+    transform-style: preserve-3d;
+}
+
+/* Land Plot / Parcel */
+.parcel {
+    position: absolute;
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+    border-radius: 24px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    border: 4px solid rgba(255, 255, 255, 0.2);
+    overflow: hidden;
+}
+
+.master-land {
+    position: absolute;
+    background: #259c53;
+    border-radius: 120px;
+    /* Large rounded corners for the whole land */
+    transform: translate3d(-50%, -50%, -5px);
+    box-shadow: inset 0 0 150px rgba(0, 0, 0, 0.3), 0 50px 100px rgba(0, 0, 0, 0.2);
+    border: 12px solid rgba(255, 255, 255, 0.05);
+}
+
+#sceneContent {
+    position: absolute;
+    width: 0;
+    height: 0;
+    transform-style: preserve-3d;
+}
+
+/* Road Styling */
+.road {
+    position: absolute;
+    background: var(--road-grey);
+    z-index: 1;
+}
+
+.road-v {
+    width: 120px;
+    height: 10000px;
+    /* Growing from top to bottom */
+    transform: translate3d(50%, 0, 1px);
+}
+
+.road-h {
+    width: 1800px;
+    height: 120px;
+    /* Growing from left to right */
+    transform: translate3d(0, -50%, 1px);
+}
+
+.road::after {
+    content: '';
+    position: absolute;
+    background-image:
+        linear-gradient(to bottom, var(--road-marking) 50%, transparent 50%),
+        linear-gradient(to right, var(--road-marking) 50%, transparent 50%);
+    background-size: 4px 40px, 40px 4px;
+    background-repeat: repeat-y, repeat-x;
+}
+
+.road-v::after {
+    width: 4px;
+    height: 100%;
+    left: 50%;
+    top: 0;
+    transform: translateX(-50%);
+    background-image: linear-gradient(to bottom, var(--road-marking) 50%, transparent 50%);
+    background-size: 4px 40px;
+}
+
+.road-h::after {
+    height: 4px;
+    width: 100%;
+    top: 50%;
+    left: 0;
+    z-index: 99;
+    transform: translateY(-150%);
+    /* background-image: linear-gradient(to right, var(--road-marking) 50%, transparent 50%); */
+    background-size: 40px 4px;
+}
+
+/* House 3D Elements */
+.house {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    transform-style: preserve-3d;
+    transition: transform 0.3s ease;
+}
+
+.house:hover {
+    transform: translateZ(50px) scale(1.1);
+}
+
+.house-face {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: #fff;
+    border: 1px solid #cbd5e1;
+}
+
+.house-front {
+    transform: rotateX(-90deg) translateZ(30px);
+    height: 60px;
+}
+
+.house-back {
+    transform: rotateX(90deg) translateZ(30px);
+    height: 60px;
+}
+
+.house-left {
+    transform: rotateY(-90deg) translateZ(30px);
+    width: 60px;
+}
+
+.house-right {
+    transform: rotateY(90deg) translateZ(30px);
+    width: 60px;
+}
+
+.house-top {
+    transform: translateZ(60px);
+    background: var(--house-accent);
+    border: none;
+}
+
+.house-bottom {
+    transform: translateZ(0);
+    background: #64748b;
+}
+
+/* Window highlight */
+.house-front::after {
+    content: '';
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    right: 15px;
+    bottom: 15px;
+    background: #e2e8f0;
+    border: 2px solid #94a3b8;
+}
+
+/* UI Overlays */
+.nav-ui {
+    position: fixed;
+    top: 32px;
+    left: 32px;
+    z-index: 100;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 24px;
+    border-radius: 24px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
+    backdrop-filter: blur(16px);
+    border: 1px solid white;
+    max-width: 320px;
+}
+
+.controls {
+    position: fixed;
+    bottom: 32px;
+    right: 32px;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.btn {
+    background: white;
+    color: #1e293b;
+    padding: 12px 20px;
+    border-radius: 16px;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    border-color: #cbd5e1;
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 4px;
+}
+
+.instruction {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #f1f5f9;
+    font-size: 0.85rem;
+    color: #64748b;
+}
+
+.rotate_25 {
+    transform: rotate(10deg);
+}
+
+/* New Zonal Structure */
+.zone-light {
+    position: absolute;
+    background: #4ade80;
+    /* Light green */
+    border-radius: 40px;
+    padding-inline: 40px;
+    padding-block: 40px;
+    transform-style: preserve-3d;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+}
+
+.house-block {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    border: 2px dashed #d9ff00;
+    padding: 5px;
+    display: flex;
+    transform-style: preserve-3d;
+    width: 100%;
+}
+
+.sub-house-block {
+    width:90px;
+    height: 280px;
+    border: 1px solid rgb(23, 55, 102);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    margin: 4px;
+    transition: transform 0.2s;
+}
+
+.sub-house-block:hover {
+    transform: translateZ(10px) scale(1.05);
+    border-color: var(--house-accent);
+}
+
+.house-image {
+    width: 80%;
+    height: 80%;
+    object-fit: contain;
+    opacity: 0.8;
+}
+
+.prefix-label {
+    position: absolute;
+    top: -10px;
+    left: 10px;
+    background: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: bold;
+    color: #64748b;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+.bl_odd,.bl_even{
+    display: flex;
+    gap: 0;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+}

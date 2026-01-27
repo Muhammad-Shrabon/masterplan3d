@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D SVG Road Viewport</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #f1f5f9;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            margin: 0;
+            overflow: hidden;
+            perspective: 1000px; /* Required for 3D effects */
+        }
+        .canvas-grid {
+            background-image: 
+                linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-size: 50px 50px;
+            cursor: grab;
+        }
+        .canvas-grid:active {
+            cursor: grabbing;
+        }
+        #viewport {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            overflow: hidden;
+        }
+        /* The main wrapper that handles user panning/zooming */
+        #cameraRig {
+            transform-style: preserve-3d;
+            transition: transform 0.05s linear;
+            will-change: transform;
+        }
+        /* The specific container for the road's 3D orientation */
+        #road3D {
+            transform-style: preserve-3d;
+            will-change: transform;
+        }
+        .controls-overlay {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 10;
+        }
+        .info-overlay {
+            position: fixed;
+            top: 24px;
+            left: 24px;
+            pointer-events: none;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="info-overlay">
+        <h1 class="text-2xl font-bold text-blue-400">3D Road Viewport</h1>
+        <p class="text-slate-400 text-sm">Drag to Pan • Scroll to Zoom</p>
+        <p id="statsDisplay" class="text-slate-500 font-mono text-xs mt-2"></p>
+    </div>
+
+    <div class="controls-overlay">
+        <button onclick="resetCamera()" class="bg-slate-800 hover:bg-slate-700 text-white p-3 rounded-full border border-slate-700 shadow-xl transition-all flex items-center gap-2 px-6">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            Reset View
+        </button>
+    </div>
+
+    <div id="viewport" class="canvas-grid">
+        <div id="cameraRig">
+            <div id="road3D">
+                <div id="roadContainer">
+                    <!-- Road SVG injected here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /** * INTERNAL CONFIGURATION
+         * Modify these values to change the road profile and its 3D position/rotation.
+         */
+        const config = {
+            // Road Geometry
+            width: 80,
+            curve: 500,
+            verticalScale: 3,
+            roadColor: '#334155',
+
+            // 3D POSITION (X, Y, Z)
+            posX: 0, 
+            posY: 0, 
+            posZ: -200,
+
+            // 3D ROTATION (Degrees X, Y, Z)
+            rotX: 65,  // Tilted back for perspective
+            rotY: 0, 
+            rotZ: 0
+        };
+
+        // Viewport Interaction State
+        let scale = 0.4; 
+        let translateX = 0;
+        let translateY = 0;
+        let isDragging = false;
+        let startX, startY;
+
+        const viewport = document.getElementById('viewport');
+        const cameraRig = document.getElementById('cameraRig');
+        const road3D = document.getElementById('road3D');
+        const container = document.getElementById('roadContainer');
+        const stats = document.getElementById('statsDisplay');
+
+        /**
+         * Applies the X Y Z values from config to the 3D container
+         */
+        function apply3DTransform() {
+            road3D.style.transform = `
+                translate3d(${config.posX}px, ${config.posY}px, ${config.posZ}px)
+                rotateX(${config.rotX}deg)
+                rotateY(${config.rotY}deg)
+                rotateZ(${config.rotZ}deg)
+            `;
+        }
+
+        /**
+         * Generates the SVG Markup
+         */
+        function generateRoadSVG() {
+            const calculatedLength = Math.abs(config.curve) * config.verticalScale;
+            const padding = 400;
+            const viewWidth = Math.max(1200, Math.abs(config.curve) * 2 + padding);
+            const viewHeight = calculatedLength + padding;
+            
+            const startX = viewWidth / 2;
+            const startY = viewHeight - 100;
+            const endX = startX + config.curve;
+            const endY = 100;
+
+            const cp1x = startX;
+            const cp1y = startY - (calculatedLength / 1.5);
+            const cp2x = endX;
+            const cp2y = endY + (calculatedLength / 1.5);
+
+            const pathData = `M ${startX} ${startY} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${endX} ${endY}`;
+
+            stats.innerText = `Pos: [${config.posX}, ${config.posY}, ${config.posZ}] | Rot: [${config.rotX}°, ${config.rotY}°, ${config.rotZ}°]`;
+
+            return `
+                <svg width="${viewWidth}" height="${viewHeight}" viewBox="0 0 ${viewWidth} ${viewHeight}" xmlns="http://www.w3.org/2000/svg">
+                    <path d="${pathData}" fill="none" stroke="rgba(0,0,0,0.6)" stroke-width="${config.width + 15}" stroke-linecap="round" />
+                    <path d="${pathData}" fill="none" stroke="${config.roadColor}" stroke-width="${config.width}" stroke-linecap="round" />
+                    <path d="${pathData}" fill="none" stroke="#fbbf24" stroke-width="3" stroke-dasharray="40,30" stroke-linecap="round" />
+                    <path d="${pathData}" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="3" transform="translate(${-config.width/2 + 6}, 0)" />
+                    <path d="${pathData}" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="3" transform="translate(${config.width/2 - 6}, 0)" />
+                </svg>
+            `.trim();
+        }
+
+        function updateTransform() {
+            cameraRig.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+            viewport.style.backgroundPosition = `${translateX}px ${translateY}px`;
+        }
+
+        // --- Interaction Logic ---
+
+        viewport.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            startX = e.clientX - translateX;
+            startY = e.clientY - translateY;
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            translateX = e.clientX - startX;
+            translateY = e.clientY - startY;
+            updateTransform();
+        });
+
+        window.addEventListener('mouseup', () => isDragging = false);
+
+        viewport.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const factor = Math.pow(1.1, -e.deltaY / 100); 
+            scale = Math.min(Math.max(0.01, scale * factor), 10);
+            updateTransform();
+        }, { passive: false });
+
+        function resetCamera() {
+            scale = 0.4;
+            translateX = 0;
+            translateY = 0;
+            updateTransform();
+        }
+
+        // Initialize
+        window.onload = () => {
+            container.innerHTML = generateRoadSVG();
+            apply3DTransform();
+            updateTransform();
+        };
+    </script>
+</body>
+</html>
