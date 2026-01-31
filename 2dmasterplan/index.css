@@ -1,6 +1,6 @@
 :root {
     --bg-color: #f8fafc;
-    --land-green: #22c55e;
+    --land-green: #edf3ef;
     --road-grey: #334155;
     --house-color: #ffffff;
     --house-accent: #3b82f6;
@@ -24,7 +24,8 @@ body {
     perspective: 2000px;
     overflow: hidden;
     cursor: grab;
-    background: #259c53;
+    /* background: #259c53; */
+    background: #ffffff;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -47,7 +48,7 @@ body {
     width: 0;
     height: 0;
     transform-style: preserve-3d;
-    background: #259c53 !important;
+    background: #e0e7e3 !important;
 }
 
 .land-container {
@@ -68,7 +69,7 @@ body {
 
 .master-land {
     position: absolute;
-    background: #259c53;
+    background: #ffffff;
     border-radius: 120px;
     /* Large rounded corners for the whole land */
     transform: translate3d(-50%, -50%, -5px);
@@ -276,7 +277,7 @@ body {
 /* New Zonal Structure */
 .zone-light {
     position: absolute;
-    background: #4ade80;
+    background: #ffffff;
     /* Light green */
     border-radius: 40px;
     padding-inline: 40px;
@@ -296,7 +297,7 @@ body {
 }
 
 .sub-house-block {
-    width:90px;
+    width: 100%;
     height: 280px;
     border: 1px solid rgb(23, 55, 102);
     display: flex;
@@ -306,17 +307,38 @@ body {
     margin: 4px;
     transition: transform 0.2s;
 }
-
+.bunch-zone .sub-house-block{
+    width: 100%;
+    height: 380px;
+    border: 1px solid rgb(23, 55, 102);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    margin: 4px;
+    transition: transform 0.2s;
+}
 .sub-house-block:hover {
     transform: translateZ(10px) scale(1.05);
     border-color: var(--house-accent);
 }
 
 .house-image {
+    display: none;
+    /* Hide images as requested */
     width: 80%;
     height: 80%;
     object-fit: contain;
     opacity: 0.8;
+}
+
+.house-number {
+    font-size: 48px;
+    font-weight: 800;
+    color: #1e293b;
+    z-index: 2;
+    pointer-events: none;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .prefix-label {
@@ -331,9 +353,204 @@ body {
     color: #64748b;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
-.bl_odd,.bl_even{
+
+.bl_odd,
+.bl_even {
     display: flex;
     gap: 0;
     flex-wrap: nowrap;
     justify-content: space-between;
+}
+
+.lake {
+    background: #05ffc1;
+}
+
+/* House Info Popup */
+.info-popup {
+    position: fixed;
+    top: 32px;
+    right: -400px;
+    /* Hidden by default */
+    width: 350px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 24px;
+    box-shadow: -10px 0 40px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    padding: 24px;
+    transition: right 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    color: #1e293b;
+}
+
+.info-popup.active {
+    right: 32px;
+}
+
+.info-popup h2 {
+    font-size: 1.25rem;
+    font-weight: 800;
+    margin-bottom: 8px;
+    color: #0f172a;
+}
+
+.info-popup .status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 99px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+}
+
+.info-popup .info-grid {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.info-popup .info-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.info-popup .info-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.info-popup .info-value {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #334155;
+}
+
+.info-popup .status-form {
+    border-top: 1px solid #e2e8f0;
+    padding-top: 20px;
+}
+
+.info-popup .status-form label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.info-popup .status-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.info-popup .status-btn {
+    padding: 8px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: 1px solid #e2e8f0;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+}
+
+.info-popup .status-btn:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+}
+
+.info-popup .status-btn.selected {
+    background: var(--house-accent);
+    color: white;
+    border-color: var(--house-accent);
+}
+
+.close-popup {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: #f1f5f9;
+    border: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #64748b;
+    transition: all 0.2s;
+}
+
+.close-popup:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+}
+
+/* Status Border Colors */
+.status-available {
+    border-color: #22c55e !important;
+    border-width: 2px !important;
+}
+
+.status-saff-kaboola {
+    border-color: #a855f7 !important;
+    border-width: 2px !important;
+}
+
+.status-contact-sign {
+    border-color: #3b82f6 !important;
+    border-width: 2px !important;
+}
+
+.status-full-reservation {
+    border-color: #f59e0b !important;
+    border-width: 2px !important;
+}
+
+.status-token-received {
+    border-color: #06b6d4 !important;
+    border-width: 2px !important;
+}
+
+.status-hold {
+    border-color: #ef4444 !important;
+    border-width: 2px !important;
+}
+
+/* Status Badge Colors */
+.badge-available {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.badge-saff-kaboola {
+    background: #f3e8ff;
+    color: #9333ea;
+}
+
+.badge-contact-sign {
+    background: #dbeafe;
+    color: #2563eb;
+}
+
+.badge-full-reservation {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.badge-token-received {
+    background: #cffafe;
+    color: #0891b2;
+}
+
+.badge-hold {
+    background: #fee2e2;
+    color: #dc2626;
 }

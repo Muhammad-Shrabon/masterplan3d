@@ -6,8 +6,12 @@ const state = {
     tilt: 0, // 0 for flat top-down, 45 for 3D
     isDragging: false,
     startX: 0,
-    startY: 0
+    startY: 0,
+    lastClickTime: 0,
+    dragDistance: 0
 };
+
+let currentHouse = null;
 
 const viewport = document.getElementById('viewport');
 const cameraRig = document.getElementById('cameraRig');
@@ -89,20 +93,159 @@ viewport.addEventListener('mousedown', (e) => {
     state.isDragging = true;
     state.startX = e.clientX - state.tx * state.scale;
     state.startY = e.clientY - state.ty * state.scale;
+    state.dragDistance = 0;
+    state.lastClickTime = Date.now();
     viewport.style.cursor = 'grabbing';
 });
 
 window.addEventListener('mousemove', (e) => {
     if (!state.isDragging) return;
-    state.tx = (e.clientX - state.startX) / state.scale;
-    state.ty = (e.clientY - state.startY) / state.scale;
+    const newTx = (e.clientX - state.startX) / state.scale;
+    const newTy = (e.clientY - state.startY) / state.scale;
+
+    // Track drag distance to distinguish between click and drag
+    state.dragDistance += Math.abs(newTx - state.tx) + Math.abs(newTy - state.ty);
+
+    state.tx = newTx;
+    state.ty = newTy;
     updateTransform();
 });
 
-window.addEventListener('mouseup', () => {
+window.addEventListener('mouseup', (e) => {
     state.isDragging = false;
     viewport.style.cursor = 'grab';
+
+    // If drag distance is small and time is short, it's a click
+    const clickDuration = Date.now() - state.lastClickTime;
+    if (state.dragDistance < 5 && clickDuration < 300) {
+        handleViewportClick(e);
+    }
 });
+
+function handleViewportClick(e) {
+    const house = e.target.closest('.sub-house-block');
+    if (house) {
+        openPopup(house);
+    } else if (!e.target.closest('.info-popup') && !e.target.closest('.nav-ui') && !e.target.closest('.controls')) {
+        closePopup();
+    }
+}
+
+function openPopup(house) {
+    currentHouse = house;
+    const infoPopup = document.getElementById('infoPopup');
+    const label = house.querySelector('.prefix-label') ? house.querySelector('.prefix-label').innerText : 'Unknown';
+    document.getElementById('houseTitle').innerText = `Townhome 1900 (${label})`;
+
+    const status = house.getAttribute('data-status') || 'Available';
+    updatePopupStatusUI(status);
+
+    infoPopup.classList.add('active');
+}
+
+function closePopup() {
+    const infoPopup = document.getElementById('infoPopup');
+    if (infoPopup) infoPopup.classList.remove('active');
+    currentHouse = null;
+}
+
+function updatePopupStatusUI(status) {
+    const badge = document.getElementById('statusBadge');
+    if (!badge) return;
+
+    badge.innerText = status;
+    badge.className = 'status-badge';
+
+    const statusClassMap = {
+        'Available': 'badge-available',
+        'Saff-kaboola & Power': 'badge-saff-kaboola',
+        'Contact Sign': 'badge-contact-sign',
+        'Full Reservation': 'badge-full-reservation',
+        'Token Received': 'badge-token-received',
+        'Hold': 'badge-hold'
+    };
+
+    badge.classList.add(statusClassMap[status] || 'badge-available');
+
+    const btns = document.querySelectorAll('.status-btn');
+    btns.forEach(btn => {
+        if (btn.innerText === status) {
+            btn.classList.add('selected');
+        } else {
+            btn.classList.remove('selected');
+        }
+    });
+}
+
+function updateStatus(status) {
+    if (!currentHouse) return;
+
+    currentHouse.setAttribute('data-status', status);
+    currentHouse.classList.remove('status-available', 'status-saff-kaboola', 'status-contact-sign', 'status-full-reservation', 'status-token-received', 'status-hold');
+
+    const borderClassMap = {
+        'Available': 'status-available',
+        'Saff-kaboola & Power': 'status-saff-kaboola',
+        'Contact Sign': 'status-contact-sign',
+        'Full Reservation': 'status-full-reservation',
+        'Token Received': 'status-token-received',
+        'Hold': 'status-hold'
+    };
+
+    currentHouse.classList.add(borderClassMap[status] || 'status-available');
+    updatePopupStatusUI(status);
+}
+
+function initializeHouseNumbers() {
+    document.querySelectorAll('.zone-light').forEach(zone => {
+        const isBunch = zone.classList.contains('bunch-zone');
+        const blOdd = zone.querySelector('.bl_odd');
+        const blEven = zone.querySelector('.bl_even');
+
+        if (blOdd) {
+            blOdd.querySelectorAll('.house-block').forEach((block, i) => {
+                const num = (2 * i + 1);
+                const subBlocks = block.querySelectorAll('.sub-house-block');
+                if (isBunch) {
+                    const label = String(num).padStart(2, '0');
+                    if (subBlocks[0]) setHouseLabel(subBlocks[0], label);
+                } else {
+                    if (subBlocks[0]) setHouseLabel(subBlocks[0], `${num}A`);
+                    if (subBlocks[1]) setHouseLabel(subBlocks[1], `${num}B`);
+                }
+            });
+        }
+
+        if (blEven) {
+            blEven.querySelectorAll('.house-block').forEach((block, i) => {
+                const num = (2 * i + 2);
+                const subBlocks = block.querySelectorAll('.sub-house-block');
+                if (isBunch) {
+                    const label = String(num).padStart(2, '0');
+                    if (subBlocks[0]) setHouseLabel(subBlocks[0], label);
+                } else {
+                    if (subBlocks[0]) setHouseLabel(subBlocks[0], `${num}A`);
+                    if (subBlocks[1]) setHouseLabel(subBlocks[1], `${num}B`);
+                }
+            });
+        }
+    });
+}
+
+function setHouseLabel(subBlock, label) {
+    // Update prefix label
+    const prefix = subBlock.querySelector('.prefix-label');
+    if (prefix) prefix.innerText = label;
+
+    // Add/Update big number in the middle
+    let numDisp = subBlock.querySelector('.house-number');
+    if (!numDisp) {
+        numDisp = document.createElement('div');
+        numDisp.className = 'house-number';
+        subBlock.appendChild(numDisp);
+    }
+    numDisp.innerText = label;
+}
 
 viewport.addEventListener('wheel', (e) => {
     e.preventDefault();
@@ -125,6 +268,15 @@ function toggleTilt() {
 }
 
 window.onload = () => {
-    generateLayout();
+    // generateLayout();
     updateTransform();
+    initializeHouseNumbers();
+
+    // Initialize all sub-house-blocks with status-available class
+    document.querySelectorAll('.sub-house-block').forEach(house => {
+        if (!house.classList.contains('status-available')) {
+            house.classList.add('status-available');
+            house.setAttribute('data-status', 'Available');
+        }
+    });
 };
