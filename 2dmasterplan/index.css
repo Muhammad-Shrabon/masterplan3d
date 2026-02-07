@@ -307,7 +307,8 @@ body {
     margin: 4px;
     transition: transform 0.2s;
 }
-.bunch-zone .sub-house-block{
+
+.bunch-zone .sub-house-block {
     width: 100%;
     height: 380px;
     border: 1px solid rgb(23, 55, 102);
@@ -318,6 +319,7 @@ body {
     margin: 4px;
     transition: transform 0.2s;
 }
+
 .sub-house-block:hover {
     transform: translateZ(10px) scale(1.05);
     border-color: var(--house-accent);
