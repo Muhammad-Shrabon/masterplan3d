@@ -181,8 +181,8 @@
                     new THREE.Vector3(10, 0, 150),
                     new THREE.Vector3(0, 0, 150),
                     new THREE.Vector3(0, 0, 0),
-                    new THREE.Vector3(0, 0, -1150),
-                    new THREE.Vector3(0, 0, -1150),
+                    new THREE.Vector3(-60, 0, -1150),
+                    new THREE.Vector3(-60, 0, -1150),
                     new THREE.Vector3(800, 0, -800),
                     new THREE.Vector3(800, 0, -650),
                     new THREE.Vector3(830, 0, -500),
@@ -582,15 +582,19 @@
             rotation: { x: 0, y: Math.PI / 2, z: 0 },
             points: [
 
-                new THREE.Vector3(610, 0, 1100),
-                new THREE.Vector3(300, 0, 850),
-                new THREE.Vector3(300, 0, 684),
-                new THREE.Vector3(300, 0, 284),
-                new THREE.Vector3(300, 0, 204),
-                new THREE.Vector3(300, 0, 200),
-                new THREE.Vector3(200, 0, 200),
-                new THREE.Vector3(0, 0, 204),
-                new THREE.Vector3(0, 0, 204),
+                // new THREE.Vector3(610, 0, 1100),
+                // new THREE.Vector3(300, 0, 850),
+                // new THREE.Vector3(300, 0, 684),
+                // new THREE.Vector3(300, 0, 284),
+                // new THREE.Vector3(300, 0, 204),
+                // new THREE.Vector3(300, 0, 200),
+                // new THREE.Vector3(200, 0, 200),
+                new THREE.Vector3(250, 0, 878),
+                new THREE.Vector3(250, 0, 262),
+                new THREE.Vector3(250, 0, 258),
+                new THREE.Vector3(200, 0, 258),
+                new THREE.Vector3(0, 0, 264),
+                new THREE.Vector3(0, 0, 260),
                 new THREE.Vector3(0, 0, 0),
             ]
         };
@@ -837,6 +841,10 @@
             const subGreenLandCL12 = new THREE.Group();
             subGreenLandCL12.position.set(-10, 0, -300);// Elevated to be above the lake surface
             cityBlocks.add(subGreenLandCL12);
+            // Lake Near Horizontal
+            const subGreenLandCL13 = new THREE.Group();
+            subGreenLandCL13.position.set(-364, 0, -20);// Elevated to be above the lake surface
+            cityBlocks.add(subGreenLandCL13);
 
 
             // Create House Bunches and Clusters synchronously for guaranteed visibility
@@ -901,22 +909,53 @@
                 carCount: 1,
                 hasPlayground: true,
                 singleRow: true,
-                hDepth: 1550, // Increased house length (450 + 300)
-                hWidth: 520, // Increased house width (220 + 300)
-                plotWidth: 2000, // Increased land area width (1000 + 300)
-                plotDepth: 4000, // Increased land area depth (1400 + 300)
-                hasWing: false, // Remove the L-part
-                hFloorH: 140,   // Increase house height (double floor height)
-                houseOX: 200,   // Building X (Original 2000 * 0.15 + 200)
-                houseOZ: 500,   // Building Z
-                poolOX: -570,   // Pool X (Original -2000/3.5)
-                poolOZ: -1250,  // Pool Z (Original -5000/4)
-                carOX: -150,       // Car X
-                carOZ: 100,       // Car Z
-                playOX: -570,   // Playground X (Original -2000/3.5)
-                playOZ: 200,    // Playground Z (Original -5000/2 + 5000*0.2)
-                carW: 200,      // Adjusted width
-                carL: 460       // Reduced length (-300px)
+                hDepth: 1550,
+                hWidth: 520,
+                plotWidth: 2000,
+                plotDepth: 4000,
+                hasWing: false,
+                hFloorH: 140,
+                houseOX: 200,
+                houseOZ: 500,
+                poolOX: -570,
+                poolOZ: -1250,
+                carOX: -150,
+                carOZ: 100,
+                playOX: -570,
+                playOZ: 200,
+                carW: 200,
+                carL: 460
+            });
+            createHouseCluster(subGreenLandCL13, {
+                serialCount: 12,
+                startX: 0,
+                startZ: 190,
+                unitSpacing: 21,
+                houseGap: 300,
+                rowSpacing: 70,
+                startId: 2,
+                clusterName: "",
+                hasPool: true,
+                carCount: 1,
+                hasPlayground: true,
+                singleRow: true,
+                hDepth: 550,
+                hWidth: 320,
+                plotWidth: 1200,
+                plotDepth: 1400,
+                hasWing: false,
+                hFloorH: 120,
+                houseOX: 200,
+                houseOZ: 300,   
+                poolOX: -270,
+                poolOZ: -150,
+                carOX: -150,
+                carOZ: 100,
+                playOX: -270,
+                playOZ: 200,
+                carW: 100,
+                carL: 260,
+                rotation: 93
             });
 
 
@@ -2058,11 +2097,13 @@
                 playOX = 0,
                 playOZ = 0,
                 carW = 80,
-                carL = 160
+                carL = 160,
+                rotation = 0
             } = options;
 
             const clusterGroup = new THREE.Group();
             clusterGroup.position.set(startX, 0, startZ);
+            if (rotation) clusterGroup.rotation.y = rotation * (Math.PI / 180);
             parent.add(clusterGroup);
 
             // Calculate Bunch Land Size including padding based on scaled house plot depth
