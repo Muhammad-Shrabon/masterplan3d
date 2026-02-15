@@ -101,32 +101,64 @@
             {
                 width: 0,
                 points: [
-                    new THREE.Vector3(460, 0, 920),
-                    new THREE.Vector3(320, 0, 780),
-                    new THREE.Vector3(320, 0, 780),
-                    new THREE.Vector3(320, 0, 104),
-                    new THREE.Vector3(320, 0, 100),
-                    new THREE.Vector3(0, 0, 100),
-                    new THREE.Vector3(0, 0, 90),
-                    new THREE.Vector3(0, 0, 0),
+                    // new THREE.Vector3(460, 0, 920),
+                    // new THREE.Vector3(320, 0, 780),
+                    // new THREE.Vector3(320, 0, 780),
+                    // new THREE.Vector3(320, 0, 104),
+                    // new THREE.Vector3(320, 0, 100),
+                    // new THREE.Vector3(0, 0, 100),
+                    // new THREE.Vector3(0, 0, 90),
+                    new THREE.Vector3(250, 0, 260),
+                    new THREE.Vector3(250, 0, 200),
+                    new THREE.Vector3(250, 0, 190),
+                    new THREE.Vector3(0, 0, 190),
+                    new THREE.Vector3(0, 0, 180),
                     new THREE.Vector3(0, 0, 0),
                 ],
                 segments: 800, // Balanced for perfomance/quality
-                position: { x: -590, y: 0, z: 150 },
+                position: { x: -630, y: 0, z: 133 },
+                rotation: { x: 0, y: -11, z: 0 }
+            },
+            {
+                width: 0,
+                points: [
+                    // new THREE.Vector3(460, 0, 920),
+                    // new THREE.Vector3(320, 0, 780),
+                    // new THREE.Vector3(320, 0, 780),
+                    // new THREE.Vector3(320, 0, 104),
+                    // new THREE.Vector3(320, 0, 100),
+                    // new THREE.Vector3(0, 0, 100),
+                    // new THREE.Vector3(0, 0, 90),
+                    new THREE.Vector3(250, 0, 260),
+                    new THREE.Vector3(250, 0, 200),
+                    new THREE.Vector3(250, 0, 186),
+                    new THREE.Vector3(220, 0, 136),
+                    new THREE.Vector3(0, 0, 126),
+                    new THREE.Vector3(0, 0, 118),
+                    new THREE.Vector3(0, 0, 0),
+                ],
+                segments: 800, // Balanced for perfomance/quality
+                position: { x: -630, y: 0, z: 75 },
                 rotation: { x: 0, y: -11, z: 0 }
             },
             // Lake Near Road
             {
                 width: 10,
                 points: [
-                    new THREE.Vector3(437, 0, 920),
-                    new THREE.Vector3(320, 0, 804),
-                    new THREE.Vector3(320, 0, 804),
-                    new THREE.Vector3(320, 0, 104),
-                    new THREE.Vector3(320, 0, 100),
-                    new THREE.Vector3(0, 0, 100),
-                    new THREE.Vector3(0, 0, 90),
-                    new THREE.Vector3(0, 0, 0),
+                    // new THREE.Vector3(437, 0, 920),
+                    // new THREE.Vector3(320, 0, 804),
+                    // new THREE.Vector3(320, 0, 804),
+                    // new THREE.Vector3(320, 0, 104),
+                    // new THREE.Vector3(320, 0, 100),
+                    // new THREE.Vector3(0, 0, 100),
+                    new THREE.Vector3(430, 0, 940),
+                    new THREE.Vector3(250, 0, 800),
+                    new THREE.Vector3(250, 0, 795),
+                    new THREE.Vector3(250, 0, 195),
+                    new THREE.Vector3(250, 0, 190),
+                    new THREE.Vector3(220, 0, 162),
+                    new THREE.Vector3(0, 0, 162),
+                    new THREE.Vector3(0, 0, 155),
                     new THREE.Vector3(0, 0, 0),
                 ],
                 segments: 800, // Balanced for performance/quality
@@ -213,7 +245,7 @@
                 width: 10,
                 points: [
                     new THREE.Vector3(0, 0, 0),
-                    new THREE.Vector3(0, 0, -500)
+                    new THREE.Vector3(0, 0, -300)
                 ],
                 segments: 2000,
                 position: { x: -634, y: 0, z: 328 },
@@ -320,7 +352,7 @@
                     new THREE.Vector3(0, 0, 342)
                 ],
                 segments: 2000,
-                position: { x: -380, y: 0, z: -414 },
+                position: { x: -380, y: 0, z: -440 },
                 rotation: { x: 0, y: -11, z: 0 }
             },
             {
@@ -330,17 +362,27 @@
                     new THREE.Vector3(0, 0, 342)
                 ],
                 segments: 2000,
-                position: { x: -380, y: 0, z: -367 },
+                position: { x: -380, y: 0, z: -370 },
                 rotation: { x: 0, y: -11, z: 0 }
             },
             {
                 width: 4,
                 points: [
                     new THREE.Vector3(0, 0, 0),
-                    new THREE.Vector3(0, 0, 342)
+                    new THREE.Vector3(0, 0, 330)
                 ],
                 segments: 2000,
-                position: { x: -380, y: 0, z: -320 },
+                position: { x: -370, y: 0, z: -290 },
+                rotation: { x: 0, y: -11, z: 0 }
+            },
+            {
+                width: 4,
+                points: [
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(0, 0, 332)
+                ],
+                segments: 2000,
+                position: { x: -370, y: 0, z: -220 },
                 rotation: { x: 0, y: -11, z: 0 }
             },
             // Cluster Road Start - (1-7)
@@ -847,6 +889,14 @@
             const subGreenLandCL13 = new THREE.Group();
             subGreenLandCL13.position.set(-364, 0, -20);// Elevated to be above the lake surface
             cityBlocks.add(subGreenLandCL13);
+            // Lake Near 
+            const subGreenLandCL14 = new THREE.Group();
+            subGreenLandCL14.position.set(-10, 0, -380);// Elevated to be above the lake surface
+            cityBlocks.add(subGreenLandCL14);
+            // Lake Near 
+            const subGreenLandCL15 = new THREE.Group();
+            subGreenLandCL15.position.set(-335, 0, -380);// Elevated to be above the lake surface
+            cityBlocks.add(subGreenLandCL15);
 
 
             // Create House Bunches and Clusters synchronously for guaranteed visibility
@@ -959,7 +1009,66 @@
                 carL: 260,
                 rotation: 93
             });
-
+            createHouseCluster(subGreenLandCL14, {
+                serialCount: 5,
+                startX: 0,
+                startZ: 262,
+                unitSpacing: 45, // Increased for much larger houses
+                houseGap: 340,
+                rowSpacing: 70,
+                startId: 2,
+                clusterName: "",
+                hasPool: true,
+                carCount: 1,
+                hasPlayground: true,
+                singleRow: true,
+                hDepth: 1550,
+                hWidth: 520,
+                plotWidth: 2400,
+                plotDepth: 3000,
+                hasWing: false,
+                hFloorH: 140,
+                houseOX: 200,
+                houseOZ: 500,
+                poolOX: -570,
+                poolOZ: -750,
+                carOX: -150,
+                carOZ: 100,
+                playOX: -570,
+                playOZ: 200,
+                carW: 200,
+                carL: 460
+            });
+            createHouseCluster(subGreenLandCL15, {
+                serialCount: 7,
+                startX: 0,
+                startZ: 262,
+                unitSpacing: 45, // Increased for much larger houses
+                houseGap: 340,
+                rowSpacing: 70,
+                startId: 2,
+                clusterName: "",
+                hasPool: true,
+                carCount: 1,
+                hasPlayground: true,
+                singleRow: true,
+                hDepth: 1550,
+                hWidth: 520,
+                plotWidth: 2400,
+                plotDepth: 3000,
+                hasWing: false,
+                hFloorH: 140,
+                houseOX: 200,
+                houseOZ: 500,
+                poolOX: -570,
+                poolOZ: -750,
+                carOX: -150,
+                carOZ: 100,
+                playOX: -570,
+                playOZ: 200,
+                carW: 200,
+                carL: 460
+            });
 
             // Shared materials for all roads
             const asphaltBaseMat = getSharedMaterial('asphaltBase', () => new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.9, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 }));
@@ -1020,9 +1129,16 @@
 
             // --- Fill Empty Curved Area with Houses ---
             createCurveHouseBunch(scene, ROAD_CONFIGS[0], {
-                houseSpacing: 18,
-                offsetDistance: 15,
-                landWidth: 65,
+                houseSpacing: 22,
+                offsetDistance: 5,
+                landWidth: 46,
+                startId: 500
+            });
+            // --- Fill Empty Curved Area with Houses Oposite---
+            createCurveHouseBunch(scene, ROAD_CONFIGS[1], {
+                houseSpacing: 22,
+                offsetDistance: 5,
+                landWidth: 46,
                 startId: 500
             });
 
