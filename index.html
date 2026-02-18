@@ -163,7 +163,7 @@
                     new THREE.Vector3(0, 0, -450),
                     new THREE.Vector3(0, 0, -450),
                     new THREE.Vector3(0, 0, -610),
-                    new THREE.Vector3(-695, 0, -850),
+                    new THREE.Vector3(-750, 0, -880),
                 ],
                 segments: 800, // Balanced
                 position: { x: 360, y: 0, z: 330 },
@@ -313,10 +313,10 @@
                 width: 4,
                 points: [
                     new THREE.Vector3(0, 0, 0),
-                    new THREE.Vector3(0, 0, 90)
+                    new THREE.Vector3(0, 0, 254)
                 ],
                 segments: 2000,
-                position: { x: -30, y: 0, z: -294 },
+                position: { x: -30, y: 0, z: -220 },
                 rotation: { x: 0, y: -11, z: 0 },
                 skipLamps: true
             },
@@ -324,10 +324,10 @@
                 width: 4,
                 points: [
                     new THREE.Vector3(0, 0, 0),
-                    new THREE.Vector3(0, 0, 230)
+                    new THREE.Vector3(0, 0, 258)
                 ],
                 segments: 2000,
-                position: { x: -30, y: 0, z: -246 },
+                position: { x: -30, y: 0, z: -358 },
                 rotation: { x: 0, y: -11, z: 0 },
                 skipLamps: true
             },
@@ -335,10 +335,10 @@
                 width: 4,
                 points: [
                     new THREE.Vector3(0, 0, 0),
-                    new THREE.Vector3(0, 0, 240)
+                    new THREE.Vector3(0, 0, 298)
                 ],
                 segments: 2000,
-                position: { x: -30, y: 0, z: -198 },
+                position: { x: -30, y: 0, z: -289 },
                 rotation: { x: 0, y: -11, z: 0 },
                 skipLamps: true
             },
@@ -350,7 +350,7 @@
                     new THREE.Vector3(0, 0, 332)
                 ],
                 segments: 2000,
-                position: { x: -370, y: 0, z: -342.5 },
+                position: { x: -370, y: 0, z: -427 },
                 rotation: { x: 0, y: -11, z: 0 },
                 skipLamps: true
             },
@@ -361,7 +361,7 @@
                     new THREE.Vector3(0, 0, 327)
                 ],
                 segments: 2000,
-                position: { x: -365, y: 0, z: -294 },
+                position: { x: -365, y: 0, z: -358 },
                 rotation: { x: 0, y: -11, z: 0 },
                 skipLamps: true
             },
@@ -372,7 +372,7 @@
                     new THREE.Vector3(0, 0, 331)
                 ],
                 segments: 2000,
-                position: { x: -370, y: 0, z: -246 },
+                position: { x: -370, y: 0, z: -289 },
                 rotation: { x: 0, y: -11, z: 0 },
                 skipLamps: true
             },
@@ -383,7 +383,7 @@
                     new THREE.Vector3(0, 0, 332)
                 ],
                 segments: 2000,
-                position: { x: -370, y: 0, z: -198 },
+                position: { x: -370, y: 0, z: -220 },
                 rotation: { x: 0, y: -11, z: 0 },
                 skipLamps: true
             },
@@ -1057,11 +1057,11 @@
 
             // Lake Near 
             const subGreenLandCL11 = new THREE.Group();
-            subGreenLandCL11.position.set(-310, 0, -300);// Elevated to be above the lake surface
+            subGreenLandCL11.position.set(-328, 0, -296);// Elevated to be above the lake surface
             cityBlocks.add(subGreenLandCL11);
             // Lake Near 
             const subGreenLandCL12 = new THREE.Group();
-            subGreenLandCL12.position.set(-10, 0, -300);// Elevated to be above the lake surface
+            subGreenLandCL12.position.set(-10, 0, -296);// Elevated to be above the lake surface
             cityBlocks.add(subGreenLandCL12);
             // Lake Near Horizontal
             const subGreenLandCL13 = new THREE.Group();
@@ -1078,21 +1078,38 @@
 
             // BLOCK B -1
             const subGreenLandBB1 = new THREE.Group();
-            subGreenLandBB1.position.set(-350, 0, -395);
+            subGreenLandBB1.position.set(-350, 0, -411);
             cityBlocks.add(subGreenLandBB1);
 
-            // BLOCK B - 2
+            // BLOCK B - 2 (Position adjusted for 2x size)
             const subGreenLandBB2 = new THREE.Group();
-            subGreenLandBB2.position.set(-350, 0, -442);
+            subGreenLandBB2.position.set(-350, 0, -480);
             cityBlocks.add(subGreenLandBB2);
             // BLOCK B - 3
             const subGreenLandBB3 = new THREE.Group();
-            subGreenLandBB3.position.set(-350, 0, -490);
+            subGreenLandBB3.position.set(-350, 0, -548);
             cityBlocks.add(subGreenLandBB3);
             // BLOCK B - 4
             const subGreenLandBB4 = new THREE.Group();
-            subGreenLandBB4.position.set(-350, 0, -538);
+            subGreenLandBB4.position.set(-355, 0, -618);
             cityBlocks.add(subGreenLandBB4);
+
+            // BLOCK A - 1
+            const subGreenLandBA1 = new THREE.Group();
+            subGreenLandBA1.position.set(-20, 0, -618);
+            cityBlocks.add(subGreenLandBA1);
+            // BLOCK A - 2
+            const subGreenLandBA2 = new THREE.Group();
+            subGreenLandBA2.position.set(-20, 0, -548);
+            cityBlocks.add(subGreenLandBA2);
+            // BLOCK A - 3
+            const subGreenLandBA3 = new THREE.Group();
+            subGreenLandBA3.position.set(-20, 0, -480);
+            cityBlocks.add(subGreenLandBA3); 
+            // BLOCK A - 4
+            const subGreenLandBA4 = new THREE.Group();
+            subGreenLandBA4.position.set(-20, 0, -411);
+            cityBlocks.add(subGreenLandBA4);
 
 
             // Create House Bunches and Clusters synchronously for guaranteed visibility
@@ -1114,49 +1131,72 @@
             createHouseCluster(subGreenLandCL9, { serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-9" });
             createHouseCluster(subGreenLandCL10, { serialCount: 22, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-10" });
             // BLOCK B -1
-            createHouseCluster(subGreenLandBB1, { serialCount: 36, startX: 0, startZ: 210, unitSpacing: 17.6, houseGap: 460, rowSpacing: 22, startId: 2, clusterName: "BLOCK B -1" });
+            createHouseCluster(subGreenLandBB1, {
+                serialCount: 36, startX: 0, startZ: 210, unitSpacing: 8.9, houseGap: 10, rowSpacing: 16, startId: 2,
+                clusterName: "BLOCK B -1", hScale: 2,
+                innerGapScale: { x: 0.53, y: .8 },
+                outerGapScale: 0.5,
+                houseOX: 50,
+                houseOZ: 50
+            });
             // BLOCK B - 2
-            createHouseCluster(subGreenLandBB2, { serialCount: 36, startX: 0, startZ: 210, unitSpacing: 17.6, houseGap: 460, rowSpacing: 22, startId: 2, clusterName: "BLOCK B -2" });
+            createHouseCluster(subGreenLandBB2, {
+                serialCount: 36, startX: 0, startZ: 210, unitSpacing: 8.9, houseGap: 10, rowSpacing: 16, startId: 2,
+                clusterName: "BLOCK B -2", hScale: 2,
+                innerGapScale: { x: 0.53, y: .8 },
+                outerGapScale: 0.5
+            });
             // BLOCK B - 3
-            createHouseCluster(subGreenLandBB3, { serialCount: 36, startX: 0, startZ: 210, unitSpacing: 17.6, houseGap: 460, rowSpacing: 22, startId: 2, clusterName: "BLOCK B -3" });
+            createHouseCluster(subGreenLandBB3, {
+                serialCount: 36, startX: 0, startZ: 210, unitSpacing: 8.9, houseGap: 10, rowSpacing: 16, startId: 2,
+                clusterName: "BLOCK B -3", hScale: 2,
+                innerGapScale: { x: 0.53, y: .8 },
+                outerGapScale: 0.5
+            });
             // BLOCK B - 4
-            createHouseCluster(subGreenLandBB4, { serialCount: 36, startX: 0, startZ: 210, unitSpacing: 17.6, houseGap: 460, rowSpacing: 22, startId: 2, clusterName: "BLOCK B -3" });
-            // Lake Near Houses With Cluster - Updated with Single Row, Increased Depth, and 30px Car Gap
+            createHouseCluster(subGreenLandBB4, {
+                serialCount: 36, startX: 0, startZ: 210, unitSpacing: 8.9, houseGap: 10, rowSpacing: 16, startId: 2,
+                clusterName: "BLOCK B -4", hScale: 2,
+                innerGapScale: { x: 0.53, y: .8 },
+                outerGapScale: 0.5
+            });
+            // BLOCK A - 1
+            createHouseCluster(subGreenLandBA1, {
+                serialCount: 36, startX: 0, startZ: 210, unitSpacing: 8.9, houseGap: 10, rowSpacing: 16, startId: 2,
+                clusterName: "BLOCK A -1", hScale: 2,
+                innerGapScale: { x: 0.53, y: .8 },
+                outerGapScale: 0.5
+            });
+            // BLOCK A - 2
+            createHouseCluster(subGreenLandBA2, {
+                serialCount: 36, startX: 0, startZ: 210, unitSpacing: 8.9, houseGap: 10, rowSpacing: 16, startId: 2,
+                clusterName: "BLOCK A -2", hScale: 2,
+                innerGapScale: { x: 0.53, y: .8 },
+                outerGapScale: 0.5
+            });
+            // BLOCK A - 3
+            createHouseCluster(subGreenLandBA3, {
+                serialCount: 36, startX: 0, startZ: 210, unitSpacing: 8.9, houseGap: 10, rowSpacing: 16, startId: 2,
+                clusterName: "BLOCK A -3", hScale: 2,
+                innerGapScale: { x: 0.53, y: .8 },
+                outerGapScale: 0.5
+            });
+            // BLOCK A - 4
+            createHouseCluster(subGreenLandBA4, {
+                serialCount: 36, startX: 0, startZ: 210, unitSpacing: 8.9, houseGap: 10, rowSpacing: 16, startId: 2,
+                clusterName: "BLOCK A -4", hScale: 2,
+                innerGapScale: { x: 0.53, y: .8 },
+                outerGapScale: 0.5
+            });
+
+
             createHouseCluster(subGreenLandCL11, {
+                innerGapScale: { x: 1, y: .9 },
+                outerGapScale: 1.5,
                 serialCount: 8,
                 startX: 0,
                 startZ: 262,
-                unitSpacing: 36, // Increased for much larger houses
-                houseGap: 300,
-                rowSpacing: 70,
-                startId: 2,
-                clusterName: "",
-                hasPool: true,
-                carCount: 1,
-                hasPlayground: true,
-                singleRow: true,
-                hDepth: 1550, // Increased house length (450 + 300)
-                hWidth: 520, // Increased house width (220 + 300)
-                plotWidth: 2000, // Increased land area width (1000 + 300)
-                plotDepth: 4000, // Increased land area depth (1400 + 300)
-                hasWing: false, // Remove the L-part
-                hFloorH: 140,   // Increase house height (double floor height)
-                houseOX: 200,   // Building X (Original 2000 * 0.15 + 200)
-                houseOZ: 500,   // Building Z
-                poolOX: -570,   // Pool X (Original -2000/3.5)
-                poolOZ: -1250,  // Pool Z (Original -5000/4)
-                carOX: -150,       // Car X
-                carOZ: 100,       // Car Z
-                playOX: -570,   // Playground X (Original -2000/3.5)
-                playOZ: 200,    // Playground Z (Original -5000/2 + 5000*0.2)
-                carW: 200,      // Adjusted width
-                carL: 460       // Reduced length (-300px)
-            });
-            createHouseCluster(subGreenLandCL12, {
-                serialCount: 5,
-                startX: 0,
-                startZ: 262,
-                unitSpacing: 36, // Increased for much larger houses
+                unitSpacing: 38,
                 houseGap: 300,
                 rowSpacing: 70,
                 startId: 2,
@@ -1167,8 +1207,40 @@
                 singleRow: true,
                 hDepth: 1550,
                 hWidth: 520,
-                plotWidth: 2000,
-                plotDepth: 4000,
+                basePlotW: 2000,
+                basePlotD: 4000,
+                hasWing: false,
+                hFloorH: 140,
+                houseOX: 200,
+                houseOZ: 500,
+                poolOX: -570,
+                poolOZ: -1250,
+                carOX: -150,
+                carOZ: 100,
+                playOX: -570,
+                playOZ: 200,
+                carW: 200,
+                carL: 460
+            });
+            createHouseCluster(subGreenLandCL12, {
+                innerGapScale: { x: 1, y: .9 },
+                outerGapScale: 1.5,
+                serialCount: 8,
+                startX: 0,
+                startZ: 262,
+                unitSpacing: 38,
+                houseGap: 300,
+                rowSpacing: 70,
+                startId: 2,
+                clusterName: "",
+                hasPool: true,
+                carCount: 1,
+                hasPlayground: true,
+                singleRow: true,
+                hDepth: 1550,
+                hWidth: 520,
+                basePlotW: 2000,
+                basePlotD: 4000,
                 hasWing: false,
                 hFloorH: 140,
                 houseOX: 200,
@@ -1214,10 +1286,12 @@
                 rotation: 93
             });
             createHouseCluster(subGreenLandCL14, {
+                innerGapScale: { x: 1, y: .5 },
+                outerGapScale: 1.5,
                 serialCount: 5,
                 startX: 0,
                 startZ: 262,
-                unitSpacing: 45, // Increased for much larger houses
+                unitSpacing: 38, // Increased for much larger houses
                 houseGap: 340,
                 rowSpacing: 70,
                 startId: 2,
@@ -1228,8 +1302,8 @@
                 singleRow: true,
                 hDepth: 1550,
                 hWidth: 520,
-                plotWidth: 2400,
-                plotDepth: 3000,
+                basePlotW: 2000,
+                basePlotD: 4000,
                 hasWing: false,
                 hFloorH: 140,
                 houseOX: 200,
@@ -1241,13 +1315,16 @@
                 playOX: -570,
                 playOZ: 200,
                 carW: 200,
-                carL: 460
+                carL: 460,
+                houseRotation: 360
             });
             createHouseCluster(subGreenLandCL15, {
+                innerGapScale: { x: 1, y: .5 },
+                outerGapScale: 1.5,
                 serialCount: 7,
                 startX: 0,
                 startZ: 262,
-                unitSpacing: 45, // Increased for much larger houses
+                unitSpacing: 45,
                 houseGap: 340,
                 rowSpacing: 70,
                 startId: 2,
@@ -1258,8 +1335,8 @@
                 singleRow: true,
                 hDepth: 1550,
                 hWidth: 520,
-                plotWidth: 2400,
-                plotDepth: 3000,
+                basePlotW: 2000,
+                basePlotD: 4000,
                 hasWing: false,
                 hFloorH: 140,
                 houseOX: 200,
@@ -1271,7 +1348,8 @@
                 playOX: -570,
                 playOZ: 200,
                 carW: 200,
-                carL: 460
+                carL: 460,
+                houseRotation: 360
             });
 
             // Shared materials for all roads
@@ -1973,7 +2051,11 @@
         /**
          * Creates the new L-Wing house model including a stylish boundary wall and gate.
          */
-        function createHouse(id, plotW = 500, plotD = 600, skipWall = null, hasPool = false, carCount = 0, hasPlayground = false, hDepth = 280, hWidth = 220, hasWing = true, hFloorH = 100, houseOX = 0, houseOZ = 0, poolOX = 0, poolOZ = 0, carOX = 0, carOZ = 0, playOX = 0, playOZ = 0, carW = 80, carL = 160) {
+        function createHouse(id, plotW = 500, plotD = 600, skipWall = null, hasPool = false, carCount = 0, hasPlayground = false, hDepth = 280, hWidth = 220, hasWing = true, hFloorH = 100, houseOX = 0, houseOZ = 0, poolOX = 0, poolOZ = 0, carOX = 0, carOZ = 0, playOX = 0, playOZ = 0, carW = 80, carL = 160, innerGapScale = 1) {
+            const igScaleRaw = innerGapScale;
+            const igx = (typeof igScaleRaw === 'object') ? (igScaleRaw.x !== undefined ? igScaleRaw.x : 1) : igScaleRaw;
+            const igy = (typeof igScaleRaw === 'object') ? (igScaleRaw.y !== undefined ? igScaleRaw.y : 1) : igScaleRaw;
+
             const CONFIG = {
                 houseWidth: hWidth,
                 houseDepth: hDepth,
@@ -2019,20 +2101,19 @@
             const pR = new THREE.Mesh(pillarGeo, gateMat); pR.position.set(gateW / 2, (wallH + 15) / 2, -plotD / 2 + wallT / 2); house.add(pR);
 
             const building = new THREE.Group();
-            // Manual Building Offsets (Fixed automatic shift)
+            // Manual Building Offsets
             building.position.x = houseOX;
-            building.position.z = 0;
+            building.position.z = houseOZ;
             house.add(building);
-            const offsetZ = houseOZ;
 
-            const mbKey = `mainBody_${houseWidth}_${houseDepth}`;
+            const mbKey = `mainBody_${houseWidth}_${houseDepth}_${floorH}`;
             const mainBodyGeo = getSharedGeometry(mbKey, () => new THREE.BoxGeometry(houseWidth, floorH * 2, houseDepth));
-            const mb = new THREE.Mesh(mainBodyGeo, bodyMat); mb.position.set(0, floorH, offsetZ); mb.castShadow = true; building.add(mb);
+            const mb = new THREE.Mesh(mainBodyGeo, bodyMat); mb.position.set(0, floorH, 0); mb.castShadow = true; building.add(mb);
 
             if (hasWing) {
-                const wbKey = `wingBody_${wingLen}_${wingW}`;
+                const wbKey = `wingBody_${wingLen}_${wingW}_${floorH}`;
                 const wingBodyGeo = getSharedGeometry(wbKey, () => new THREE.BoxGeometry(wingLen, floorH * 2, wingW));
-                const wb = new THREE.Mesh(wingBodyGeo, bodyMat); wb.position.set(-(houseWidth / 2 + wingLen / 2), floorH, houseDepth / 2 - wingW / 2 + offsetZ);
+                const wb = new THREE.Mesh(wingBodyGeo, bodyMat); wb.position.set(-(houseWidth / 2 + wingLen / 2), floorH, houseDepth / 2 - wingW / 2);
                 wb.castShadow = true; building.add(wb);
             }
 
@@ -2046,31 +2127,31 @@
             });
 
             const doorGround = new THREE.Mesh(doorGeo, doorMat);
-            doorGround.position.set(0, 37.5, -(houseDepth / 2 + 2) + offsetZ);
+            doorGround.position.set(0, 37.5, -(houseDepth / 2 + 2));
             building.add(doorGround);
 
             const doorFirst = new THREE.Mesh(doorGeo, doorMat);
-            doorFirst.position.set(0, floorH + 37.5, -(houseDepth / 2 + 2) + offsetZ);
+            doorFirst.position.set(0, floorH + 37.5, -(houseDepth / 2 + 2));
             building.add(doorFirst);
 
             const porchGeoKey = `housePorch_${houseWidth}`;
             const porchGeo = getSharedGeometry(porchGeoKey, () => new THREE.BoxGeometry(houseWidth - 20, 10, 80));
             const porchMat = getSharedMaterial('porchMat', () => new THREE.MeshStandardMaterial({ color: 0xcccccc }));
-            const p1 = new THREE.Mesh(porchGeo, porchMat); p1.position.set(0, 5, -(houseDepth / 2 + 40) + offsetZ); building.add(p1);
+            const p1 = new THREE.Mesh(porchGeo, porchMat); p1.position.set(0, 5, -(houseDepth / 2 + 40)); building.add(p1);
             const p2 = p1.clone(); p2.position.y = floorH + 5; building.add(p2);
 
-            // House Porch Light Bulb
+            // House Porch Light Bulb - Positioned dynamically under the porch
             const houseBulbGeo = getSharedGeometry('houseBulb', () => new THREE.SphereGeometry(15, 8, 8));
             const houseBulbMat = getSharedMaterial('houseBulbMat', () => new THREE.MeshStandardMaterial({ color: 0xffffaa, emissive: 0x000000, emissiveIntensity: 0 }));
             const hb = new THREE.Mesh(houseBulbGeo, houseBulbMat);
-            hb.position.set(0, 85, -(houseDepth / 2 + 15) + offsetZ);
+            hb.position.set(0, floorH - 15, -(houseDepth / 2 + 15)); // Dynamic Y based on building height
             hb.name = 'houseBulb';
             building.add(hb);
 
             const winGeo = getSharedGeometry('houseWin', () => new THREE.PlaneGeometry(40, 50));
             if (hasWing) {
                 [-(houseWidth / 2 + 80), -(houseWidth / 2 + 220)].forEach(x => {
-                    const w = new THREE.Mesh(winGeo, winMat); w.position.set(x, 45, houseDepth / 2 - wingW - 1.5 + offsetZ);
+                    const w = new THREE.Mesh(winGeo, winMat); w.position.set(x, 45, houseDepth / 2 - wingW - 1.5);
                     w.rotation.y = Math.PI; building.add(w);
                     const wTop = w.clone(); wTop.position.y = floorH + 45; building.add(wTop);
                 });
@@ -2083,21 +2164,22 @@
             const glassGeoSide = getSharedGeometry('glassSide', () => new THREE.BoxGeometry(2, railH, 80));
 
             const gFront = new THREE.Mesh(glassGeoFront, glassMat);
-            gFront.position.set(0, floorH + 5 + railH / 2 + 5, -(houseDepth / 2 + 80) + offsetZ);
+            gFront.position.set(0, floorH + 5 + railH / 2 + 5, -(houseDepth / 2 + 80));
             building.add(gFront);
 
             const gL = new THREE.Mesh(glassGeoSide, glassMat);
-            gL.position.set(-(houseWidth - 20) / 2, floorH + 5 + railH / 2 + 5, -(houseDepth / 2 + 40) + offsetZ);
+            gL.position.set(-(houseWidth - 20) / 2, floorH + 5 + railH / 2 + 5, -(houseDepth / 2 + 40));
             building.add(gL);
 
             const gR = new THREE.Mesh(glassGeoSide, glassMat);
-            gR.position.set((houseWidth - 20) / 2, floorH + 5 + railH / 2 + 5, -(houseDepth / 2 + 40) + offsetZ);
+            gR.position.set((houseWidth - 20) / 2, floorH + 5 + railH / 2 + 5, -(houseDepth / 2 + 40));
             building.add(gR);
 
             // Beams (connecting structures - GROUND to 1st FLOOR BALCONY)
-            const beamGeo = getSharedGeometry('houseBeam', () => new THREE.CylinderGeometry(5, 5, floorH));
+            const beamKey = `houseBeam_${floorH}`;
+            const beamGeo = getSharedGeometry(beamKey, () => new THREE.CylinderGeometry(5, 5, floorH));
             const b1 = new THREE.Mesh(beamGeo, beamMat);
-            b1.position.set(-(houseWidth / 2 - 30), floorH / 2, -(houseDepth / 2 + 60) + offsetZ);
+            b1.position.set(-(houseWidth / 2 - 30), floorH / 2 + 5, -(houseDepth / 2 + 60)); // Added +5 for alignment
             building.add(b1);
             const b2 = b1.clone(); b2.position.x = houseWidth / 2 - 30;
             building.add(b2);
@@ -2107,27 +2189,27 @@
                 const wingBalconyKey = `wingBalcony_${wingLen}`;
                 const wingBalconyGeo = getSharedGeometry(wingBalconyKey, () => new THREE.BoxGeometry(wingLen - 40, 10, 60));
                 const wbFloor = new THREE.Mesh(wingBalconyGeo, porchMat);
-                wbFloor.position.set(-(houseWidth / 2 + wingLen / 2), floorH + 5, houseDepth / 2 - wingW - 30 + offsetZ);
+                wbFloor.position.set(-(houseWidth / 2 + wingLen / 2), floorH + 5, houseDepth / 2 - wingW - 30);
                 building.add(wbFloor);
 
                 const wgFrontKey = `wingGlassFront_${wingLen}`;
                 const wingGlassFrontGeo = getSharedGeometry(wgFrontKey, () => new THREE.BoxGeometry(wingLen - 40, railH, 2));
                 const wgFront = new THREE.Mesh(wingGlassFrontGeo, glassMat);
-                wgFront.position.set(-(houseWidth / 2 + wingLen / 2), floorH + 5 + railH / 2 + 5, houseDepth / 2 - wingW - 60 + offsetZ);
+                wgFront.position.set(-(houseWidth / 2 + wingLen / 2), floorH + 5 + railH / 2 + 5, houseDepth / 2 - wingW - 60);
                 building.add(wgFront);
 
                 const wingGlassSideGeo = getSharedGeometry('wingGlassSide', () => new THREE.BoxGeometry(2, railH, 60));
                 const wgL = new THREE.Mesh(wingGlassSideGeo, glassMat);
-                wgL.position.set(-(houseWidth / 2 + wingLen / 2) - (wingLen - 40) / 2, floorH + 5 + railH / 2 + 5, houseDepth / 2 - wingW - 30 + offsetZ);
+                wgL.position.set(-(houseWidth / 2 + wingLen / 2) - (wingLen - 40) / 2, floorH + 5 + railH / 2 + 5, houseDepth / 2 - wingW - 30);
                 building.add(wgL);
 
                 const wgR = new THREE.Mesh(wingGlassSideGeo, glassMat);
-                wgR.position.set(-(houseWidth / 2 + wingLen / 2) + (wingLen - 40) / 2, floorH + 5 + railH / 2 + 5, houseDepth / 2 - wingW - 30 + offsetZ);
+                wgR.position.set(-(houseWidth / 2 + wingLen / 2) + (wingLen - 40) / 2, floorH + 5 + railH / 2 + 5, houseDepth / 2 - wingW - 30);
                 building.add(wgR);
 
                 // Wing Door for Balcony Access
                 const wingDoor = new THREE.Mesh(doorGeo, doorMat);
-                wingDoor.position.set(-(houseWidth / 2 + 80), floorH + 37.5, houseDepth / 2 - wingW - 2 + offsetZ);
+                wingDoor.position.set(-(houseWidth / 2 + 80), floorH + 37.5, houseDepth / 2 - wingW - 2);
                 wingDoor.rotation.y = Math.PI;
                 building.add(wingDoor);
             }
@@ -2140,6 +2222,7 @@
                 const poolGeo = getSharedGeometry(poolKey, () => new THREE.BoxGeometry(poolW, poolH, poolD));
                 const poolMat = getSharedMaterial('poolMat', () => new THREE.MeshStandardMaterial({ color: 0x00aaff, roughness: 0.1, metalness: 0.5, transparent: true, opacity: 0.8 }));
                 const pool = new THREE.Mesh(poolGeo, poolMat);
+                // Pool position scaled by padding
                 pool.position.set(poolOX, 0.5, poolOZ);
                 poolGroup.add(pool);
 
@@ -2219,8 +2302,10 @@
                     car.add(wWrap);
                 });
 
-                const spacing = carL + 80;
-                car.position.set(plotW / 2 - (carL / 2 + 60) - (i * spacing) + carOX, 0, -plotD / 2 + 150 + carOZ);
+                const spacing = (carL + 80) * igy;
+                const frontGap = 150 * igy;
+                const rightGap = 60 * igx;
+                car.position.set(plotW / 2 - (carL / 2 + rightGap) - (i * spacing) + carOX, 0, -plotD / 2 + frontGap + carOZ);
                 car.rotation.y = Math.PI / 2;
                 house.add(car);
             }
@@ -2285,7 +2370,7 @@
                 const s = new THREE.Shape(); s.moveTo(-houseWidth / 2 - 20, 0); s.lineTo(0, roofH); s.lineTo(houseWidth / 2 + 20, 0);
                 geometryCache[mainRoofKey] = new THREE.ExtrudeGeometry(s, { depth: houseDepth + 40, bevelEnabled: false });
             }
-            const mR = new THREE.Mesh(geometryCache[mainRoofKey], roofMat); mR.position.set(0, floorH * 2, -houseDepth / 2 - 20 + offsetZ); building.add(mR);
+            const mR = new THREE.Mesh(geometryCache[mainRoofKey], roofMat); mR.position.set(0, floorH * 2, -houseDepth / 2 - 20); building.add(mR);
 
             if (hasWing) {
                 const wingRoofKey = `wingRoof_${wingW}_${wingLen}`;
@@ -2294,11 +2379,13 @@
                     geometryCache[wingRoofKey] = new THREE.ExtrudeGeometry(s, { depth: wingLen + 130, bevelEnabled: false });
                 }
                 const wR = new THREE.Mesh(geometryCache[wingRoofKey], roofMat); wR.rotation.y = -Math.PI / 2;
-                wR.position.set(-(houseWidth / 2 - 112), floorH * 2, houseDepth / 2 - wingW / 2 + offsetZ); building.add(wR);
+                wR.position.set(-(houseWidth / 2 - 112), floorH * 2, houseDepth / 2 - wingW / 2); building.add(wR);
             }
 
             const treeScale = 66.67;
-            [{ x: -plotW / 2 + 50, z: -plotD / 2 + 50 }, { x: plotW / 2 - 50, z: -plotD / 2 + 50 }].forEach(pos => {
+            const treeGapX = 50 * igx;
+            const treeGapZ = 50 * igy;
+            [{ x: -plotW / 2 + treeGapX, z: -plotD / 2 + treeGapZ }, { x: plotW / 2 - treeGapX, z: -plotD / 2 + treeGapZ }].forEach(pos => {
                 const t = createHighQualityTree(); t.position.set(pos.x, 0, pos.z); t.scale.set(treeScale, treeScale, treeScale); house.add(t);
             });
 
@@ -2399,24 +2486,43 @@
          */
         function createHouseBunch(parent, options) {
             const houseScale = 0.015;
+            const hScale = options.hScale || 1;
+
+            // 1. Inner Gap: House to Walls (Scales the 'plotWidth' minus 'hWidth')
+            const igScaleRaw = options.innerGapScale !== undefined ? options.innerGapScale : 1;
+            const igx = (typeof igScaleRaw === 'object') ? (igScaleRaw.x !== undefined ? igScaleRaw.x : 1) : igScaleRaw;
+            const igy = (typeof igScaleRaw === 'object') ? (igScaleRaw.y !== undefined ? igScaleRaw.y : 1) : igScaleRaw;
+
+            // 2. Outer Gap: Walls to Land Plot Edge (Scales the paddingLeft/Right/Top/Bottom)
+            const ogScaleRaw = options.outerGapScale !== undefined ? options.outerGapScale : 1;
+            const ogx = (typeof ogScaleRaw === 'object') ? (ogScaleRaw.x !== undefined ? ogScaleRaw.x : 1) : ogScaleRaw;
+            const ogy = (typeof ogScaleRaw === 'object') ? (ogScaleRaw.y !== undefined ? ogScaleRaw.y : 1) : ogScaleRaw;
+
             const {
                 serialCount = 10,
                 startX = 0,
                 startZ = 0,
-                plotWidth = 900, // Pre-scaled dimension
-                plotDepth = 1200, // Pre-scaled dimension
-                unitSpacing = (plotWidth * houseScale),
-                rowSpacing = plotDepth * houseScale,
-                houseGap = unitSpacing * 0.35,
-                // New Padding and Thickness defaults
-                paddingLeft = 2,
-                paddingRight = 2,
-                paddingTop = 2,
-                paddingBottom = 2,
-                landThickness = 3.5,
+                hWidth = (options.hWidth || 220) * hScale,
+                hDepth = (options.hDepth || 280) * hScale,
+                basePlotW = options.basePlotW || 900,
+                basePlotD = options.basePlotD || 1200,
                 startId = 1,
                 clusterName = "CLUSTER-6"
             } = options;
+
+            // Calculate the actual Wall Boundary (Plot Width/Depth)
+            // Use Math.max to prevent negative plot sizes if building is larger than base plot
+            const plotWidth = hWidth + Math.max(0, (basePlotW * hScale - hWidth)) * igx;
+            const plotDepth = hDepth + Math.max(0, (basePlotD * hScale - hDepth)) * igy;
+
+            const unitSpacing = options.unitSpacing ? (options.unitSpacing * hScale) : (plotWidth * houseScale);
+            const rowSpacing = options.rowSpacing ? (options.rowSpacing * hScale) : (plotDepth * houseScale);
+
+            const paddingLeft = (options.paddingLeft || 2) * hScale * ogx;
+            const paddingRight = (options.paddingRight || 2) * hScale * ogx;
+            const paddingTop = (options.paddingTop || 2) * hScale * ogy;
+            const paddingBottom = (options.paddingBottom || 2) * hScale * ogy;
+            const landThickness = 3.5;
 
             const bunchGroup = new THREE.Group();
             bunchGroup.position.set(startX, 0, startZ);
@@ -2482,7 +2588,7 @@
                 unitGroup.position.x = localIdx * unitSpacing;
 
                 // Create Single House
-                const house = createHouse(formattedId, plotWidth, plotDepth);
+                const house = createHouse(formattedId, plotWidth, plotDepth, null, false, 0, false, hDepth, hWidth, true, (options.hFloorH || 100) * hScale, 0, 0, 0, 0, 0, 0, 0, 0, 80 * hScale, 160 * hScale, igScaleRaw);
                 unitGroup.add(house);
 
                 if (serialNum % 2 !== 0) {
@@ -2504,43 +2610,49 @@
         }
         function createHouseCluster(parent, options) {
             const houseScale = 0.015;
+            const hScale = options.hScale || 1;
+
+            // 1. Inner Gap: House to Walls (Scales the 'plotWidth' minus 'hWidth')
+            const igScaleRaw = options.innerGapScale !== undefined ? options.innerGapScale : 1;
+            const igx = (typeof igScaleRaw === 'object') ? (igScaleRaw.x !== undefined ? igScaleRaw.x : 1) : igScaleRaw;
+            const igy = (typeof igScaleRaw === 'object') ? (igScaleRaw.y !== undefined ? igScaleRaw.y : 1) : igScaleRaw;
+
+            // 2. Outer Gap: Walls to Land Plot Edge (Scales the paddingLeft/Right/Top/Bottom)
+            const ogScaleRaw = options.outerGapScale !== undefined ? options.outerGapScale : 1;
+            const ogx = (typeof ogScaleRaw === 'object') ? (ogScaleRaw.x !== undefined ? ogScaleRaw.x : 1) : ogScaleRaw;
+            const ogy = (typeof ogScaleRaw === 'object') ? (ogScaleRaw.y !== undefined ? ogScaleRaw.y : 1) : ogScaleRaw;
+
             const {
                 serialCount = 10,
                 startX = 0,
                 startZ = 0,
-                plotWidth = 900, // Pre-scaled dimension
-                plotDepth = 1000, // Pre-scaled dimension
-                unitSpacing = (plotWidth * houseScale),
-                rowSpacing = plotDepth * houseScale,
-                houseGap = unitSpacing * 0.35,
-                // New Padding and Thickness defaults
-                paddingLeft = 2,
-                paddingRight = 2,
-                paddingTop = 3.5,
-                paddingBottom = 3.5,
-                landThickness = 3.5,
+                hWidth = (options.hWidth || 220) * hScale,
+                hDepth = (options.hDepth || 280) * hScale,
+                basePlotW = options.basePlotW || 900,
+                basePlotD = options.basePlotD || 1000,
                 startId = 1,
                 clusterName = "CLUSTER-6",
                 hasPool = false,
                 carCount = 0,
                 hasPlayground = false,
                 singleRow = false,
-                hDepth = 280,
-                hWidth = 220,
-                hasWing = true,
-                hFloorH = 100,
-                houseOX = 0,
-                houseOZ = 0,
-                poolOX = 0,
-                poolOZ = 0,
-                carOX = 0,
-                carOZ = 0,
-                playOX = 0,
-                playOZ = 0,
-                carW = 80,
-                carL = 160,
+                hFloorH = (options.hFloorH || 100) * hScale,
                 rotation = 0
             } = options;
+
+            // Calculate Wall Boundary (Plot Width/Depth)
+            // Use Math.max to prevent negative plot sizes if building is larger than base plot
+            const plotWidth = hWidth + Math.max(0, (basePlotW * hScale - hWidth)) * igx;
+            const plotDepth = hDepth + Math.max(0, (basePlotD * hScale - hDepth)) * igy;
+
+            const unitSpacing = options.unitSpacing ? (options.unitSpacing * hScale) : (plotWidth * houseScale);
+            const rowSpacing = options.rowSpacing ? (options.rowSpacing * hScale) : (plotDepth * houseScale);
+
+            const paddingLeft = (options.paddingLeft || 2) * hScale * ogx;
+            const paddingRight = (options.paddingRight || 2) * hScale * ogx;
+            const paddingTop = (options.paddingTop || 3.5) * hScale * ogy;
+            const paddingBottom = (options.paddingBottom || 3.5) * hScale * ogy;
+            const landThickness = 3.5;
 
             const clusterGroup = new THREE.Group();
             clusterGroup.position.set(startX, 0, startZ);
@@ -2612,8 +2724,14 @@
                 const localIdx = singleRow ? i : Math.floor(i / 2);
                 unitGroup.position.x = localIdx * unitSpacing;
 
-                // Create Single House with Enhanced Features
-                const house = createHouse(formattedId, plotWidth, plotDepth, null, hasPool, carCount, hasPlayground, hDepth, hWidth, hasWing, hFloorH, houseOX, houseOZ, poolOX, poolOZ, carOX, carOZ, playOX, playOZ, carW, carL);
+                // Create Single House
+                const house = createHouse(formattedId, plotWidth, plotDepth, null, hasPool, carCount, hasPlayground, hDepth, hWidth, options.hasWing !== undefined ? options.hasWing : true, hFloorH, (options.houseOX || 0) * hScale, (options.houseOZ || 0) * hScale, (options.poolOX || 0) * hScale, (options.poolOZ || 0) * hScale, (options.carOX || 0) * hScale, (options.carOZ || 0) * hScale, (options.playOX || 0) * hScale, (options.playOZ || 0) * hScale, (options.carW !== undefined ? options.carW : 80) * hScale, (options.carL !== undefined ? options.carL : 160) * hScale, options.innerGapScale || options.paddingScale || 1);
+
+                // Apply individual house rotation if specified
+                if (options.houseRotation) {
+                    house.rotation.y = options.houseRotation * (Math.PI / 180);
+                }
+
                 unitGroup.add(house);
 
                 if (singleRow) {
@@ -2631,6 +2749,8 @@
                 const tree = createTree();
                 // Tree position scaled to plot depth
                 const treeOffset = (hPlotScaledDepth / 2) + 2;
+                // If house is rotated 180, tree should probably be on the other side?
+                // But let's keep it simple first.
                 const treeZ = (serialNum % 2 !== 0) ? -treeOffset : (evenRow.position.z + treeOffset);
                 tree.position.set(unitGroup.position.x + 2.5, 0, treeZ);
                 clusterGroup.add(tree);
