@@ -130,6 +130,85 @@
                 rotation: { x: 0, y: -11, z: 0 },
                 skipLamps: true
             },
+            // Zone A Path
+            {
+                width: 0,
+                points: [ 
+                    new THREE.Vector3(22, 0, 170),
+                    new THREE.Vector3(-30, 0, 90),
+                    new THREE.Vector3(0, 0, 0),
+                ],
+                segments: 600, // Balanced for perfomance/quality
+                position: { x: 325, y: 0, z: 320 },
+                rotation: { x: 0, y: 0, z: 0 },
+                skipLamps: true
+            },
+            // Zone B Path
+            {
+                width: 0,
+                points: [ 
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(20, 0, 100),
+                    new THREE.Vector3(20, 0, 250),
+                    new THREE.Vector3(-80, 0, 390),
+                    new THREE.Vector3(-108, 0, 450),
+                    new THREE.Vector3(-95, 0, 475),
+                    new THREE.Vector3(-82, 0, 525),
+                    new THREE.Vector3(-82, 0, 620),
+                    // new THREE.Vector3(-130, 0, 630),
+                ],
+                segments: 600,
+                position: { x: 405, y: 0, z: -300 },
+                rotation: { x: 0, y: 0, z: 0 },
+                skipLamps: true
+            },
+            // Zone C Path
+            {
+                width: 0,
+                points: [ 
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(13, 0, 50),
+                    new THREE.Vector3(36, 0, 150),
+                    new THREE.Vector3(62, 0, 350),
+                    new THREE.Vector3(62, 0, 450),
+                    new THREE.Vector3(52, 0, 460),
+                ],
+                segments: 600,
+                position: { x: -30, y: 0, z: -485 },
+                rotation: { x: 0, y: -11.5, z: 0 },
+                skipLamps: true
+            },
+            // Zone D Path
+            {
+                width: 0,
+                points: [ 
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(13, 0, 50),
+                    new THREE.Vector3(78, 0, 330),
+                    new THREE.Vector3(85, 0, 330),
+                ],
+                segments: 600,
+                position: { x: -370, y: 0, z: -585 },
+                rotation: { x: 0, y: -11.5, z: 0 },
+                skipLamps: true
+            },
+            // Zone B Path
+            // {
+            //     width: 0,
+            //     points: [
+            //         new THREE.Vector3(250, 0, 260),
+            //         new THREE.Vector3(250, 0, 200),
+            //         new THREE.Vector3(250, 0, 186),
+            //         new THREE.Vector3(220, 0, 136),
+            //         new THREE.Vector3(0, 0, 126),
+            //         new THREE.Vector3(0, 0, 118),
+            //         new THREE.Vector3(0, 0, 0),
+            //     ],
+            //     segments: 800, // Balanced for perfomance/quality
+            //     position: { x: -630, y: 0, z: 75 },
+            //     rotation: { x: 0, y: 50, z: 0 },
+            //     skipLamps: true
+            // },
             // Lake Near Road
             {
                 width: 10,
@@ -1105,7 +1184,7 @@
             // BLOCK A - 3
             const subGreenLandBA3 = new THREE.Group();
             subGreenLandBA3.position.set(-20, 0, -480);
-            cityBlocks.add(subGreenLandBA3); 
+            cityBlocks.add(subGreenLandBA3);
             // BLOCK A - 4
             const subGreenLandBA4 = new THREE.Group();
             subGreenLandBA4.position.set(-20, 0, -411);
@@ -1458,13 +1537,82 @@
                 landWidth: 46,
                 startId: 500
             });
-            // --- Fill Empty Curved Area with Houses Oposite---
             createCurveHouseBunch(scene, ROAD_CONFIGS[1], {
                 houseSpacing: 22,
                 offsetDistance: 5,
                 landWidth: 46,
                 startId: 500
             });
+            // Zone - A
+            createCurveHouseBunch(scene, ROAD_CONFIGS[2], {
+                innerGapScale: { x:.6, y: .5 },
+                outerGapScale: 2.2,
+                houseSpacing: 1,
+                offsetDistance: 16,
+                landWidth: 15,
+                startId: 500,
+                houseCount: 18,
+                separateRows: true,
+                isTerrace: true
+            });
+            // Zone - B
+            createCurveHouseBunch(scene, ROAD_CONFIGS[3], {
+                innerGapScale: { x:.6, y: .5 },
+                outerGapScale: 2.2,
+                houseSpacing: 1,
+                offsetDistance: 16,
+                landWidth: 15,
+                startId: 500,
+                houseCount: 55,
+                separateRows: true,
+                isTerrace: true
+            });
+            // Zone - C
+            createCurveHouseBunch(scene, ROAD_CONFIGS[4], {
+                innerGapScale: { x:.6, y: .5 },
+                outerGapScale: 2.2,
+                houseSpacing: 1,
+                offsetDistance: 16,
+                landWidth: 15,
+                startId: 500,
+                houseCount: 29,
+                separateRows: true,
+                isTerrace: true
+            });
+            // Zone - D
+            createCurveHouseBunch(scene, ROAD_CONFIGS[5], {
+                innerGapScale: { x:.6, y: .5 },
+                outerGapScale: 2.2,
+                houseSpacing: 1,
+                offsetDistance: 16,
+                landWidth: 15,
+                startId: 500,
+                houseCount: 29,
+                separateRows: true,
+                isTerrace: true
+            });
+
+            // --- Zone-A House Block Initialization ---
+            // createZoneABlock(scene, {
+            //     carve: 46,         // Curvature intensity
+            //     posX: 350,        // Position X
+            //     posY: 2,           // Position Y
+            //     posZ: 430,        // Position Z
+            //     rotX: 0,           // Rotation X
+            //     rotY: -60,         // Rotation Y
+            //     serialCount: 18,   // 18 houses
+            //     hScale: 0.8
+            // });
+            // createZoneABlock(scene, {
+            //     carve: 46,         // Curvature intensity
+            //     posX: 350,        // Position X
+            //     posY: 2,           // Position Y
+            //     posZ: 230,        // Position Z
+            //     rotX: 0,           // Rotation X
+            //     rotY: -60,         // Rotation Y
+            //     serialCount: 44,   // 44 houses
+            //     hScale: 0.8
+            // });
 
             console.log("Masterplan Initialization Complete. Rendering started.");
             requestAnimationFrame(sceneRender);
@@ -2051,7 +2199,7 @@
         /**
          * Creates the new L-Wing house model including a stylish boundary wall and gate.
          */
-        function createHouse(id, plotW = 500, plotD = 600, skipWall = null, hasPool = false, carCount = 0, hasPlayground = false, hDepth = 280, hWidth = 220, hasWing = true, hFloorH = 100, houseOX = 0, houseOZ = 0, poolOX = 0, poolOZ = 0, carOX = 0, carOZ = 0, playOX = 0, playOZ = 0, carW = 80, carL = 160, innerGapScale = 1) {
+        function createHouse(id, plotW = 500, plotD = 600, skipWall = null, hasPool = false, carCount = 0, hasPlayground = false, hDepth = 280, hWidth = 220, hasWing = true, hFloorH = 100, houseOX = 0, houseOZ = 0, poolOX = 0, poolOZ = 0, carOX = 0, carOZ = 0, playOX = 0, playOZ = 0, carW = 80, carL = 160, innerGapScale = 1, isTerrace = false) {
             const igScaleRaw = innerGapScale;
             const igx = (typeof igScaleRaw === 'object') ? (igScaleRaw.x !== undefined ? igScaleRaw.x : 1) : igScaleRaw;
             const igy = (typeof igScaleRaw === 'object') ? (igScaleRaw.y !== undefined ? igScaleRaw.y : 1) : igScaleRaw;
@@ -2365,21 +2513,57 @@
 
 
             // Roofs (Optimized)
-            const mainRoofKey = `mainRoof_${houseWidth}_${houseDepth}`;
-            if (!geometryCache[mainRoofKey]) {
-                const s = new THREE.Shape(); s.moveTo(-houseWidth / 2 - 20, 0); s.lineTo(0, roofH); s.lineTo(houseWidth / 2 + 20, 0);
-                geometryCache[mainRoofKey] = new THREE.ExtrudeGeometry(s, { depth: houseDepth + 40, bevelEnabled: false });
-            }
-            const mR = new THREE.Mesh(geometryCache[mainRoofKey], roofMat); mR.position.set(0, floorH * 2, -houseDepth / 2 - 20); building.add(mR);
+            if (isTerrace) {
+                // Terrace Style: Flat roof with railing
+                const roofThickness = 8;
+                const roofGeo = getSharedGeometry(`terraceRoof_${houseWidth}_${houseDepth}`, () => new THREE.BoxGeometry(houseWidth + 40, roofThickness, houseDepth + 40));
+                const terraceRoof = new THREE.Mesh(roofGeo, roofMat);
+                terraceRoof.position.set(0, floorH * 2 + roofThickness / 2, 0);
+                building.add(terraceRoof);
 
-            if (hasWing) {
-                const wingRoofKey = `wingRoof_${wingW}_${wingLen}`;
-                if (!geometryCache[wingRoofKey]) {
-                    const s = new THREE.Shape(); s.moveTo(-wingW / 2 - 20, 0); s.lineTo(0, roofH); s.lineTo(wingW / 2 + 20, 0);
-                    geometryCache[wingRoofKey] = new THREE.ExtrudeGeometry(s, { depth: wingLen + 130, bevelEnabled: false });
+                // Add railing
+                const railH = 20;
+                const glassMatRailing = getSharedMaterial('terraceGlass', () => new THREE.MeshPhongMaterial({ color: 0xaaddff, opacity: 0.4, transparent: true }));
+
+                const railGeoF = getSharedGeometry(`terraceRailF_${houseWidth}_${houseDepth}`, () => new THREE.BoxGeometry(houseWidth + 40, railH, 2));
+                const rF = new THREE.Mesh(railGeoF, glassMatRailing);
+                rF.position.set(0, floorH * 2 + roofThickness + railH / 2, -houseDepth / 2 - 20);
+                building.add(rF);
+
+                const rB = rF.clone();
+                rB.position.z = houseDepth / 2 + 20;
+                building.add(rB);
+
+                const railSideGeo = getSharedGeometry(`terraceSideRail_${houseWidth}_${houseDepth}`, () => new THREE.BoxGeometry(2, railH, houseDepth + 40));
+                const rL = new THREE.Mesh(railSideGeo, glassMatRailing);
+                rL.position.set(-houseWidth / 2 - 20, floorH * 2 + roofThickness + railH / 2, 0);
+                building.add(rL);
+
+                const rR = rL.clone();
+                rR.position.x = houseWidth / 2 + 20;
+                building.add(rR);
+            } else {
+                // Classic Peaked Roof
+                const mainRoofKey = `mainRoof_${houseWidth}_${houseDepth}`;
+                if (!geometryCache[mainRoofKey]) {
+                    const s = new THREE.Shape(); s.moveTo(-houseWidth / 2 - 20, 0); s.lineTo(0, roofH); s.lineTo(houseWidth / 2 + 20, 0);
+                    geometryCache[mainRoofKey] = new THREE.ExtrudeGeometry(s, { depth: houseDepth + 40, bevelEnabled: false });
                 }
-                const wR = new THREE.Mesh(geometryCache[wingRoofKey], roofMat); wR.rotation.y = -Math.PI / 2;
-                wR.position.set(-(houseWidth / 2 - 112), floorH * 2, houseDepth / 2 - wingW / 2); building.add(wR);
+                const mR = new THREE.Mesh(geometryCache[mainRoofKey], roofMat);
+                mR.position.set(0, floorH * 2, -houseDepth / 2 - 20);
+                building.add(mR);
+
+                if (hasWing) {
+                    const wingRoofKey = `wingRoof_${wingW}_${wingLen}`;
+                    if (!geometryCache[wingRoofKey]) {
+                        const s = new THREE.Shape(); s.moveTo(-wingW / 2 - 20, 0); s.lineTo(0, roofH); s.lineTo(wingW / 2 + 20, 0);
+                        geometryCache[wingRoofKey] = new THREE.ExtrudeGeometry(s, { depth: wingLen + 130, bevelEnabled: false });
+                    }
+                    const wR = new THREE.Mesh(geometryCache[wingRoofKey], roofMat);
+                    wR.rotation.y = -Math.PI / 2;
+                    wR.position.set(-(houseWidth / 2 - 112), floorH * 2, houseDepth / 2 - wingW / 2);
+                    building.add(wR);
+                }
             }
 
             const treeScale = 66.67;
@@ -3067,18 +3251,54 @@
         /**
          * Creates a curved cluster of houses along a provided path.
          */
+        /**
+         * Creates a curved cluster of houses along a provided path.
+         */
         function createCurveHouseBunch(parent, config, options = {}) {
             const { points, position, rotation } = config;
             const {
-                houseSpacing = 16.5,
-                offsetDistance = 14,
-                landWidth = 32,
-                startId = 800
+                houseSpacing = 40,
+                offsetDistance = 16,
+                landWidth = 40,
+                startId = 500,
+                houseCount: customHouseCount,
+                separateRows = false,
+                isTerrace = false,
+                innerGapScale = 1,
+                outerGapScale = 1,
+                basePlotW = 1200,
+                basePlotD = 1500,
+                hWidth = 220,
+                hDepth = 280
             } = options;
+
+            const igx = (typeof innerGapScale === 'object') ? (innerGapScale.x !== undefined ? innerGapScale.x : 1) : innerGapScale;
+            const igy = (typeof innerGapScale === 'object') ? (innerGapScale.y !== undefined ? innerGapScale.y : 1) : innerGapScale;
+            const ogx = (typeof outerGapScale === 'object') ? (outerGapScale.x !== undefined ? outerGapScale.x : 1) : outerGapScale;
+            const ogy = (typeof outerGapScale === 'object') ? (outerGapScale.y !== undefined ? outerGapScale.y : 1) : outerGapScale;
+
+            // Calculate plot dimensions using innerGapScale (consistent with createHouseCluster)
+            const plotWidth = hWidth + Math.max(0, (basePlotW - hWidth)) * igx;
+            const plotDepth = hDepth + Math.max(0, (basePlotD - hDepth)) * igy;
 
             const curve = new THREE.CatmullRomCurve3(points);
             const totalLen = curve.getLength();
-            const houseCount = Math.floor(totalLen / houseSpacing);
+
+            // Calculate margin to avoid land overflow (half of plot width in world units)
+            // ogy (from outerGapScale) affects the longitudinal margin
+            const houseWorldWidth = plotWidth * 0.015;
+            const margin = (houseWorldWidth / 2) * ogy;
+            const tMargin = totalLen > (margin * 2) ? margin / totalLen : 0;
+            const tStart = tMargin;
+            const tEnd = 1 - tMargin;
+            const activeLen = totalLen * (tEnd - tStart);
+
+            // Determine loopCount (number of positions along the curve)
+            let loopCount = customHouseCount;
+            if (loopCount === undefined) {
+                loopCount = Math.floor(activeLen / houseSpacing) + 1;
+            }
+            if (loopCount < 1) loopCount = 1;
 
             const group = new THREE.Group();
             group.position.set(position.x || 0, position.y || 0, position.z || 0);
@@ -3086,17 +3306,17 @@
             parent.add(group);
 
             // Create curved land strip
-            const offsetPoints = [];
-            for (let i = 0; i <= 100; i++) {
-                const t = i / 100;
+            const landPoints = [];
+            const segmentsCount = 100;
+            for (let i = 0; i <= segmentsCount; i++) {
+                const t = i / segmentsCount;
                 const p = curve.getPointAt(t);
-                const tangent = curve.getTangentAt(t).normalize();
-                const normal = new THREE.Vector3(0, 1, 0);
-                const binormal = new THREE.Vector3().crossVectors(tangent, normal).normalize();
-                offsetPoints.push(p.clone().add(binormal.multiplyScalar(offsetDistance)));
+                landPoints.push(p.clone());
             }
-            const offsetCurve = new THREE.CatmullRomCurve3(offsetPoints);
-            const landGeo = createRoadGeometry(offsetCurve, landWidth, 100);
+            const landCurve = new THREE.CatmullRomCurve3(landPoints);
+            // ogx affects the land width
+            const finalLandWidth = landWidth * ogx;
+            const landGeo = createRoadGeometry(landCurve, finalLandWidth * (separateRows ? 2 : 1), segmentsCount);
             const landMat = new THREE.MeshBasicMaterial({
                 color: 0xA9DA3F,
                 polygonOffset: true,
@@ -3108,26 +3328,127 @@
             group.add(landMesh);
 
             // Place houses and trees
-            for (let i = 0; i < houseCount; i++) {
-                const t = (i + 0.5) / houseCount;
+            for (let i = 0; i < loopCount; i++) {
+                // Map i to t within [tStart, tEnd] to keep houses inside land boundaries
+                const t = loopCount > 1 ? tStart + (i / (loopCount - 1)) * (tEnd - tStart) : 0.5;
                 const p = curve.getPointAt(t);
                 const tangent = curve.getTangentAt(t).normalize();
                 const normal = new THREE.Vector3(0, 1, 0);
                 const binormal = new THREE.Vector3().crossVectors(tangent, normal).normalize();
-
-                const housePos = p.clone().add(binormal.clone().multiplyScalar(offsetDistance));
-                const formattedId = "CH-" + (startId + i);
-                // Increased plot size: 1200 x 1500, Added Pool, and 1-2 Cars
-                const carQty = (i % 3 === 0) ? 2 : 1;
-                const house = createHouse(formattedId, 1200, 1500, null, true, carQty);
-                house.position.copy(housePos);
-                house.position.y = 0.2; // Increased to prevent Z-fighting
-
-                // Orientation: face the road
                 const angle = Math.atan2(tangent.x, tangent.z);
-                house.rotation.y = angle + Math.PI / 2;
-                group.add(house);
+
+                if (separateRows) {
+                    // Place pair (Even on Side A, Odd on Side B)
+                    // Row A
+                    const housePosA = p.clone().add(binormal.clone().multiplyScalar(offsetDistance));
+                    const houseA = createHouse("CH-" + (startId + (i * 2)), plotWidth, plotDepth, null, true, 2, false, hDepth, hWidth, !isTerrace, 100, 0, 0, 0, 0, 0, 0, 0, 0, 80, 160, innerGapScale, isTerrace);
+                    houseA.position.copy(housePosA);
+                    houseA.position.y = 0.2;
+                    houseA.rotation.y = angle + Math.PI / 2;
+                    group.add(houseA);
+
+                    // Row B
+                    const housePosB = p.clone().add(binormal.clone().multiplyScalar(-offsetDistance));
+                    const houseB = createHouse("CH-" + (startId + (i * 2) + 1), plotWidth, plotDepth, null, true, 2, false, hDepth, hWidth, !isTerrace, 100, 0, 0, 0, 0, 0, 0, 0, 0, 80, 160, innerGapScale, isTerrace);
+                    houseB.position.copy(housePosB);
+                    houseB.position.y = 0.2;
+                    houseB.rotation.y = angle - Math.PI / 2;
+                    group.add(houseB);
+                } else {
+                    // Single row placement
+                    const housePos = p.clone().add(binormal.clone().multiplyScalar(offsetDistance));
+                    const house = createHouse("CH-" + (startId + i), plotWidth, plotDepth, null, true, 2, false, hDepth, hWidth, !isTerrace, 100, 0, 0, 0, 0, 0, 0, 0, 0, 80, 160, innerGapScale, isTerrace);
+                    house.position.copy(housePos);
+                    house.position.y = 0.2;
+                    house.rotation.y = angle + Math.PI / 2;
+                    group.add(house);
+                }
             }
+            return group;
+        }
+
+        /**
+         * Creates a Zone-A House block where have 18 houses with a small pool and car,
+         * which will be odd and even separate and this houses group or block 
+         * controllable by Carve value (curvature), Position X Y Z and Rotation X Y.
+         */
+        function createZoneABlock(parent, options) {
+            const {
+                carve = 0,         // Curvature factor (Bulge amount)
+                posX = 0, posY = 0, posZ = 0,
+                rotX = 0, rotY = 0,
+                serialCount = 18,
+                hScale = 0.8,
+                unitSpacing = 22,
+                rowSpacing = 35
+            } = options;
+
+            const group = new THREE.Group();
+            group.position.set(posX, posY, posZ);
+            group.rotation.set(rotX * (Math.PI / 180), rotY * (Math.PI / 180), 0);
+            parent.add(group);
+
+            const totalPerRow = Math.ceil(serialCount / 2);
+            const halfLen = ((totalPerRow - 1) * unitSpacing) / 2;
+
+            // Plot sizes for createHouse
+            const plotW = 800 * hScale;
+            const plotD = 1000 * hScale;
+
+            for (let i = 0; i < serialCount; i++) {
+                const isEven = i % 2 === 0;
+                const localIdx = Math.floor(i / 2);
+
+                // Position along X (local to group)
+                const x = -halfLen + localIdx * unitSpacing;
+
+                // Curvature (Parabolic Offset)
+                const t = totalPerRow > 1 ? localIdx / (totalPerRow - 1) : 0.5;
+                const curveZ = carve * (1 - Math.pow(2 * t - 1, 2));
+
+                // Row Z offset (separate odd/even)
+                const z = (isEven ? rowSpacing / 2 : -rowSpacing / 2) + curveZ;
+
+                const unitGroup = new THREE.Group();
+                unitGroup.position.set(x, 0, z);
+
+                // Calculate local rotation to follow the curve tangent
+                const L = (totalPerRow - 1) * unitSpacing;
+                const slope = L > 0 ? -8 * carve * (x / (L * L)) : 0;
+                const angle = Math.atan(slope);
+
+                unitGroup.rotation.y = -angle + (isEven ? 0 : Math.PI);
+
+                const formattedId = "Z-A-" + (i + 1).toString().padStart(2, '0');
+                // createHouse signature: id, plotW, plotD, skipWall, hasPool, carCount
+                const house = createHouse(formattedId, plotW, plotD, null, true, 1);
+                unitGroup.add(house);
+                group.add(unitGroup);
+            }
+
+            // Create curved land base following the 'carve' curvature
+            const landPoints = [];
+            const segments = 20;
+            for (let i = 0; i <= segments; i++) {
+                const t = i / segments;
+                const lx = -halfLen - 15 + t * (halfLen * 2 + 30);
+                // Re-calculate curve offset for land
+                const lCurveZ = carve * (1 - Math.pow(2 * t - 1, 2));
+                landPoints.push(new THREE.Vector3(lx, 0, lCurveZ));
+            }
+
+            const landCurve = new THREE.CatmullRomCurve3(landPoints);
+            const landGeo = createRoadGeometry(landCurve, rowSpacing + 40, 64);
+            const landMat = new THREE.MeshBasicMaterial({
+                color: 0xA9DA3F,
+                polygonOffset: true,
+                polygonOffsetFactor: 3,
+                polygonOffsetUnits: 3
+            });
+            const landMesh = new THREE.Mesh(landGeo, landMat);
+            landMesh.position.y = -0.05; // Slightly below houses
+            group.add(landMesh);
+
             return group;
         }
 
