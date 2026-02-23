@@ -10,9 +10,6 @@
 
 <body>
 
-
-
-
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Load Three.js -->
@@ -765,8 +762,8 @@
 
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 14000);
 
-            camera.position.set(0, 500, 1800); // Set camera to a viewing distance
-            camera.lookAt(0, 0, 0);
+            camera.position.set(10, 2500, 500); // Drone high-altitude start
+            camera.lookAt(10, 15, -100);
 
             scene.add(camera)
 
@@ -814,6 +811,7 @@
             controls.maxPolarAngle = Math.PI / 2.05; // Prevent going under ground (restrict to just above horizon)
             controls.minPolarAngle = 0;
             controls.screenSpacePanning = false; // Disable screen space panning to keep target on ground
+            controls.target.set(10, 15, -100); // Initial target
 
             // Ground Land
             const ground = new THREE.PlaneGeometry(14000, 14000);
@@ -1872,9 +1870,14 @@
                 const currentDensity = initialFogDensity - (initialFogDensity - finalFogDensity) * easedProgress;
                 scene.fog.density = currentDensity; // Slight offset to avoid zero density
 
-                // Subtle camera height adjustment for cinematic reveal (rises slightly as fog clears)
-                const cameraLift = 20; // Subtle 20 unit lift
-                camera.position.y = initialCameraY + (cameraLift * easedProgress);
+                // Cinematic Drone Descent: Start high and gracefully drop to ground level
+                const finalCameraY = 30;
+                const descentProgress = Math.pow(easedProgress, 1.2); // Slower start, faster middle for impact
+                camera.position.y = initialCameraY - (initialCameraY - finalCameraY) * descentProgress;
+
+                // Subtle camera X/Z drift during descent for realism
+                camera.position.z = 500 - (400 * easedProgress);
+                camera.position.x = 10 + Math.sin(easedProgress * Math.PI) * 20;
 
                 if (progress >= 1.0) {
                     fogRevealComplete = true;
