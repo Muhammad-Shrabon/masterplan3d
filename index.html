@@ -23,6 +23,7 @@
         let scene, camera, renderer, controls, flagObj, lakeObj, river;
         let sr_riverMesh, sr_bankMesh, sr_waterTexture, sr_treeGroup; // Small river (lake) variables
         let nightSkyGroup, stars, moon, isNight = false; // Night sky elements and state
+        let isWalkingMode = false; // Walking Mode state
 
         // Performance optimization: Shared materials cache
         const sharedMaterials = {};
@@ -44,7 +45,7 @@
                 this.points = config.points || [];
                 this.width = config.width || 10;
                 this.thickness = config.thickness || 0.8;
-                this.color = config.color || 0x33ccff;
+                this.color = config.color || 0x187C19;
 
                 // New position and rotation configuration
                 this.position = config.position || { x: 0, y: 0.2, z: 0 };
@@ -133,7 +134,7 @@
             // Zone A Path
             {
                 width: 0,
-                points: [ 
+                points: [
                     new THREE.Vector3(22, 0, 170),
                     new THREE.Vector3(-30, 0, 90),
                     new THREE.Vector3(0, 0, 0),
@@ -146,7 +147,7 @@
             // Zone B Path
             {
                 width: 0,
-                points: [ 
+                points: [
                     new THREE.Vector3(0, 0, 0),
                     new THREE.Vector3(20, 0, 100),
                     new THREE.Vector3(20, 0, 250),
@@ -165,7 +166,7 @@
             // Zone C Path
             {
                 width: 0,
-                points: [ 
+                points: [
                     new THREE.Vector3(0, 0, 0),
                     new THREE.Vector3(13, 0, 50),
                     new THREE.Vector3(36, 0, 150),
@@ -181,7 +182,7 @@
             // Zone D Path
             {
                 width: 0,
-                points: [ 
+                points: [
                     new THREE.Vector3(0, 0, 0),
                     new THREE.Vector3(13, 0, 50),
                     new THREE.Vector3(78, 0, 330),
@@ -238,10 +239,10 @@
                     new THREE.Vector3(-75, 0, 0),
                     new THREE.Vector3(-85, 0, -120),
                     new THREE.Vector3(-100, 0, -200),
-                    new THREE.Vector3(15, 0, -380),
-                    new THREE.Vector3(0, 0, -450),
-                    new THREE.Vector3(0, 0, -450),
-                    new THREE.Vector3(0, 0, -610),
+                    new THREE.Vector3(8, 0, -380),
+                    new THREE.Vector3(0, 0, -595),
+                    new THREE.Vector3(0, 0, -595),
+                    new THREE.Vector3(0, 0, -620),
                     new THREE.Vector3(-750, 0, -880),
                 ],
                 segments: 800, // Balanced
@@ -278,11 +279,11 @@
                     new THREE.Vector3(10, 0, 150),
                     new THREE.Vector3(0, 0, 150),
                     new THREE.Vector3(0, 0, 0),
-                    new THREE.Vector3(-60, 0, -1150),
-                    new THREE.Vector3(-60, 0, -1150),
-                    new THREE.Vector3(800, 0, -800),
+                    new THREE.Vector3(-60, 0, -1060),
+                    new THREE.Vector3(-60, 0, -1060),
+                    new THREE.Vector3(720, 0, -800),
                     new THREE.Vector3(800, 0, -650),
-                    new THREE.Vector3(830, 0, -500),
+                    new THREE.Vector3(808, 0, -500),
                     new THREE.Vector3(700, 0, -300),
                     new THREE.Vector3(700, 0, -200),
                     new THREE.Vector3(700, 0, -100),
@@ -705,14 +706,14 @@
             position: { x: 620, y: 10, z: 400 },
             rotation: { x: 0, y: Math.PI / 2, z: 0 },
             points: [
-                new THREE.Vector3(1400, 0, -1400),
-                new THREE.Vector3(1200, 0, -1000),
-                new THREE.Vector3(900, 0, -200),
-                new THREE.Vector3(760, 0, -70),
-                new THREE.Vector3(660, 0, -100),
-                new THREE.Vector3(560, 0, -70),
-                new THREE.Vector3(460, 0, -70),
-                new THREE.Vector3(360, 0, -110),
+                // new THREE.Vector3(1400, 0, -1800),
+                new THREE.Vector3(1400, 0, -2400),
+                new THREE.Vector3(900, 0, -400),
+                new THREE.Vector3(760, 0, -140),
+                new THREE.Vector3(660, 0, -110),
+                // new THREE.Vector3(560, 0, -70),
+                // new THREE.Vector3(460, 0, -100),
+                new THREE.Vector3(360, 0, -105),
                 new THREE.Vector3(280, 0, -185),
                 new THREE.Vector3(100, 0, -200),
                 new THREE.Vector3(70, 0, -200),
@@ -809,14 +810,15 @@
             controls.zoomSpeed = 1.9;     // Very fast zoom
             controls.panSpeed = 1.9;      // Very fast move
             controls.minDistance = 0.1;
-            controls.maxDistance = 1700; // Allow much further exploration
-            controls.maxPolarAngle = Math.PI / 2.1;
-            controls.screenSpacePanning = true;
+            controls.maxDistance = 3200; // Increased to satisfy "less than 5% of ground area" (sqrt(0.05 * 14000^2) ≈ 3130)
+            controls.maxPolarAngle = Math.PI / 2.05; // Prevent going under ground (restrict to just above horizon)
+            controls.minPolarAngle = 0;
+            controls.screenSpacePanning = false; // Disable screen space panning to keep target on ground
 
             // Ground Land
             const ground = new THREE.PlaneGeometry(14000, 14000);
             const groundMaterial = new THREE.MeshBasicMaterial({
-                color: 0x008000,
+                color: 0x187C19,
                 side: THREE.DoubleSide,
                 polygonOffset: true,
                 polygonOffsetFactor: 10,
@@ -1053,7 +1055,7 @@
 
             const cityLandGeometry = new THREE.PlaneGeometry(1400, 3200);
             const cityLandMaterial = new THREE.MeshBasicMaterial({
-                color: 0xc1d86c,
+                color: 0XAED652,
                 polygonOffset: true,
                 polygonOffsetFactor: 5,
                 polygonOffsetUnits: 5
@@ -1212,7 +1214,7 @@
             // BLOCK B -1
             createHouseCluster(subGreenLandBB1, {
                 serialCount: 36, startX: 0, startZ: 210, unitSpacing: 8.9, houseGap: 10, rowSpacing: 16, startId: 2,
-                clusterName: "BLOCK B -1", hScale: 2,
+                clusterName: "BLOCK B - 1", hScale: 2,
                 innerGapScale: { x: 0.53, y: .8 },
                 outerGapScale: 0.5,
                 houseOX: 50,
@@ -1221,14 +1223,14 @@
             // BLOCK B - 2
             createHouseCluster(subGreenLandBB2, {
                 serialCount: 36, startX: 0, startZ: 210, unitSpacing: 8.9, houseGap: 10, rowSpacing: 16, startId: 2,
-                clusterName: "BLOCK B -2", hScale: 2,
+                clusterName: "BLOCK B - 2", hScale: 2,
                 innerGapScale: { x: 0.53, y: .8 },
                 outerGapScale: 0.5
             });
             // BLOCK B - 3
             createHouseCluster(subGreenLandBB3, {
                 serialCount: 36, startX: 0, startZ: 210, unitSpacing: 8.9, houseGap: 10, rowSpacing: 16, startId: 2,
-                clusterName: "BLOCK B -3", hScale: 2,
+                clusterName: "BLOCK B - 3", hScale: 2,
                 innerGapScale: { x: 0.53, y: .8 },
                 outerGapScale: 0.5
             });
@@ -1240,30 +1242,30 @@
                 outerGapScale: 0.5
             });
             // BLOCK A - 1
-            createHouseCluster(subGreenLandBA1, {
-                serialCount: 36, startX: 0, startZ: 210, unitSpacing: 8.9, houseGap: 10, rowSpacing: 16, startId: 2,
-                clusterName: "BLOCK A -1", hScale: 2,
-                innerGapScale: { x: 0.53, y: .8 },
-                outerGapScale: 0.5
-            });
+            // createHouseCluster(subGreenLandBA1, {
+            //     serialCount: 10, startX: 0, startZ: 210, unitSpacing: 8.9, houseGap: 10, rowSpacing: 16, startId: 2,
+            //     clusterName: "BLOCK A - 1", hScale: 2,
+            //     innerGapScale: { x: 0.53, y: .8 },
+            //     outerGapScale: 0.5
+            // });
             // BLOCK A - 2
             createHouseCluster(subGreenLandBA2, {
-                serialCount: 36, startX: 0, startZ: 210, unitSpacing: 8.9, houseGap: 10, rowSpacing: 16, startId: 2,
-                clusterName: "BLOCK A -2", hScale: 2,
+                serialCount: 20, startX: 0, startZ: 210, unitSpacing: 8.9, houseGap: 10, rowSpacing: 16, startId: 2,
+                clusterName: "BLOCK A - 2", hScale: 2,
                 innerGapScale: { x: 0.53, y: .8 },
                 outerGapScale: 0.5
             });
             // BLOCK A - 3
             createHouseCluster(subGreenLandBA3, {
-                serialCount: 36, startX: 0, startZ: 210, unitSpacing: 8.9, houseGap: 10, rowSpacing: 16, startId: 2,
-                clusterName: "BLOCK A -3", hScale: 2,
+                serialCount: 31, startX: 0, startZ: 210, unitSpacing: 8.9, houseGap: 10, rowSpacing: 16, startId: 2,
+                clusterName: "BLOCK A - 3", hScale: 2,
                 innerGapScale: { x: 0.53, y: .8 },
                 outerGapScale: 0.5
             });
             // BLOCK A - 4
             createHouseCluster(subGreenLandBA4, {
-                serialCount: 36, startX: 0, startZ: 210, unitSpacing: 8.9, houseGap: 10, rowSpacing: 16, startId: 2,
-                clusterName: "BLOCK A -4", hScale: 2,
+                serialCount: 21, startX: 0, startZ: 210, unitSpacing: 8.9, houseGap: 10, rowSpacing: 16, startId: 2,
+                clusterName: "BLOCK A - 4", hScale: 2,
                 innerGapScale: { x: 0.53, y: .8 },
                 outerGapScale: 0.5
             });
@@ -1545,7 +1547,7 @@
             });
             // Zone - A
             createCurveHouseBunch(scene, ROAD_CONFIGS[2], {
-                innerGapScale: { x:.6, y: .5 },
+                innerGapScale: { x: .6, y: .5 },
                 outerGapScale: 2.2,
                 houseSpacing: 1,
                 offsetDistance: 16,
@@ -1557,7 +1559,7 @@
             });
             // Zone - B
             createCurveHouseBunch(scene, ROAD_CONFIGS[3], {
-                innerGapScale: { x:.6, y: .5 },
+                innerGapScale: { x: .6, y: .5 },
                 outerGapScale: 2.2,
                 houseSpacing: 1,
                 offsetDistance: 16,
@@ -1569,7 +1571,7 @@
             });
             // Zone - C
             createCurveHouseBunch(scene, ROAD_CONFIGS[4], {
-                innerGapScale: { x:.6, y: .5 },
+                innerGapScale: { x: .6, y: .5 },
                 outerGapScale: 2.2,
                 houseSpacing: 1,
                 offsetDistance: 16,
@@ -1581,7 +1583,7 @@
             });
             // Zone - D
             createCurveHouseBunch(scene, ROAD_CONFIGS[5], {
-                innerGapScale: { x:.6, y: .5 },
+                innerGapScale: { x: .6, y: .5 },
                 outerGapScale: 2.2,
                 houseSpacing: 1,
                 offsetDistance: 16,
@@ -1803,12 +1805,45 @@
             return roadMesh;
         }
 
+        /**
+         * Global object to store key states for walking mode
+         */
+        const keys = {
+            w: false,
+            a: false,
+            s: false,
+            d: false
+        };
+
+        // Event listeners for keyboard input
+        window.addEventListener('keydown', (event) => {
+            if (isWalkingMode) {
+                switch (event.key) {
+                    case 'w': keys.w = true; break;
+                    case 'a': keys.a = true; break;
+                    case 's': keys.s = true; break;
+                    case 'd': keys.d = true; break;
+                }
+            }
+        });
+
+        window.addEventListener('keyup', (event) => {
+            if (isWalkingMode) {
+                switch (event.key) {
+                    case 'w': keys.w = false; break;
+                    case 'a': keys.a = false; break;
+                    case 's': keys.s = false; break;
+                    case 'd': keys.d = false; break;
+                }
+            }
+        });
+
         function sceneRender(time) {
             requestAnimationFrame(sceneRender);
             const t = time * 0.001;
 
             // Only update controls if damping is enabled (performance)
-            if (controls.enableDamping) {
+            if (controls.enableDamping && !isWalkingMode) {
                 controls.update();
             }
 
@@ -1900,6 +1935,42 @@
             }
 
             // Removed ripple animation to prevent zigzagging/blinking
+
+            // --- Gaming Walking Mode Logic (WASD) ---
+            if (isWalkingMode) {
+                const moveSpeed = 3.5;
+                const direction = new THREE.Vector3();
+                const frontVector = new THREE.Vector3();
+                const sideVector = new THREE.Vector3();
+
+                // Get camera direction
+                camera.getWorldDirection(frontVector);
+                frontVector.y = 0;
+                frontVector.normalize();
+
+                sideVector.copy(frontVector).applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 2);
+
+                if (keys.w) direction.add(frontVector);
+                if (keys.s) direction.sub(frontVector);
+                if (keys.a) direction.add(sideVector);
+                if (keys.d) direction.sub(sideVector);
+
+                if (direction.length() > 0) {
+                    direction.normalize().multiplyScalar(moveSpeed);
+                    camera.position.add(direction);
+                    controls.target.add(direction); // Move focus point with camera
+                }
+
+                // Smooth height lock
+                const targetHeight = 22.0;
+                camera.position.y += (targetHeight - camera.position.y) * 0.1;
+
+                controls.update(); // Manual update to keep orientation smooth
+            }
+
+            // --- Final Safety Check: Never go under ground ---
+            if (camera.position.y < 2.0) camera.position.y = 2.0;
+            if (controls.target.y < 0) controls.target.y = 0;
 
             renderer.render(scene, camera)
         }
@@ -3473,9 +3544,8 @@
                 
                 #day-night-switch {
                     position: fixed;
-                    bottom: 40px;
-                    left: 50%;
-                    transform: translateX(-50%);
+                    top: 30px;
+                    right: 30px;
                     z-index: 10000;
                     background: rgba(255, 255, 255, 0.1);
                     backdrop-filter: blur(15px) saturate(160%);
@@ -3496,7 +3566,7 @@
                 
                 #day-night-switch:hover {
                     box-shadow: 0 15px 50px rgba(0,0,0,0.25);
-                    transform: translateX(-50%) translateY(-5px);
+                    transform: translateY(-5px);
                     background: rgba(255, 255, 255, 0.15);
                 }
                 
@@ -3532,7 +3602,6 @@
                 .mode-text {
                     font-size: 14px;
                     font-weight: 600;
-                    text-transform: uppercase;
                     letter-spacing: 1.5px;
                     text-shadow: 0 2px 4px rgba(0,0,0,0.3);
                 }
@@ -3559,6 +3628,56 @@
                 
                 .night-active .icon-sun { opacity: 0; }
                 .night-active .icon-moon { opacity: 1; }
+
+                #city-tour-btn { display: none; } /* Removed Drone Tour */
+
+                /* Walking Mode Button */
+                #walking-mode-btn {
+                    position: fixed;
+                    top: 100px;
+                    right: 30px;
+                    z-index: 10000;
+                    background: rgba(255, 255, 255, 0.1);
+                    backdrop-filter: blur(15px) saturate(160%);
+                    -webkit-backdrop-filter: blur(15px) saturate(160%);
+                    border: 1px solid rgba(255, 255, 255, 0.2);
+                    padding: 8px 12px;
+                    border-radius: 100px;
+                    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    cursor: pointer;
+                    font-family: 'Outfit', sans-serif;
+                    transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+                    user-select: none;
+                    color: white;
+                }
+                #walking-mode-btn:hover {
+                    box-shadow: 0 15px 50px rgba(255, 255, 255, 0.2);
+                    transform: translateY(-5px);
+                    background: rgba(255, 255, 255, 0.2);
+                }
+                #walking-mode-btn.active {
+                    background: rgba(34, 197, 94, 0.3);
+                    border-color: rgba(34, 197, 94, 0.5);
+                    box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+                }
+                #walking-mode-btn .controls-hint {
+                    position: absolute;
+                    top: 100%;
+                    right: 0;
+                    font-size: 10px;
+                    margin-top: 10px;
+                    background: rgba(0,0,0,0.5);
+                    padding: 4px 8px;
+                    border-radius: 4px;
+                    opacity: 0;
+                    transition: 0.3s;
+                    pointer-events: none;
+                    white-space: nowrap;
+                }
+                #walking-mode-btn.active .controls-hint { opacity: 1; }
             `;
             document.head.appendChild(style);
 
@@ -3574,6 +3693,39 @@
                 </div>
             `;
             document.body.appendChild(toggle);
+
+            const walkingBtn = document.createElement('div');
+            walkingBtn.id = 'walking-mode-btn';
+            walkingBtn.innerHTML = `
+                <div class="tour-icon">🚶</div>
+                <span class="mode-text">Walking Tour</span>
+                <div class="controls-hint">USE W, A, S, D TO WALK</div>
+            `;
+            document.body.appendChild(walkingBtn);
+
+            walkingBtn.addEventListener('click', () => {
+                isWalkingMode = !isWalkingMode;
+                walkingBtn.classList.toggle('active', isWalkingMode);
+                walkingBtn.querySelector('.mode-text').textContent = isWalkingMode ? 'Exit Walking' : 'Walking Tour';
+
+                if (isWalkingMode) {
+                    // Set walk-friendly controls
+                    controls.maxDistance = 10;
+                    controls.minDistance = 0.5;
+                    controls.enablePan = false; // Disable right-click pan in walk mode
+                    controls.maxPolarAngle = Math.PI / 1.7; // Allow looking up at buildings
+
+                    // Initial position for walk
+                    camera.lookAt(0, 22, -100);
+                    controls.target.set(0, 22, -100);
+                } else {
+                    // Restore original controls
+                    controls.maxDistance = 3200;
+                    controls.minDistance = 0.1;
+                    controls.enablePan = true;
+                    controls.maxPolarAngle = Math.PI / 2.05;
+                }
+            });
 
 
             toggle.addEventListener('click', () => {
