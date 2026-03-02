@@ -190,6 +190,7 @@
         function addDecorations() {
             const createTree = (x, z) => {
                 const tree = new THREE.Group();
+                tree.scale.set(0.3, 0.3, 0.3);
                 const trunk = new THREE.Mesh(
                     new THREE.CylinderGeometry(1.5, 2.2, 8, 8),
                     new THREE.MeshPhongMaterial({ color: 0x7a4d2b })

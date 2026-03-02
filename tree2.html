@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Procedural Forest - Three.js</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #050505;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 12px;
+            pointer-events: none;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            margin: 0 0 5px 0;
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        p {
+            margin: 0;
+            font-size: 13px;
+            opacity: 0.8;
+        }
+
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="ui">
+        <h1>Procedural Forest</h1>
+        <p>Drag to Orbit • Scroll to Zoom</p>
+    </div>
+
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- OrbitControls CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        let scene, camera, renderer, controls;
+        let leaves = [];
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0a0c10);
+            scene.fog = new THREE.Fog(0x0a0c10, 30, 150);
+
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(40, 30, 60);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.body.appendChild(renderer.domElement);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.target.set(0, 5, 0);
+
+            // Lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+            scene.add(ambientLight);
+
+            const sunLight = new THREE.DirectionalLight(0xffffff, 1.2);
+            sunLight.position.set(50, 100, 50);
+            sunLight.castShadow = true;
+            sunLight.shadow.mapSize.width = 4096;
+            sunLight.shadow.mapSize.height = 4096;
+            sunLight.shadow.camera.left = -100;
+            sunLight.shadow.camera.right = 100;
+            sunLight.shadow.camera.top = 100;
+            sunLight.shadow.camera.bottom = -100;
+            scene.add(sunLight);
+
+            // Ground
+            const groundGeo = new THREE.PlaneGeometry(200, 200);
+            const groundMat = new THREE.MeshStandardMaterial({ color: 0x0d120c, roughness: 1 });
+            const ground = new THREE.Mesh(groundGeo, groundMat);
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            scene.add(ground);
+
+            // --- PLACING MULTIPLE TREES ---
+
+            // Central Tree
+            createTree(new THREE.Vector3(0, 0, 0), new THREE.Euler(0, 0, 0));
+
+            // Random Forest
+            for (let i = 0; i < 8; i++) {
+                const x = (Math.random() - 0.5) * 80;
+                const z = (Math.random() - 0.5) * 80;
+                // Avoid placing on the center tree
+                if (Math.abs(x) < 10 && Math.abs(z) < 10) continue;
+
+                const rotY = Math.random() * Math.PI * 2;
+                const rotX = (Math.random() - 0.5) * 0.2; // Slight lean
+                const rotZ = (Math.random() - 0.5) * 0.2; // Slight lean
+
+                createTree(
+                    new THREE.Vector3(x, 0, z),
+                    new THREE.Euler(rotX, rotY, rotZ)
+                );
+            }
+
+            window.addEventListener('resize', onWindowResize, false);
+            animate();
+        }
+
+        /**
+         * Reusable Tree Creation Function
+         * @param {THREE.Vector3} position - Where to place the tree
+         * @param {THREE.Euler} rotation - Orientation of the tree
+         */
+        function createTree(position, rotation) {
+            const treeGroup = new THREE.Group();
+            treeGroup.position.copy(position);
+            treeGroup.rotation.copy(rotation);
+            treeGroup.scale.set(0.3, 0.3, 0.3); // Scale down tree
+            scene.add(treeGroup);
+
+            // Materials
+            const barkMat = new THREE.MeshStandardMaterial({
+                color: 0x2b1d0e,
+                roughness: 0.9,
+                metalness: 0.1
+            });
+
+            // Leaf Geometry
+            const leafShape = new THREE.Shape();
+            leafShape.moveTo(0, 0);
+            leafShape.quadraticCurveTo(0.5, 0.5, 0, 1.2);
+            leafShape.quadraticCurveTo(-0.5, 0.5, 0, 0);
+            const leafGeo = new THREE.ShapeGeometry(leafShape);
+            const leafColors = [0x2d4c1e, 0x3a5a2a, 0x4b6e32, 0x1e3a12];
+
+            // Recursive growth scoped to this tree instance
+            function growBranch(startPos, direction, length, thickness, depth) {
+                if (depth > 8) return; // Slightly reduced depth for performance with multiple trees
+
+                const endPos = new THREE.Vector3().addVectors(startPos, direction.clone().multiplyScalar(length));
+
+                const midpoint = new THREE.Vector3().addVectors(startPos, endPos).multiplyScalar(0.5);
+                const branchGeo = new THREE.CylinderGeometry(thickness * 0.7, thickness, length, 6);
+                const branch = new THREE.Mesh(branchGeo, barkMat);
+
+                branch.position.copy(midpoint);
+                branch.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.clone().normalize());
+                branch.castShadow = true;
+                branch.receiveShadow = true;
+                treeGroup.add(branch);
+
+                if (depth > 5) {
+                    const leafCount = Math.floor(Math.random() * 4) + 2;
+                    for (let i = 0; i < leafCount; i++) {
+                        const color = leafColors[Math.floor(Math.random() * leafColors.length)];
+                        const leafMat = new THREE.MeshStandardMaterial({
+                            color: color,
+                            side: THREE.DoubleSide,
+                            roughness: 0.8
+                        });
+
+                        const leaf = new THREE.Mesh(leafGeo, leafMat);
+                        leaf.position.copy(endPos).add(new THREE.Vector3(
+                            (Math.random() - 0.5) * 0.7,
+                            (Math.random() - 0.5) * 0.7,
+                            (Math.random() - 0.5) * 0.7
+                        ));
+
+                        const s = 0.3 + Math.random() * 0.3;
+                        leaf.scale.set(s, s, s);
+                        leaf.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+                        leaf.castShadow = true;
+
+                        // Wind metadata
+                        leaf.userData.phase = Math.random() * Math.PI * 2;
+                        leaf.userData.speed = 0.8 + Math.random() * 1.2;
+                        leaf.userData.originalRotation = leaf.rotation.clone();
+
+                        treeGroup.add(leaf);
+                        leaves.push(leaf);
+                    }
+                }
+
+                const numBranches = (depth === 0) ? 1 : (Math.random() > 0.8 ? 3 : 2);
+                for (let i = 0; i < numBranches; i++) {
+                    const nextDir = direction.clone();
+                    const angle = 0.3 + Math.random() * 0.4;
+                    const randomAxis = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize();
+                    nextDir.applyAxisAngle(randomAxis, angle);
+
+                    growBranch(
+                        endPos,
+                        nextDir,
+                        length * (0.7 + Math.random() * 0.2),
+                        thickness * 0.7,
+                        depth + 1
+                    );
+                }
+            }
+
+            // Start growth relative to the local treeGroup
+            growBranch(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 1, 0), 5.5, 0.9, 0);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const time = Date.now() * 0.001;
+
+            leaves.forEach(leaf => {
+                const wave = Math.sin(time * leaf.userData.speed + leaf.userData.phase) * 0.12;
+                leaf.rotation.x = leaf.userData.originalRotation.x + wave;
+            });
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        window.onload = init;
+    </script>
+</body>
+
+</html>

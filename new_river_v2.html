@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,7 +8,12 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #050505; }
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #050505;
+        }
+
         #info {
             position: absolute;
             top: 10px;
@@ -21,9 +27,10 @@
         }
     </style>
 </head>
+
 <body>
     <div id="info">
-        High Quality River Simulation with Forested Banks<br/>
+        High Quality River Simulation with Forested Banks<br />
         Left Click: Rotate | Right Click: Pan | Scroll: Zoom
     </div>
 
@@ -43,13 +50,13 @@
             canvas.width = 256;
             canvas.height = 256;
             const ctx = canvas.getContext('2d');
-            
+
             ctx.fillStyle = '#0077be';
             ctx.fillRect(0, 0, 256, 256);
-            
+
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
             ctx.lineWidth = 2;
-            for(let i = 0; i < 30; i++) {
+            for (let i = 0; i < 30; i++) {
                 ctx.beginPath();
                 ctx.moveTo(Math.random() * 256, Math.random() * 256);
                 ctx.lineTo(Math.random() * 256, Math.random() * 256);
@@ -58,14 +65,14 @@
 
             const texture = new THREE.CanvasTexture(canvas);
             texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-            texture.repeat.set(1, 6); 
+            texture.repeat.set(1, 6);
             return texture;
         }
 
         // Helper to create a simple tree
         function createTree() {
             const group = new THREE.Group();
-            
+
             // Trunk
             const trunkGeo = new THREE.CylinderGeometry(0.5, 0.7, 4, 8);
             const trunkMat = new THREE.MeshStandardMaterial({ color: TRUNK_COLOR });
@@ -76,15 +83,15 @@
             // Foliage
             const leafColor = LEAF_COLORS[Math.floor(Math.random() * LEAF_COLORS.length)];
             const leafMat = new THREE.MeshStandardMaterial({ color: leafColor });
-            
-            for(let i = 0; i < 3; i++) {
+
+            for (let i = 0; i < 3; i++) {
                 const leafGeo = new THREE.ConeGeometry(2.5 - (i * 0.5), 4, 8);
                 const leaves = new THREE.Mesh(leafGeo, leafMat);
                 leaves.position.y = 4 + (i * 2);
                 group.add(leaves);
             }
 
-            const scale = 0.5 + Math.random() * 1.5;
+            const scale = 0.15 + Math.random() * 0.45;
             group.scale.set(scale, scale, scale);
             return group;
         }
@@ -118,7 +125,7 @@
             waterTexture = createWaterTexture();
 
             // Initial river and tree creation
-            createRiverAndBanks(15, 400, {x:0, y:0, z:0}, {x:0, y:0, z:0}, 45);
+            createRiverAndBanks(15, 400, { x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 0 }, 45);
 
             const groundGeo = new THREE.PlaneGeometry(2000, 2000);
             const groundMat = new THREE.MeshStandardMaterial({ color: 0x050505 });
@@ -138,7 +145,7 @@
             treeGroup = new THREE.Group();
 
             const points = [];
-            const segments = 300; 
+            const segments = 300;
             for (let i = 0; i <= 10; i++) {
                 const t = i / 10;
                 points.push(new THREE.Vector3(
@@ -155,7 +162,7 @@
             const transformGeo = (geo, yOffset) => {
                 const posAttr = geo.attributes.position;
                 const tmpVec = new THREE.Vector3();
-                
+
                 for (let i = 0; i < posAttr.count; i++) {
                     const x = posAttr.getX(i);
                     const y = posAttr.getY(i);
@@ -164,7 +171,7 @@
                     const tangent = curve.getTangentAt(t);
                     const up = new THREE.Vector3(0, 1, 0);
                     const side = new THREE.Vector3().crossVectors(tangent, up).normalize();
-                    
+
                     tmpVec.copy(point).addScaledVector(side, x);
                     posAttr.setXYZ(i, tmpVec.x, tmpVec.y + yOffset, tmpVec.z);
                 }
@@ -172,8 +179,8 @@
                 geo.computeVertexNormals();
             };
 
-            transformGeo(riverGeo, 0.2); 
-            transformGeo(bankGeo, 0);    
+            transformGeo(riverGeo, 0.2);
+            transformGeo(bankGeo, 0);
 
             const riverMat = new THREE.MeshStandardMaterial({
                 color: WATER_COLOR,
@@ -196,21 +203,21 @@
 
             // TREE PLACEMENT ALONG BANK
             const treeCount = 60;
-            for(let i = 0; i < treeCount; i++) {
+            for (let i = 0; i < treeCount; i++) {
                 const t = Math.random();
                 const point = curve.getPointAt(t);
                 const tangent = curve.getTangentAt(t);
-                const side = new THREE.Vector3().crossVectors(tangent, new THREE.Vector3(0,1,0)).normalize();
-                
+                const side = new THREE.Vector3().crossVectors(tangent, new THREE.Vector3(0, 1, 0)).normalize();
+
                 const tree = createTree();
-                
+
                 // Position trees randomly on left or right bank
                 const sideOffset = (Math.random() > 0.5 ? 1 : -1) * (w / 2 + 4 + Math.random() * 4);
                 tree.position.copy(point).addScaledVector(side, sideOffset);
-                
+
                 // Random rotation
                 tree.rotation.y = Math.random() * Math.PI * 2;
-                
+
                 treeGroup.add(tree);
             }
 
@@ -221,7 +228,7 @@
 
             group.position.set(pos.x, pos.y, pos.z);
             group.rotation.set(rot.x, rot.y, rot.z);
-            
+
             scene.add(group);
         }
 
@@ -231,7 +238,7 @@
             const time = clock.getElapsedTime();
 
             if (waterTexture) {
-                waterTexture.offset.y -= delta * 0.2; 
+                waterTexture.offset.y -= delta * 0.2;
             }
 
             // Water ripple
@@ -252,4 +259,5 @@
         window.onload = init;
     </script>
 </body>
+
 </html>

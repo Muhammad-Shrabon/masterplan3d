@@ -18,9 +18,37 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script>
         let scene, camera, renderer, controls, flagObj, lakeObj, river;
-        let sr_riverMesh, sr_bankMesh, sr_waterTexture, sr_treeGroup; // Small river (lake) variables
-        let nightSkyGroup, stars, moon, isNight = false; // Night sky elements and state
-        let isWalkingMode = false; // Walking Mode state
+        let sr_riverMesh, sr_bankMesh, sr_waterTexture, sr_treeGroup;
+        let nightSkyGroup, stars, moon, isNight = false;
+        let isWalkingMode = false;
+        let agent, agentAnims = { legL: null, legR: null, armL: null, armR: null, upperBody: null, bodyGroup: null };
+
+        // Variables for new animated trees from tree2.html
+        let animatedLeaves = [];
+        const customTreePositions = [
+            { x: -625, y: 0, z: 54 },
+            { x: -605, y: 0, z: 54 },
+            { x: -585, y: 0, z: 54 },
+            { x: -565, y: 0, z: 54 },
+            { x: -545, y: 0, z: 54 },
+            { x: -525, y: 0, z: 54 },
+            { x: -525, y: 0, z: 40 },
+            { x: -525, y: 0, z: 20 },
+            { x: -525, y: 0, z: 0 },
+            { x: -525, y: 0, z: -20 },
+            { x: -525, y: 0, z: -40 },
+            { x: -525, y: 0, z: -60 },
+            { x: -525, y: 0, z: -80 },
+            { x: -525, y: 0, z: -100 },
+            { x: -525, y: 0, z: -120 },
+            { x: -520, y: 0, z: -140 },
+            { x: -510, y: 0, z: -160 },
+            { x: -490, y: 0, z: -180 },
+            { x: -470, y: 0, z: -190 },
+            { x: -450, y: 0, z: -200 },
+            { x: -400, y: 0, z: -200 },
+        ];
+
 
         // Performance optimization: Shared materials cache
         const sharedMaterials = {};
@@ -28,11 +56,11 @@
 
         // --- Fog Reveal Animation Variables (Aggressively Optimized) ---
         let fogRevealStartTime = null;
-        let fogRevealDuration = 3000; // 3 seconds for instant impact
-        let initialFogDensity = 0.005; // Slightly dense for reveal (reduced from 0.18)
-        let finalFogDensity = 0.0005; // Clear visibility (matches existing fog)
+        let fogRevealDuration = 3000;
+        let initialFogDensity = 0.005;
+        let finalFogDensity = 0.0005;
         let fogRevealComplete = false;
-        let initialCameraY = null; // Store initial camera Y position
+        let initialCameraY = null;
 
 
 
@@ -96,7 +124,7 @@
         }
         // Configuration from road.html
         const ROAD_CONFIGS = [
-            // Lake Near HOUSES PATH
+            // WESTERN LINK HOUSE BOTTOM
             {
                 width: 0,
                 points: [
@@ -112,10 +140,11 @@
                 rotation: { x: 0, y: -11, z: 0 },
                 skipLamps: true
             },
+            // WESTERN LINK HOUSE TOP
             {
                 width: 0,
                 points: [
-                    new THREE.Vector3(250, 0, 260),
+                    new THREE.Vector3(250, 0, 253),
                     new THREE.Vector3(250, 0, 200),
                     new THREE.Vector3(250, 0, 186),
                     new THREE.Vector3(220, 0, 136),
@@ -124,7 +153,7 @@
                     new THREE.Vector3(0, 0, 0),
                 ],
                 segments: 800, // Balanced for perfomance/quality
-                position: { x: -630, y: 0, z: 75 },
+                position: { x: -630, y: 0, z: 79 },
                 rotation: { x: 0, y: -11, z: 0 },
                 skipLamps: true
             },
@@ -146,6 +175,7 @@
                 width: 0,
                 points: [
                     new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(-2, 0, 0),
                     new THREE.Vector3(20, 0, 100),
                     new THREE.Vector3(20, 0, 250),
                     new THREE.Vector3(-80, 0, 390),
@@ -165,14 +195,16 @@
                 width: 0,
                 points: [
                     new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(0, 0, -1),
                     new THREE.Vector3(13, 0, 50),
                     new THREE.Vector3(36, 0, 150),
                     new THREE.Vector3(62, 0, 350),
-                    new THREE.Vector3(62, 0, 450),
-                    new THREE.Vector3(52, 0, 460),
+                    new THREE.Vector3(62, 0, 430),
+                    new THREE.Vector3(58, 0, 430),
+                    new THREE.Vector3(53, 0, 450),
                 ],
                 segments: 600,
-                position: { x: -30, y: 0, z: -485 },
+                position: { x: -25, y: 0, z: -480 },
                 rotation: { x: 0, y: -11.5, z: 0 },
                 skipLamps: true
             },
@@ -181,12 +213,13 @@
                 width: 0,
                 points: [
                     new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(5, 0, 10),
                     new THREE.Vector3(13, 0, 50),
                     new THREE.Vector3(78, 0, 330),
-                    new THREE.Vector3(85, 0, 330),
+                    new THREE.Vector3(78, 0, 330),
                 ],
                 segments: 600,
-                position: { x: -370, y: 0, z: -585 },
+                position: { x: -380, y: 0, z: -585 },
                 rotation: { x: 0, y: -11.5, z: 0 },
                 skipLamps: true
             },
@@ -424,10 +457,10 @@
                 width: 4,
                 points: [
                     new THREE.Vector3(0, 0, 0),
-                    new THREE.Vector3(0, 0, 332)
+                    new THREE.Vector3(0, 0, 340)
                 ],
                 segments: 2000,
-                position: { x: -370, y: 0, z: -427 },
+                position: { x: -378, y: 0, z: -427 },
                 rotation: { x: 0, y: -11, z: 0 },
                 skipLamps: true
             },
@@ -435,10 +468,10 @@
                 width: 4,
                 points: [
                     new THREE.Vector3(0, 0, 0),
-                    new THREE.Vector3(0, 0, 327)
+                    new THREE.Vector3(0, 0, 335)
                 ],
                 segments: 2000,
-                position: { x: -365, y: 0, z: -358 },
+                position: { x: -374, y: 0, z: -358 },
                 rotation: { x: 0, y: -11, z: 0 },
                 skipLamps: true
             },
@@ -756,14 +789,21 @@
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x87ceeb);
             flagObj = createFlag(scene, { x: 10, y: 0, z: -5 });
+
+            // Create Agent
+            agent = createCharacterAgent();
+            scene.add(agent);
+            agent.visible = false;
+            agent.position.set(10, 0.5, -5); // Start at the flag
+
             // scene.fog = new THREE.Fog( 0xcccccc, 10, 15 );
             // Initialize with dense fog for reveal animation
             scene.fog = new THREE.FogExp2(0x87ceeb, initialFogDensity);
 
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 14000);
 
-            camera.position.set(10, 2500, 500); // Drone high-altitude start
-            camera.lookAt(10, 15, -100);
+            camera.position.set(10, 150, 150); // Drone high-altitude start
+            camera.lookAt(500, 850, 500);
 
             scene.add(camera)
 
@@ -772,7 +812,7 @@
             scene.add(ambientLight);
 
             const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            directionalLight.position.set(50, 150, 50);
+            directionalLight.position.set(5000, 5500, 5000);
             directionalLight.castShadow = true;
             directionalLight.shadow.bias = -0.0005; // Reduces shadow acne (blinking shadows)
             directionalLight.shadow.normalBias = 0.05; // Helps with shadow artifacts on surfaces
@@ -1348,8 +1388,8 @@
                 singleRow: true,
                 hDepth: 550,
                 hWidth: 320,
-                plotWidth: 1200,
-                plotDepth: 1400,
+                basePlotW: 1200,
+                basePlotD: 1400,
                 hasWing: false,
                 hFloorH: 120,
                 houseOX: 200,
@@ -1535,13 +1575,22 @@
                 houseSpacing: 22,
                 offsetDistance: 5,
                 landWidth: 46,
-                startId: 500
+                startId: 500,
+                houseOX: 200,
+                houseOZ: 300,
+                poolOX: -270,
+                carOX: -150
             });
             createCurveHouseBunch(scene, ROAD_CONFIGS[1], {
                 houseSpacing: 22,
-                offsetDistance: 5,
-                landWidth: 46,
-                startId: 500
+                offsetDistance: 0,
+                landWidth: 30,
+                startId: 500,
+                flipped: true,
+                houseOX: 200,
+                houseOZ: 300,
+                poolOX: -270,
+                carOX: -150
             });
             // Zone - A
             createCurveHouseBunch(scene, ROAD_CONFIGS[2], {
@@ -1613,6 +1662,14 @@
             //     serialCount: 44,   // 44 houses
             //     hScale: 0.8
             // });
+
+            // --- Create Custom Animated Trees (from tree2.html) ---
+            customTreePositions.forEach(pos => {
+                createAnimatedTree(
+                    new THREE.Vector3(pos.x, pos.y, pos.z),
+                    new THREE.Euler(0, Math.random() * Math.PI * 2, 0)
+                );
+            });
 
             console.log("Masterplan Initialization Complete. Rendering started.");
             requestAnimationFrame(sceneRender);
@@ -1807,38 +1864,186 @@
          * Global object to store key states for walking mode
          */
         const keys = {
-            w: false,
-            a: false,
-            s: false,
-            d: false
+            w: false, a: false, s: false, d: false,
+            ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false
         };
 
         // Event listeners for keyboard input
         window.addEventListener('keydown', (event) => {
             if (isWalkingMode) {
-                switch (event.key) {
-                    case 'w': keys.w = true; break;
-                    case 'a': keys.a = true; break;
-                    case 's': keys.s = true; break;
-                    case 'd': keys.d = true; break;
-                }
+                if (event.key in keys) keys[event.key] = true;
             }
         });
 
         window.addEventListener('keyup', (event) => {
             if (isWalkingMode) {
-                switch (event.key) {
-                    case 'w': keys.w = false; break;
-                    case 'a': keys.a = false; break;
-                    case 's': keys.s = false; break;
-                    case 'd': keys.d = false; break;
-                }
+                if (event.key in keys) keys[event.key] = false;
             }
         });
+
+        function createCharacterAgent() {
+            const group = new THREE.Group();
+            group.scale.set(0.7, 0.7, 0.7); // Made agent smaller
+
+            // Materials
+            const skinMat = new THREE.MeshPhongMaterial({ color: 0xffdbac });
+            const shirtMat = new THREE.MeshPhongMaterial({ color: 0x3b82f6 });
+            const clothMat = new THREE.MeshPhongMaterial({ color: 0x1e293b });
+            const hairMat = new THREE.MeshPhongMaterial({ color: 0x2e1503 });
+            const eyeMat = new THREE.MeshPhongMaterial({ color: 0x000000 });
+            const whiteEyeMat = new THREE.MeshPhongMaterial({ color: 0xffffff });
+            const shoeMat = new THREE.MeshPhongMaterial({ color: 0x111111 });
+
+            // Helper to create smooth rounded shapes since r128 lacks CapsuleGeometry
+            function createSmoothCapsule(radius, length, mat) {
+                const grp = new THREE.Group();
+                const cyl = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, length, 16), mat);
+                const top = new THREE.Mesh(new THREE.SphereGeometry(radius, 16, 16), mat);
+                top.position.y = length / 2;
+                const bottom = new THREE.Mesh(new THREE.SphereGeometry(radius, 16, 16), mat);
+                bottom.position.y = -length / 2;
+                grp.add(cyl, top, bottom);
+                return grp;
+            }
+
+            // Upper Body
+            const upperBody = new THREE.Group();
+            upperBody.position.y = 1.0;
+            group.add(upperBody);
+            agentAnims.upperBody = upperBody;
+
+            // Main body
+            const body = createSmoothCapsule(0.35, 0.6, shirtMat);
+            body.position.y = 0.2;
+            upperBody.add(body);
+
+            // Head Group
+            const headGroup = new THREE.Group();
+            headGroup.position.y = 1.0; // position relative to upperBody
+            upperBody.add(headGroup);
+
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.35, 32, 32), skinMat);
+            headGroup.add(head);
+
+            // Hair
+            const hair = new THREE.Mesh(new THREE.SphereGeometry(0.37, 32, 32, 0, Math.PI * 2, 0, Math.PI / 1.7), hairMat);
+            hair.position.y = 0.02;
+            headGroup.add(hair);
+
+            // Hair puff/fringe
+            const hairPuff = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 16), hairMat);
+            hairPuff.position.set(0, 0.25, 0.25);
+            hairPuff.scale.set(1.2, 0.8, 1);
+            headGroup.add(hairPuff);
+
+            // Eyes
+            const eyeGroupL = new THREE.Group();
+            eyeGroupL.position.set(-0.12, 0.05, 0.3);
+            const eyeWhiteL = new THREE.Mesh(new THREE.SphereGeometry(0.06, 16, 16), whiteEyeMat);
+            const pupilL = new THREE.Mesh(new THREE.SphereGeometry(0.03, 16, 16), eyeMat);
+            pupilL.position.z = 0.05;
+            eyeGroupL.add(eyeWhiteL, pupilL);
+            headGroup.add(eyeGroupL);
+
+            const eyeGroupR = new THREE.Group();
+            eyeGroupR.position.set(0.12, 0.05, 0.3);
+            const eyeWhiteR = new THREE.Mesh(new THREE.SphereGeometry(0.06, 16, 16), whiteEyeMat);
+            const pupilR = new THREE.Mesh(new THREE.SphereGeometry(0.03, 16, 16), eyeMat);
+            pupilR.position.z = 0.05;
+            eyeGroupR.add(eyeWhiteR, pupilR);
+            headGroup.add(eyeGroupR);
+
+            // Nose
+            const nose = new THREE.Mesh(new THREE.SphereGeometry(0.04, 16, 16), skinMat);
+            nose.position.set(0, -0.05, 0.35);
+            headGroup.add(nose);
+
+            // Mouth (rounded now)
+            const mouth = new THREE.Mesh(new THREE.SphereGeometry(0.03, 16, 16), eyeMat);
+            mouth.scale.set(1.5, 0.5, 0.5);
+            mouth.position.set(0, -0.15, 0.33);
+            headGroup.add(mouth);
+
+            // Limbs
+            function createArm(isLeft) {
+                const pivot = new THREE.Group();
+                pivot.position.set(isLeft ? -0.48 : 0.48, 0.55, 0);
+                const arm = createSmoothCapsule(0.1, 0.45, skinMat);
+                arm.position.y = -0.3;
+                pivot.add(arm);
+
+                // Sleeve
+                const sleeve = createSmoothCapsule(0.12, 0.2, shirtMat);
+                sleeve.position.y = -0.15;
+                pivot.add(sleeve);
+
+                return pivot;
+            }
+            agentAnims.armL = createArm(true);
+            agentAnims.armR = createArm(false);
+            upperBody.add(agentAnims.armL, agentAnims.armR);
+
+            // Lower Body / Legs
+            const lowerBody = new THREE.Group();
+            group.add(lowerBody);
+
+            function createLeg(isLeft) {
+                const pivot = new THREE.Group();
+                pivot.position.set(isLeft ? -0.18 : 0.18, 0.55, 0); // start a bit higher inside body
+                const leg = createSmoothCapsule(0.13, 0.5, clothMat);
+                leg.position.y = -0.35;
+                pivot.add(leg);
+
+                // Shoe (rounded)
+                const shoe = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 16), shoeMat);
+                shoe.scale.set(0.95, 0.6, 1.4);
+                shoe.position.set(0, -0.65, 0.05);
+                pivot.add(shoe);
+
+                return pivot;
+            }
+            agentAnims.legL = createLeg(true);
+            agentAnims.legR = createLeg(false);
+            lowerBody.add(agentAnims.legL, agentAnims.legR);
+
+            return group;
+        }
+
+        function animateAgent(agent, time) {
+            const t = time * 0.001;
+            const speed = 4.0; // Slower, relaxed walking speed
+            const cycle = Math.sin(t * speed);
+
+            // Walking movement
+            agentAnims.legL.rotation.x = cycle * 0.4;
+            agentAnims.legR.rotation.x = -cycle * 0.4;
+            agentAnims.armL.rotation.x = -cycle * 0.25;
+            agentAnims.armR.rotation.x = cycle * 0.25;
+
+            // Natural body bobbing
+            agent.position.y = 0.5 + Math.abs(cycle) * 0.05;
+            agentAnims.upperBody.rotation.y = cycle * 0.05; // Subtle shoulder swing
+        }
+
+        function resetAgentAnimation() {
+            agentAnims.legL.rotation.x *= 0.8;
+            agentAnims.legR.rotation.x *= 0.8;
+            agentAnims.armL.rotation.x *= 0.8;
+            agentAnims.armR.rotation.x *= 0.8;
+            agentAnims.upperBody.rotation.y *= 0.8;
+            agent.position.y += (0.5 - agent.position.y) * 0.2;
+        }
+
 
         function sceneRender(time) {
             requestAnimationFrame(sceneRender);
             const t = time * 0.001;
+
+            // Animate leaves
+            animatedLeaves.forEach(leaf => {
+                const wave = Math.sin(t * leaf.userData.speed + leaf.userData.phase) * 0.12;
+                leaf.rotation.x = leaf.userData.originalRotation.x + wave;
+            });
 
             // Only update controls if damping is enabled (performance)
             if (controls.enableDamping && !isWalkingMode) {
@@ -1871,9 +2076,10 @@
                 scene.fog.density = currentDensity; // Slight offset to avoid zero density
 
                 // Cinematic Drone Descent: Start high and gracefully drop to ground level
-                const finalCameraY = 30;
-                const descentProgress = Math.pow(easedProgress, 1.2); // Slower start, faster middle for impact
-                camera.position.y = initialCameraY - (initialCameraY - finalCameraY) * descentProgress;
+                // Camera movement disabled during fog reveal as per user request
+                // const finalCameraY = 30;
+                // const descentProgress = Math.pow(easedProgress, 1.2); // Slower start, faster middle for impact
+                // camera.position.y = initialCameraY - (initialCameraY - finalCameraY) * descentProgress;
 
                 // Subtle camera X/Z drift during descent for realism
                 camera.position.z = 500 - (400 * easedProgress);
@@ -1939,37 +2145,58 @@
 
             // Removed ripple animation to prevent zigzagging/blinking
 
-            // --- Gaming Walking Mode Logic (WASD) ---
-            if (isWalkingMode) {
-                const moveSpeed = 3.5;
+            // --- Gaming Walking Mode Logic (WASD + Arrows) ---
+            if (isWalkingMode && agent) {
+                const moveSpeed = 1.8; // Reduced for a calm, normal walking pace
                 const direction = new THREE.Vector3();
                 const frontVector = new THREE.Vector3();
                 const sideVector = new THREE.Vector3();
 
-                // Get camera direction
+                // Get camera direction (ignoring pitch)
                 camera.getWorldDirection(frontVector);
                 frontVector.y = 0;
                 frontVector.normalize();
-
                 sideVector.copy(frontVector).applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 2);
 
-                if (keys.w) direction.add(frontVector);
-                if (keys.s) direction.sub(frontVector);
-                if (keys.a) direction.add(sideVector);
-                if (keys.d) direction.sub(sideVector);
+                const up = keys.w || keys.ArrowUp;
+                const down = keys.s || keys.ArrowDown;
+                const left = keys.a || keys.ArrowLeft;
+                const right = keys.d || keys.ArrowRight;
+
+                if (up) direction.add(frontVector);
+                if (down) direction.sub(frontVector);
+                if (left) direction.add(sideVector);
+                if (right) direction.sub(sideVector);
 
                 if (direction.length() > 0) {
-                    direction.normalize().multiplyScalar(moveSpeed);
-                    camera.position.add(direction);
-                    controls.target.add(direction); // Move focus point with camera
+                    direction.normalize();
+                    // Rotate agent to face direction
+                    const targetAngle = Math.atan2(direction.x, direction.z);
+                    agent.rotation.y = targetAngle;
+
+                    direction.multiplyScalar(moveSpeed);
+                    agent.position.add(direction);
+                    animateAgent(agent, time);
+                } else {
+                    resetAgentAnimation();
                 }
 
-                // Smooth height lock
-                const targetHeight = 22.0;
-                camera.position.y += (targetHeight - camera.position.y) * 0.1;
+                // Third-Person Camera System
+                // Focus slightly above the agent
+                const targetFocus = agent.position.clone().add(new THREE.Vector3(0, 3, 0));
 
-                controls.update(); // Manual update to keep orientation smooth
+                // Move camera by the exact same amount the target is moving, 
+                // so OrbitControls distance and angle are perfectly preserved.
+                const offset = targetFocus.clone().sub(controls.target);
+                camera.position.add(offset);
+                controls.target.copy(targetFocus);
+
+                controls.update();
+
+                // Ensure agent is visible
+                agent.visible = true;
             }
+
 
             // --- Final Safety Check: Never go under ground ---
             if (camera.position.y < 2.0) camera.position.y = 2.0;
@@ -2213,6 +2440,7 @@
 
         function createTree() {
             const treeGroup = new THREE.Group();
+            treeGroup.scale.set(0.3, 0.3, 0.3);
 
             // Trunk
             const trunkGeometry = new THREE.CylinderGeometry(0.08, 0.08, 0.5, 6);
@@ -2239,6 +2467,7 @@
          */
         function createHighQualityTree() {
             const treeGroup = new THREE.Group();
+            treeGroup.scale.set(0.3, 0.3, 0.3);
 
             const trunkGeo = getSharedGeometry('treeTrunk', () => new THREE.CylinderGeometry(0.15, 0.2, 1.0, 6));
             const trunkMat = getSharedMaterial('treeTrunkMat', () => new THREE.MeshStandardMaterial({ color: 0x654321, roughness: 0.88, metalness: 0.0 }));
@@ -2264,6 +2493,102 @@
             topSphere.position.set(0, 2.05, 0); topSphere.castShadow = true; treeGroup.add(topSphere);
 
             return treeGroup;
+        }
+
+        /**
+         * Creates a procedurally generated animated tree from tree2.html
+         */
+        function createAnimatedTree(position, rotation) {
+            const treeGroup = new THREE.Group();
+            treeGroup.position.copy(position);
+            treeGroup.rotation.copy(rotation);
+            treeGroup.scale.set(0.3, 0.3, 0.3);
+            scene.add(treeGroup);
+
+            // Reusing shared geometry and material cache for performance
+            const barkMat = getSharedMaterial('animatedTreeBark', () => new THREE.MeshStandardMaterial({
+                color: 0x2b1d0e,
+                roughness: 0.9,
+                metalness: 0.1
+            }));
+
+            const leafShape = new THREE.Shape();
+            leafShape.moveTo(0, 0);
+            leafShape.quadraticCurveTo(0.5, 0.5, 0, 1.2);
+            leafShape.quadraticCurveTo(-0.5, 0.5, 0, 0);
+            const leafGeo = getSharedGeometry('animatedTreeLeafGeo', () => new THREE.ShapeGeometry(leafShape));
+
+            const leafColors = [0x2d4c1e, 0x3a5a2a, 0x4b6e32, 0x1e3a12];
+            const leafMats = leafColors.map((c, i) => getSharedMaterial(`animatedTreeLeafMat${i}`, () => new THREE.MeshStandardMaterial({
+                color: c,
+                side: THREE.DoubleSide,
+                roughness: 0.8
+            })));
+
+            // Recursive growth scoped to this tree instance
+            function growBranch(startPos, direction, length, thickness, depth) {
+                if (depth > 7) return; // Increased depth from 6 to 7 for exponentially more branches
+
+                const endPos = new THREE.Vector3().addVectors(startPos, direction.clone().multiplyScalar(length));
+                const midpoint = new THREE.Vector3().addVectors(startPos, endPos).multiplyScalar(0.5);
+
+                const branchGeo = new THREE.CylinderGeometry(thickness * 0.7, thickness, length, 5);
+                const branch = new THREE.Mesh(branchGeo, barkMat);
+
+                branch.position.copy(midpoint);
+                branch.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.clone().normalize());
+                branch.castShadow = true;
+                branch.receiveShadow = true;
+                treeGroup.add(branch);
+
+                // Add leaves much earlier in the tree and in huge quantities
+                if (depth > 2) {
+                    const leafCount = Math.floor(Math.random() * 8) + 5; // Spawn 5 to 12 leaves per branch instead of 1-3
+                    for (let i = 0; i < leafCount; i++) {
+                        const leafMat = leafMats[Math.floor(Math.random() * leafMats.length)];
+                        const leaf = new THREE.Mesh(leafGeo, leafMat);
+
+                        // Spread them out more so they look like a full canopy
+                        const spreadX = (Math.random() - 0.5) * (length * 1.5);
+                        const spreadY = (Math.random() - 0.5) * (length * 1.5);
+                        const spreadZ = (Math.random() - 0.5) * (length * 1.5);
+
+                        leaf.position.copy(endPos).add(new THREE.Vector3(spreadX, spreadY, spreadZ));
+
+                        const s = 0.5 + Math.random() * 0.5; // Larger leaves for more fullness
+                        leaf.scale.set(s, s, s);
+                        leaf.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+                        leaf.castShadow = true;
+
+                        // Wind metadata
+                        leaf.userData.phase = Math.random() * Math.PI * 2;
+                        leaf.userData.speed = 0.8 + Math.random() * 1.2;
+                        leaf.userData.originalRotation = leaf.rotation.clone();
+
+                        treeGroup.add(leaf);
+                        animatedLeaves.push(leaf);
+                    }
+                }
+
+                const numBranches = (depth === 0) ? 1 : (Math.random() > 0.8 ? 3 : 2);
+                for (let i = 0; i < numBranches; i++) {
+                    const nextDir = direction.clone();
+                    const angle = 0.3 + Math.random() * 0.4;
+                    const randomAxis = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize();
+                    nextDir.applyAxisAngle(randomAxis, angle);
+
+                    growBranch(
+                        endPos,
+                        nextDir,
+                        length * (0.7 + Math.random() * 0.2),
+                        thickness * 0.7,
+                        depth + 1
+                    );
+                }
+            }
+
+            // Start growth
+            growBranch(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 1, 0), 5.5, 0.9, 0);
         }
 
         /**
@@ -2640,12 +2965,40 @@
                 }
             }
 
-            const treeScale = 66.67;
-            const treeGapX = 50 * igx;
-            const treeGapZ = 50 * igy;
-            [{ x: -plotW / 2 + treeGapX, z: -plotD / 2 + treeGapZ }, { x: plotW / 2 - treeGapX, z: -plotD / 2 + treeGapZ }].forEach(pos => {
-                const t = createHighQualityTree(); t.position.set(pos.x, 0, pos.z); t.scale.set(treeScale, treeScale, treeScale); house.add(t);
-            });
+            // --- Realistic Boundary Trees ---
+            const tScale = 66.67;
+            const treeSpacing = 220; // Plot units
+            const treeInland = 45;   // Slightly inside the boundary wall
+
+            const addBoundaryTree = (x, z) => {
+                const t = createHighQualityTree();
+                t.position.set(x, 0, z);
+                t.scale.set(tScale, tScale, tScale);
+                house.add(t);
+            };
+
+            // Back boundary
+            for (let x = -plotW / 2 + treeInland; x <= plotW / 2 - treeInland; x += treeSpacing) {
+                addBoundaryTree(x, plotD / 2 - treeInland);
+            }
+            // Side boundaries
+            if (skipWall !== 'left') {
+                for (let z = -plotD / 2 + treeInland; z <= plotD / 2 - treeInland; z += treeSpacing) {
+                    addBoundaryTree(-plotW / 2 + treeInland, z);
+                }
+            }
+            if (skipWall !== 'right') {
+                for (let z = -plotD / 2 + treeInland; z <= plotD / 2 - treeInland; z += treeSpacing) {
+                    addBoundaryTree(plotW / 2 - treeInland, z);
+                }
+            }
+            // Front boundary (avoiding the gate)
+            for (let x = -plotW / 2 + treeInland; x <= -gateW / 2 - treeInland; x += treeSpacing) {
+                addBoundaryTree(x, -plotD / 2 + treeInland);
+            }
+            for (let x = gateW / 2 + treeInland; x <= plotW / 2 - treeInland; x += treeSpacing) {
+                addBoundaryTree(x, -plotD / 2 + treeInland);
+            }
 
             house.scale.set(0.015, 0.015, 0.015); house.rotation.y = Math.PI;
             return house;
@@ -2808,6 +3161,22 @@
             landMesh.position.set(centerX, -landThickness / 2 + 0.01, centerZ);
             bunchGroup.add(landMesh);
 
+            // --- Boundary Trees ---
+            const treeInset = 1.2;
+            const tSpacing = 8;
+            for (let x = centerX - landWidth / 2 + treeInset; x <= centerX + landWidth / 2 - treeInset; x += tSpacing) {
+                [{ z: centerZ + landDepth / 2 - treeInset }, { z: centerZ - landDepth / 2 + treeInset }].forEach(pos => {
+                    const t = createTree(); t.position.set(x, 0, pos.z); t.scale.set(0.4, 0.4, 0.4);
+                    bunchGroup.add(t);
+                });
+            }
+            for (let z = centerZ - landDepth / 2 + treeInset + tSpacing; z <= centerZ + landDepth / 2 - treeInset - tSpacing; z += tSpacing) {
+                [{ x: centerX - landWidth / 2 + treeInset }, { x: centerX + landWidth / 2 - treeInset }].forEach(pos => {
+                    const t = createTree(); t.position.set(pos.x, 0, z); t.scale.set(0.4, 0.4, 0.4);
+                    bunchGroup.add(t);
+                });
+            }
+
             const oddRow = new THREE.Group();
             const evenRow = new THREE.Group();
             evenRow.position.z = rowSpacing;
@@ -2940,6 +3309,32 @@
             const centerZ = (singleRow ? 0 : rowSpacing / 2) + (paddingBottom - paddingTop) / 2;
             landMesh.position.set(centerX, -landThickness / 2 + 0.01, centerZ);
             clusterGroup.add(landMesh);
+
+            // --- Add Trees to Block Perimeter (Wall Boundary) ---
+            const treeInset = 1.2;
+            const tSpacing = 8;
+
+            const addBlockTree = (lx, lz) => {
+                const tree = createTree();
+                tree.position.set(lx, 0, lz);
+                tree.scale.set(0.4, 0.4, 0.4);
+                clusterGroup.add(tree);
+            };
+
+            // Calculate land edges in clusterGroup local space
+            const left = centerX - landWidth / 2 + treeInset;
+            const right = centerX + landWidth / 2 - treeInset;
+            const top = centerZ + landDepth / 2 - treeInset;
+            const bottom = centerZ - landDepth / 2 + treeInset;
+
+            for (let x = left; x <= right; x += tSpacing) {
+                addBlockTree(x, top);
+                addBlockTree(x, bottom);
+            }
+            for (let z = bottom + tSpacing; z <= top - tSpacing; z += tSpacing) {
+                addBlockTree(left, z);
+                addBlockTree(right, z);
+            }
 
             const oddRow = new THREE.Group();
             const evenRow = new THREE.Group();
@@ -3215,7 +3610,7 @@
                 group.add(leaves);
             }
 
-            const scale = 0.5 + Math.random() * 1.5;
+            const scale = 0.15 + Math.random() * 0.45;
             group.scale.set(scale, scale, scale);
             return group;
         }
@@ -3343,7 +3738,18 @@
                 basePlotW = 1200,
                 basePlotD = 1500,
                 hWidth = 220,
-                hDepth = 280
+                hDepth = 280,
+                houseRotation = 0,
+                flipped = false,
+                hasPool = true,
+                carCount = 2,
+                hasPlayground = false,
+                hFloorH = 100,
+                houseOX = 0, houseOZ = 0,
+                poolOX = 0, poolOZ = 0,
+                carOX = 0, carOZ = 0,
+                playOX = 0, playOZ = 0,
+                carW = 80, carL = 160
             } = options;
 
             const igx = (typeof innerGapScale === 'object') ? (innerGapScale.x !== undefined ? innerGapScale.x : 1) : innerGapScale;
@@ -3401,6 +3807,30 @@
             landMesh.position.y = 0.10;
             group.add(landMesh);
 
+            // --- Curved Boundary Trees ---
+            const edgeTreeSpacing = 15;
+            const treeDensity = Math.floor(totalLen / edgeTreeSpacing);
+            const edgeOffset = (finalLandWidth * (separateRows ? 2 : 1) / 2) - 2.5;
+
+            for (let i = 0; i <= treeDensity; i++) {
+                const t = i / treeDensity;
+                const p = landCurve.getPointAt(t);
+                const tangent = landCurve.getTangentAt(t).normalize();
+                const bino = new THREE.Vector3().crossVectors(tangent, new THREE.Vector3(0, 1, 0)).normalize();
+
+                // Left Edge
+                const tL = createTree();
+                tL.position.copy(p).add(bino.clone().multiplyScalar(edgeOffset));
+                tL.scale.set(0.4, 0.4, 0.4);
+                group.add(tL);
+
+                // Right Edge
+                const tR = createTree();
+                tR.position.copy(p).add(bino.clone().multiplyScalar(-edgeOffset));
+                tR.scale.set(0.4, 0.4, 0.4);
+                group.add(tR);
+            }
+
             // Place houses and trees
             for (let i = 0; i < loopCount; i++) {
                 // Map i to t within [tStart, tEnd] to keep houses inside land boundaries
@@ -3411,30 +3841,32 @@
                 const binormal = new THREE.Vector3().crossVectors(tangent, normal).normalize();
                 const angle = Math.atan2(tangent.x, tangent.z);
 
+                const hRotRad = houseRotation * (Math.PI / 180);
+
                 if (separateRows) {
                     // Place pair (Even on Side A, Odd on Side B)
                     // Row A
                     const housePosA = p.clone().add(binormal.clone().multiplyScalar(offsetDistance));
-                    const houseA = createHouse("CH-" + (startId + (i * 2)), plotWidth, plotDepth, null, true, 2, false, hDepth, hWidth, !isTerrace, 100, 0, 0, 0, 0, 0, 0, 0, 0, 80, 160, innerGapScale, isTerrace);
+                    const houseA = createHouse("CH-" + (startId + (i * 2)), plotWidth, plotDepth, null, hasPool, carCount, hasPlayground, hDepth, hWidth, !isTerrace, hFloorH, houseOX, houseOZ, poolOX, poolOZ, carOX, carOZ, playOX, playOZ, carW, carL, innerGapScale, isTerrace);
                     houseA.position.copy(housePosA);
                     houseA.position.y = 0.2;
-                    houseA.rotation.y = angle + Math.PI / 2;
+                    houseA.rotation.y = angle + (flipped ? -Math.PI / 2 : Math.PI / 2) + hRotRad;
                     group.add(houseA);
 
                     // Row B
                     const housePosB = p.clone().add(binormal.clone().multiplyScalar(-offsetDistance));
-                    const houseB = createHouse("CH-" + (startId + (i * 2) + 1), plotWidth, plotDepth, null, true, 2, false, hDepth, hWidth, !isTerrace, 100, 0, 0, 0, 0, 0, 0, 0, 0, 80, 160, innerGapScale, isTerrace);
+                    const houseB = createHouse("CH-" + (startId + (i * 2) + 1), plotWidth, plotDepth, null, hasPool, carCount, hasPlayground, hDepth, hWidth, !isTerrace, hFloorH, houseOX, houseOZ, poolOX, poolOZ, carOX, carOZ, playOX, playOZ, carW, carL, innerGapScale, isTerrace);
                     houseB.position.copy(housePosB);
                     houseB.position.y = 0.2;
-                    houseB.rotation.y = angle - Math.PI / 2;
+                    houseB.rotation.y = angle + (flipped ? Math.PI / 2 : -Math.PI / 2) + hRotRad;
                     group.add(houseB);
                 } else {
                     // Single row placement
                     const housePos = p.clone().add(binormal.clone().multiplyScalar(offsetDistance));
-                    const house = createHouse("CH-" + (startId + i), plotWidth, plotDepth, null, true, 2, false, hDepth, hWidth, !isTerrace, 100, 0, 0, 0, 0, 0, 0, 0, 0, 80, 160, innerGapScale, isTerrace);
+                    const house = createHouse("CH-" + (startId + i), plotWidth, plotDepth, null, hasPool, carCount, hasPlayground, hDepth, hWidth, !isTerrace, hFloorH, houseOX, houseOZ, poolOX, poolOZ, carOX, carOZ, playOX, playOZ, carW, carL, innerGapScale, isTerrace);
                     house.position.copy(housePos);
                     house.position.y = 0.2;
-                    house.rotation.y = angle + Math.PI / 2;
+                    house.rotation.y = angle + (flipped ? -Math.PI / 2 : Math.PI / 2) + hRotRad;
                     group.add(house);
                 }
             }
@@ -3710,18 +4142,39 @@
                 isWalkingMode = !isWalkingMode;
                 walkingBtn.classList.toggle('active', isWalkingMode);
                 walkingBtn.querySelector('.mode-text').textContent = isWalkingMode ? 'Exit Walking' : 'Walking Tour';
+                walkingBtn.querySelector('.controls-hint').textContent = isWalkingMode ? 'USE ARROWS OR WASD TO WALK' : '';
+
+                if (agent) {
+                    agent.visible = isWalkingMode;
+                }
 
                 if (isWalkingMode) {
                     // Set walk-friendly controls
-                    controls.maxDistance = 10;
-                    controls.minDistance = 0.5;
-                    controls.enablePan = false; // Disable right-click pan in walk mode
-                    controls.maxPolarAngle = Math.PI / 1.7; // Allow looking up at buildings
+                    controls.maxDistance = 30; // Closer 3rd person orbiting
+                    controls.minDistance = 2;
+                    controls.enablePan = false;
+                    controls.maxPolarAngle = Math.PI / 2.05; // Prevent going underground
 
-                    // Initial position for walk
-                    camera.lookAt(0, 22, -100);
-                    controls.target.set(0, 22, -100);
+                    // Teleport agent to current view instantly
+                    if (agent && controls.target) {
+                        agent.position.set(controls.target.x, 0.5, controls.target.z);
+                        // Orient agent to face current camera forward direction
+                        const forward = new THREE.Vector3();
+                        camera.getWorldDirection(forward);
+                        forward.y = 0;
+                        forward.normalize();
+                        agent.rotation.y = Math.atan2(forward.x, forward.z);
+
+                        // Teleport camera instantly to prevent "fly-in" move
+                        const eyePos = agent.position.clone()
+                            .sub(forward.multiplyScalar(8.0)) // Closer to agent
+                            .add(new THREE.Vector3(0, 4.0, 0)); // Lower height
+                        camera.position.copy(eyePos);
+                        controls.target.copy(agent.position.clone().add(new THREE.Vector3(0, 3, 0))); // Focus slightly lower
+                        controls.update();
+                    }
                 } else {
+                    agent.visible = false;
                     // Restore original controls
                     controls.maxDistance = 3200;
                     controls.minDistance = 0.1;
@@ -3729,6 +4182,7 @@
                     controls.maxPolarAngle = Math.PI / 2.05;
                 }
             });
+
 
 
             toggle.addEventListener('click', () => {
