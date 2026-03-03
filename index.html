@@ -698,7 +698,7 @@
             width: 15,
             segments: 300,
             treeCount: 30,
-            position: { x: 350, y: 0, z: 957 },
+            position: { x: 350, y: 0.1, z: 957 },
             rotation: { x: 0, y: 0, z: 0 },
             points: [
                 new THREE.Vector3(-670, 0, -240),
@@ -720,7 +720,7 @@
             width: 15,
             segments: 300,
             treeCount: 10,
-            position: { x: 420, y: 10, z: 700 },
+            position: { x: 420, y: 0.1, z: 700 }, // Lowered from 10
             rotation: { x: 0, y: 0, z: 0 },
             points: [
                 new THREE.Vector3(0, 0, -220),
@@ -733,7 +733,7 @@
             width: 80,
             segments: 400,
             treeCount: 10,
-            position: { x: 620, y: 10, z: 400 },
+            position: { x: 620, y: 0.1, z: 400 }, // Lowered from 10
             rotation: { x: 0, y: Math.PI / 2, z: 0 },
             points: [
                 // new THREE.Vector3(1400, 0, -1800),
@@ -759,7 +759,7 @@
             width: 15,
             segments: 400,
             treeCount: 10,
-            position: { x: -660, y: 2, z: 165 },
+            position: { x: -660, y: 0.1, z: 165 },
             rotation: { x: 0, y: Math.PI / 2, z: 0 },
             points: [
 
@@ -2202,6 +2202,14 @@
             if (camera.position.y < 2.0) camera.position.y = 2.0;
             if (controls.target.y < 0) controls.target.y = 0;
 
+            // GTree Leaf Animation (Swaying Breath) - Use the 't' (seconds) defined earlier
+            scene.traverse((child) => {
+                if (child.isMesh && child.userData && child.userData.originalPos) {
+                    child.position.x = child.userData.originalPos.x + Math.sin(t + child.id) * 0.15;
+                    child.position.y = child.userData.originalPos.y + Math.cos(t * 0.8 + child.id) * 0.15;
+                }
+            });
+
             renderer.render(scene, camera)
         }
 
@@ -2440,22 +2448,25 @@
 
         function createTree() {
             const treeGroup = new THREE.Group();
-            treeGroup.scale.set(0.3, 0.3, 0.3);
+            // Internal height is 1.15. Normalize to 1.0 (1/1.15 = 0.869)
+            treeGroup.scale.set(0.87, 0.87, 0.87);
 
-            // Trunk
-            const trunkGeometry = new THREE.CylinderGeometry(0.08, 0.08, 0.5, 6);
-            const trunkMaterial = new THREE.MeshBasicMaterial({ color: 0x8D6E63 });
+            // Trunk (height 0.5)
+            const trunkGeometry = getSharedGeometry('stdTrunk', () => new THREE.CylinderGeometry(0.08, 0.08, 0.5, 6));
+            const trunkMaterial = getSharedMaterial('stdTrunkMat', () => new THREE.MeshBasicMaterial({ color: 0x8D6E63 }));
             const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
             trunk.position.y = 0.25;
             treeGroup.add(trunk);
 
             // Foliage
-            const leavesMaterial = new THREE.MeshBasicMaterial({ color: 0x388E3C });
-            const lowerCone = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.6, 8), leavesMaterial);
+            const leavesMaterial = getSharedMaterial('stdLeafMat', () => new THREE.MeshBasicMaterial({ color: 0x388E3C }));
+            const lowerConeGeo = getSharedGeometry('stdLowerLeaf', () => new THREE.ConeGeometry(0.3, 0.6, 8));
+            const lowerCone = new THREE.Mesh(lowerConeGeo, leavesMaterial);
             lowerCone.position.y = 0.6;
             treeGroup.add(lowerCone);
 
-            const upperCone = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.5, 8), leavesMaterial);
+            const upperConeGeo = getSharedGeometry('stdUpperLeaf', () => new THREE.ConeGeometry(0.2, 0.5, 8));
+            const upperCone = new THREE.Mesh(upperConeGeo, leavesMaterial);
             upperCone.position.y = 0.9;
             treeGroup.add(upperCone);
 
@@ -2467,30 +2478,26 @@
          */
         function createHighQualityTree() {
             const treeGroup = new THREE.Group();
-            treeGroup.scale.set(0.3, 0.3, 0.3);
+            // Internal height is 2.5. Normalize to 1.0 (1/2.5 = 0.4)
+            treeGroup.scale.set(0.4, 0.4, 0.4);
 
-            const trunkGeo = getSharedGeometry('treeTrunk', () => new THREE.CylinderGeometry(0.15, 0.2, 1.0, 6));
-            const trunkMat = getSharedMaterial('treeTrunkMat', () => new THREE.MeshStandardMaterial({ color: 0x654321, roughness: 0.88, metalness: 0.0 }));
+            const trunkGeo = getSharedGeometry('hqTrunk', () => new THREE.CylinderGeometry(0.15, 0.2, 1.0, 6));
+            const trunkMat = getSharedMaterial('hqTrunkMat', () => new THREE.MeshStandardMaterial({ color: 0x654321, roughness: 0.88 }));
             const trunk = new THREE.Mesh(trunkGeo, trunkMat);
-            trunk.castShadow = true; trunk.receiveShadow = true; trunk.position.y = 0.5;
+            trunk.position.y = 0.5;
             treeGroup.add(trunk);
 
-            const foliageMat1 = getSharedMaterial('foliageMat1', () => new THREE.MeshStandardMaterial({ color: 0x2E7D32, roughness: 0.76 }));
-            const foliageMat2 = getSharedMaterial('foliageMat2', () => new THREE.MeshStandardMaterial({ color: 0x43A047, roughness: 0.78 }));
-            const foliageMat3 = getSharedMaterial('foliageMat3', () => new THREE.MeshStandardMaterial({ color: 0x66BB6A, roughness: 0.82 }));
+            const leafMat = getSharedMaterial('hqLeafMat', () => new THREE.MeshStandardMaterial({ color: 0x2E7D32 }));
+            const leafGeo = getSharedGeometry('hqLeafSphere', () => new THREE.SphereGeometry(0.7, 8, 8));
 
-            const baseGeo = getSharedGeometry('treeBase', () => new THREE.SphereGeometry(0.7, 8, 8)); // Segments reduced
-            const midGeo = getSharedGeometry('treeMid', () => new THREE.SphereGeometry(0.6, 8, 8));
-            const topGeo = getSharedGeometry('treeTop', () => new THREE.SphereGeometry(0.45, 8, 8));
+            const s1 = new THREE.Mesh(leafGeo, leafMat);
+            s1.position.y = 1.0; treeGroup.add(s1);
 
-            const baseSphere = new THREE.Mesh(baseGeo, foliageMat1);
-            baseSphere.position.set(0, 1.0, 0); baseSphere.castShadow = true; treeGroup.add(baseSphere);
+            const s2 = new THREE.Mesh(leafGeo, leafMat);
+            s2.scale.setScalar(0.85); s2.position.y = 1.6; treeGroup.add(s2);
 
-            const midSphere = new THREE.Mesh(midGeo, foliageMat2);
-            midSphere.position.set(0, 1.6, 0); midSphere.castShadow = true; treeGroup.add(midSphere);
-
-            const topSphere = new THREE.Mesh(topGeo, foliageMat3);
-            topSphere.position.set(0, 2.05, 0); topSphere.castShadow = true; treeGroup.add(topSphere);
+            const s3 = new THREE.Mesh(leafGeo, leafMat);
+            s3.scale.setScalar(0.65); s3.position.y = 2.1; treeGroup.add(s3);
 
             return treeGroup;
         }
@@ -2502,7 +2509,9 @@
             const treeGroup = new THREE.Group();
             treeGroup.position.copy(position);
             treeGroup.rotation.copy(rotation);
-            treeGroup.scale.set(0.3, 0.3, 0.3);
+            // Normalized: height ~27.5. Scale to reach 0.3 world units (0.3 / 27.5 = 0.011)
+            // (0.3 world units = 20 plot units when house scale is 0.015)
+            treeGroup.scale.set(0.011, 0.011, 0.011);
             scene.add(treeGroup);
 
             // Reusing shared geometry and material cache for performance
@@ -2589,6 +2598,101 @@
 
             // Start growth
             growBranch(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 1, 0), 5.5, 0.9, 0);
+        }
+
+        function createGTree(scale = 1.0) {
+            const treeGroup = new THREE.Group();
+            // Internal height for depth 2: Seg(10) + Child(7.5) + GChild(5.625) = 23.125
+            // Normalize to 1.0: 1 / 23.125 = 0.043
+            const internalScale = 0.043;
+            treeGroup.scale.set(scale * internalScale, scale * internalScale, scale * internalScale);
+
+            const barkMaterial = getSharedMaterial('gtreeBark', () => new THREE.MeshStandardMaterial({ color: 0x3d2b1f, roughness: 0.9 }));
+            const leafMaterial = getSharedMaterial('gtreeLeaf', () => new THREE.MeshStandardMaterial({
+                color: 0x22c55e,
+                emissive: 0x064e3b,
+                transparent: true,
+                opacity: 0.85
+            }));
+
+            function createFoliageBunch(radius) {
+                const bunchGroup = new THREE.Group();
+                // Match gtree.html proportions: radius-based sub-branches
+                const subBranchGeo = getSharedGeometry(`gtreeSubBranch_${radius.toFixed(2)}`, () => new THREE.CylinderGeometry(radius * 0.5, radius * 0.8, radius * 8, 6));
+                const subBranch = new THREE.Mesh(subBranchGeo, barkMaterial);
+                subBranch.position.y = radius * 4;
+                bunchGroup.add(subBranch);
+
+                const leafDensity = 2;
+                for (let i = 0; i < leafDensity; i++) {
+                    const leafSize = radius * (10 + Math.random() * 5); // Slimmer bushy look
+                    const leafGeo = getSharedGeometry('gtreeLeafSphere', () => new THREE.SphereGeometry(1, 7, 7));
+                    const leaf = new THREE.Mesh(leafGeo, leafMaterial);
+                    leaf.scale.setScalar(leafSize);
+
+                    leaf.position.set(
+                        (Math.random() - 0.5) * radius * 12,
+                        (radius * 3) + (Math.random() * radius * 4),
+                        (Math.random() - 0.5) * radius * 12
+                    );
+
+                    // Store for animation
+                    leaf.userData.originalPos = leaf.position.clone();
+                    bunchGroup.add(leaf);
+                }
+                return bunchGroup;
+            }
+
+            function buildMainStructure(parentGroup, height, radius, depth) {
+                const geometry = getSharedGeometry(`gtreeBranchSeg_${depth}`, () => new THREE.CylinderGeometry(0.7, 1.0, 10, 6)); // 6 instead of 8
+                const segment = new THREE.Mesh(geometry, barkMaterial);
+                segment.scale.set(radius, 1, radius);
+                segment.castShadow = true;
+                segment.position.y = height / 2;
+                parentGroup.add(segment);
+
+                if (depth === 0) {
+                    const bunch = createFoliageBunch(radius);
+                    bunch.position.y = height;
+                    parentGroup.add(bunch);
+                } else {
+                    const numChildren = 3; // Fuller tree
+                    for (let i = 0; i < numChildren; i++) {
+                        const nextGroup = new THREE.Group();
+                        nextGroup.position.y = height;
+                        const spread = 0.8;
+                        nextGroup.rotation.x = (Math.random() - 0.5) * spread;
+                        nextGroup.rotation.z = (Math.random() - 0.5) * spread;
+                        nextGroup.rotation.y = (Math.random() * Math.PI * 2);
+                        parentGroup.add(nextGroup);
+                        buildMainStructure(nextGroup, height * 0.75, radius * 0.7, depth - 1);
+                    }
+                }
+            }
+
+            function buildRoots(baseRadius, treeGroup) {
+                const numRoots = 3; // Reduced from 4
+                const rootGeo = getSharedGeometry('gtreeRootSeg', () => new THREE.CylinderGeometry(0.5, 0.8, 10, 5));
+                for (let i = 0; i < numRoots; i++) {
+                    const rootAngle = (i / numRoots) * Math.PI * 2;
+                    const rootPart = new THREE.Mesh(rootGeo, barkMaterial);
+                    rootPart.scale.set(baseRadius, 0.4, baseRadius); // Short stubby roots
+
+                    const nextX = Math.cos(rootAngle) * 4;
+                    const nextZ = Math.sin(rootAngle) * 4;
+                    const nextY = -1;
+
+                    rootPart.position.set(nextX / 2, 0, nextZ / 2);
+                    rootPart.lookAt(nextX, nextY, nextZ);
+                    rootPart.rotateX(Math.PI / 2);
+                    treeGroup.add(rootPart);
+                }
+            }
+
+            buildMainStructure(treeGroup, 10, 0.7, 2); // Depth 2 for performance & shorter look
+            buildRoots(0.7, treeGroup);
+
+            return treeGroup;
         }
 
         /**
@@ -2966,15 +3070,18 @@
             }
 
             // --- Realistic Boundary Trees ---
-            const tScale = 66.67;
-            const treeSpacing = 220; // Plot units
-            const treeInland = 45;   // Slightly inside the boundary wall
+            const tScale = 20; // Exact uniform height
+            const treeSpacing = 220;
+            const treeInland = 45;
+            let treeIdx = 0; // For alternating pattern
 
             const addBoundaryTree = (x, z) => {
-                const t = createHighQualityTree();
+                // Alternating pattern: GTree, Standard, GTree...
+                const t = (treeIdx % 2 === 0) ? createGTree(1.0) : createHighQualityTree();
                 t.position.set(x, 0, z);
                 t.scale.set(tScale, tScale, tScale);
                 house.add(t);
+                treeIdx++;
             };
 
             // Back boundary
@@ -3577,50 +3684,27 @@
         // Helper to create a simple tree for the small river (optimized with shared geometries)
         function sr_createTree() {
             const group = new THREE.Group();
+            // Normalize: height ~10 -> scale 0.1 to reach height 1.0 internally
+            group.scale.set(0.1, 0.1, 0.1);
 
-            // Trunk - reuse geometry if available
-            const TRUNK_COLOR = 0x3d2b1f;
-            if (!sharedGeometries.treeTrunk) {
-                sharedGeometries.treeTrunk = new THREE.CylinderGeometry(0.5, 0.7, 4, 8);
-            }
-            if (!sharedMaterials.treeTrunk) {
-                sharedMaterials.treeTrunk = new THREE.MeshStandardMaterial({ color: TRUNK_COLOR });
-            }
-            const trunk = new THREE.Mesh(sharedGeometries.treeTrunk, sharedMaterials.treeTrunk);
+            const trunkGeo = getSharedGeometry('srTrunk', () => new THREE.CylinderGeometry(0.5, 0.7, 4, 8));
+            const barkMat = getSharedMaterial('srTrunkMat', () => new THREE.MeshStandardMaterial({ color: 0x3d2b1f }));
+            const trunk = new THREE.Mesh(trunkGeo, barkMat);
             trunk.position.y = 2;
             group.add(trunk);
 
-            // Foliage - reuse geometries
-            const LEAF_COLORS = [0x2d4c1e, 0x3a5a2a, 0x4b6f3a];
-            const leafColor = LEAF_COLORS[Math.floor(Math.random() * LEAF_COLORS.length)];
-
-            // Create or reuse leaf material
-            const leafMatKey = 'treeLeaf_' + leafColor;
-            if (!sharedMaterials[leafMatKey]) {
-                sharedMaterials[leafMatKey] = new THREE.MeshStandardMaterial({ color: leafColor });
-            }
-
+            const leafMat = getSharedMaterial('srLeafMat', () => new THREE.MeshStandardMaterial({ color: 0x2d4c1e }));
             for (let i = 0; i < 3; i++) {
-                const leafGeoKey = 'treeLeaf_' + i;
-                if (!sharedGeometries[leafGeoKey]) {
-                    sharedGeometries[leafGeoKey] = new THREE.ConeGeometry(2.5 - (i * 0.5), 4, 8);
-                }
-                const leaves = new THREE.Mesh(sharedGeometries[leafGeoKey], sharedMaterials[leafMatKey]);
-                leaves.position.y = 4 + (i * 2);
-                group.add(leaves);
+                const cone = new THREE.Mesh(getSharedGeometry('srLeaf_' + i, () => new THREE.ConeGeometry(2.5 - i * 0.5, 4, 8)), leafMat);
+                cone.position.y = 4 + (i * 2);
+                group.add(cone);
             }
-
-            const scale = 0.15 + Math.random() * 0.45;
-            group.scale.set(scale, scale, scale);
             return group;
         }
 
         function sr_createRiverAndBanks(config) {
-            if (sr_riverMesh) scene.remove(sr_riverMesh);
-            if (sr_bankMesh) scene.remove(sr_bankMesh);
-            if (sr_treeGroup) scene.remove(sr_treeGroup);
-
-            sr_treeGroup = new THREE.Group();
+            const sr_group = new THREE.Group();
+            scene.add(sr_group);
 
             // Generate curve from the config's points array
             const curve = new THREE.CatmullRomCurve3(config.points);
@@ -3652,26 +3736,26 @@
                 geo.computeVertexNormals();
             };
 
-            transformGeo(riverGeo, 1.5);  // Raised higher to prevent z-fighting
-            transformGeo(bankGeo, 0.8);   // Banks slightly lower than water
+            transformGeo(riverGeo, 0.4);
+            transformGeo(bankGeo, 0.2);
 
-            const WATER_COLOR = 0xc8ffff;  // Lighter, brighter water color
+            const WATER_COLOR = 0xc8ffff;
             const SOIL_COLOR = 0x768c4b;
 
-            const riverMat = new THREE.MeshBasicMaterial({
+            const riverMat = new THREE.MeshStandardMaterial({
                 color: WATER_COLOR,
                 map: sr_waterTexture,
-                roughness: 0.05,      // Lower roughness for more shine
-                metalness: 0.6,       // Higher metalness for more reflective water
+                roughness: 0.1,
+                metalness: 0.5,
                 transparent: true,
-                opacity: 0.85,        // Slightly more transparent for lighter appearance
+                opacity: 0.9,
                 side: THREE.DoubleSide,
                 depthWrite: true,
                 polygonOffset: true,
-                polygonOffsetFactor: -1,
-                polygonOffsetUnits: -1,
-                emissive: 0x88ddff,   // Add subtle glow for brighter appearance
-                emissiveIntensity: 0.15
+                polygonOffsetFactor: -2,
+                polygonOffsetUnits: -2,
+                emissive: 0x336688,
+                emissiveIntensity: 0.3
             });
 
             const bankMat = new THREE.MeshStandardMaterial({
@@ -3679,42 +3763,34 @@
                 roughness: 1.0,
                 side: THREE.DoubleSide,
                 polygonOffset: true,
-                polygonOffsetFactor: 1,
-                polygonOffsetUnits: 1
+                polygonOffsetFactor: -1,
+                polygonOffsetUnits: -1
             });
 
             sr_riverMesh = new THREE.Mesh(riverGeo, riverMat);
             sr_bankMesh = new THREE.Mesh(bankGeo, bankMat);
+            sr_group.add(sr_riverMesh);
+            sr_group.add(sr_bankMesh);
 
             // TREE PLACEMENT ALONG BANK
-            const treeCount = config.treeCount;
+            const treeCount = config.treeCount || 10;
             for (let i = 0; i < treeCount; i++) {
                 const t = Math.random();
                 const point = curve.getPointAt(t);
                 const tangent = curve.getTangentAt(t);
                 const side = new THREE.Vector3().crossVectors(tangent, new THREE.Vector3(0, 1, 0)).normalize();
 
-                const tree = sr_createTree();
+                const tree = Math.random() > 0.5 ? sr_createTree() : createGTree(1.0);
 
-                // Position trees randomly on left or right bank
                 const sideOffset = (Math.random() > 0.5 ? 1 : -1) * (config.width / 2 + 4 + Math.random() * 4);
                 tree.position.copy(point).addScaledVector(side, sideOffset);
-
-                // Random rotation
+                tree.scale.set(0.3, 0.3, 0.3);
                 tree.rotation.y = Math.random() * Math.PI * 2;
-
-                sr_treeGroup.add(tree);
+                sr_group.add(tree);
             }
 
-            const group = new THREE.Group();
-            group.add(sr_riverMesh);
-            group.add(sr_bankMesh);
-            group.add(sr_treeGroup);
-
-            group.position.set(config.position.x, config.position.y, config.position.z);
-            group.rotation.set(config.rotation.x, config.rotation.y, config.rotation.z);
-
-            scene.add(group);
+            sr_group.position.set(config.position.x || 0, config.position.y || 0, config.position.z || 0);
+            sr_group.rotation.set(config.rotation.x || 0, config.rotation.y || 0, config.rotation.z || 0);
         }
 
         /**
@@ -3819,15 +3895,16 @@
                 const bino = new THREE.Vector3().crossVectors(tangent, new THREE.Vector3(0, 1, 0)).normalize();
 
                 // Left Edge
-                const tL = createTree();
+                const tL = Math.random() > 0.8 ? createGTree(1.0) : createTree();
                 tL.position.copy(p).add(bino.clone().multiplyScalar(edgeOffset));
-                tL.scale.set(0.4, 0.4, 0.4);
+                // House scale (0.015) * tree scale (20) = 0.3 world units
+                tL.scale.set(0.3, 0.3, 0.3); // Consistent with boundary trees height
                 group.add(tL);
 
                 // Right Edge
-                const tR = createTree();
+                const tR = Math.random() > 0.8 ? createGTree(1.0) : createTree();
                 tR.position.copy(p).add(bino.clone().multiplyScalar(-edgeOffset));
-                tR.scale.set(0.4, 0.4, 0.4);
+                tR.scale.set(0.3, 0.3, 0.3); // Consistent with boundary trees height
                 group.add(tR);
             }
 
