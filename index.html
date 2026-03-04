@@ -23,6 +23,10 @@
         let isWalkingMode = false;
         let agent, agentAnims = { legL: null, legR: null, armL: null, armR: null, upperBody: null, bodyGroup: null };
 
+        // --- Tree Height Controls ---
+        let wallGTreeHeight = 7;
+        let wallStdTreeHeight = 70;
+
         // Variables for new animated trees from tree2.html
         let animatedLeaves = [];
         const customTreePositions = [
@@ -124,36 +128,22 @@
         }
         // Configuration from road.html
         const ROAD_CONFIGS = [
-            // WESTERN LINK HOUSE BOTTOM
+            // WESTERN LINK HOUSE (MERGED - SMOOTHED)
             {
-                width: 0,
+                width: 12,
                 points: [
                     new THREE.Vector3(250, 0, 260),
                     new THREE.Vector3(250, 0, 200),
-                    new THREE.Vector3(250, 0, 190),
-                    new THREE.Vector3(0, 0, 190),
-                    new THREE.Vector3(0, 0, 180),
+                    new THREE.Vector3(245, 0, 195), // Bevel Corner 1
+                    new THREE.Vector3(230, 0, 185), // Bevel Corner 1
+                    new THREE.Vector3(125, 0, 180), // Middle stretch
+                    new THREE.Vector3(20, 0, 175),  // Bevel Corner 2
+                    new THREE.Vector3(5, 0, 165),   // Bevel Corner 2
+                    new THREE.Vector3(0, 0, 150),
                     new THREE.Vector3(0, 0, 0),
                 ],
-                segments: 800, // Balanced for perfomance/quality
-                position: { x: -630, y: 0, z: 133 },
-                rotation: { x: 0, y: -11, z: 0 },
-                skipLamps: true
-            },
-            // WESTERN LINK HOUSE TOP
-            {
-                width: 0,
-                points: [
-                    new THREE.Vector3(250, 0, 253),
-                    new THREE.Vector3(250, 0, 200),
-                    new THREE.Vector3(250, 0, 186),
-                    new THREE.Vector3(220, 0, 136),
-                    new THREE.Vector3(0, 0, 126),
-                    new THREE.Vector3(0, 0, 118),
-                    new THREE.Vector3(0, 0, 0),
-                ],
-                segments: 800, // Balanced for perfomance/quality
-                position: { x: -630, y: 0, z: 79 },
+                segments: 800, // Balanced for performance/quality
+                position: { x: -630, y: 0, z: 116 },
                 rotation: { x: 0, y: -11, z: 0 },
                 skipLamps: true
             },
@@ -247,12 +237,12 @@
                     new THREE.Vector3(430, 0, 940),
                     new THREE.Vector3(250, 0, 800),
                     new THREE.Vector3(250, 0, 795),
-                    new THREE.Vector3(250, 0, 195),
-                    new THREE.Vector3(250, 0, 190),
-                    new THREE.Vector3(220, 0, 162),
-                    new THREE.Vector3(0, 0, 162),
-                    new THREE.Vector3(0, 0, 155),
-                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(250, 0, 270),
+                    // new THREE.Vector3(250, 0, 190),
+                    // new THREE.Vector3(250, 0, 162),
+                    // new THREE.Vector3(0, 0, 162),
+                    // new THREE.Vector3(0, 0, 155),
+                    // new THREE.Vector3(0, 0, -500),
                 ],
                 segments: 800, // Balanced for performance/quality
                 position: { x: -640, y: 0, z: 100 },
@@ -1571,29 +1561,22 @@
             sr_createRiverAndBanks(SR_LAKE_CONFIG_CENTER_LAKE);
 
             // --- Fill Empty Curved Area with Houses ---
+            // Western Link Houses (Merged Dual-Row Staggered Serial)
             createCurveHouseBunch(scene, ROAD_CONFIGS[0], {
-                houseSpacing: 22,
-                offsetDistance: 5,
-                landWidth: 46,
+                houseSpacing: 18, // Distance along the road between staggered neighbors
+                offsetDistance: 18,
+                landWidth: 45,
                 startId: 500,
-                houseOX: 200,
-                houseOZ: 300,
-                poolOX: -270,
-                carOX: -150
-            });
-            createCurveHouseBunch(scene, ROAD_CONFIGS[1], {
-                houseSpacing: 22,
-                offsetDistance: 0,
-                landWidth: 30,
-                startId: 500,
-                flipped: true,
+                totalHouses: 63,
+                separateRows: true, // Dual-row restored
+                innerGapScale: { x: 0.8, y: 0.5 },
                 houseOX: 200,
                 houseOZ: 300,
                 poolOX: -270,
                 carOX: -150
             });
             // Zone - A
-            createCurveHouseBunch(scene, ROAD_CONFIGS[2], {
+            createCurveHouseBunch(scene, ROAD_CONFIGS[1], {
                 innerGapScale: { x: .6, y: .5 },
                 outerGapScale: 2.2,
                 houseSpacing: 1,
@@ -1605,7 +1588,7 @@
                 isTerrace: true
             });
             // Zone - B
-            createCurveHouseBunch(scene, ROAD_CONFIGS[3], {
+            createCurveHouseBunch(scene, ROAD_CONFIGS[2], {
                 innerGapScale: { x: .6, y: .5 },
                 outerGapScale: 2.2,
                 houseSpacing: 1,
@@ -1617,7 +1600,7 @@
                 isTerrace: true
             });
             // Zone - C
-            createCurveHouseBunch(scene, ROAD_CONFIGS[4], {
+            createCurveHouseBunch(scene, ROAD_CONFIGS[3], {
                 innerGapScale: { x: .6, y: .5 },
                 outerGapScale: 2.2,
                 houseSpacing: 1,
@@ -1629,7 +1612,7 @@
                 isTerrace: true
             });
             // Zone - D
-            createCurveHouseBunch(scene, ROAD_CONFIGS[5], {
+            createCurveHouseBunch(scene, ROAD_CONFIGS[4], {
                 innerGapScale: { x: .6, y: .5 },
                 outerGapScale: 2.2,
                 houseSpacing: 1,
@@ -3077,9 +3060,14 @@
 
             const addBoundaryTree = (x, z) => {
                 // Alternating pattern: GTree, Standard, GTree...
-                const t = (treeIdx % 2 === 0) ? createGTree(1.0) : createHighQualityTree();
+                const isG = (treeIdx % 2 === 0);
+                const t = isG ? createGTree(1.0) : createHighQualityTree();
                 t.position.set(x, 0, z);
-                t.scale.set(tScale, tScale, tScale);
+
+                const currentHeight = isG ? wallGTreeHeight : wallStdTreeHeight;
+                t.scale.set(currentHeight, currentHeight, currentHeight);
+                t.name = isG ? "wallGTree" : "wallStdTree";
+
                 house.add(t);
                 treeIdx++;
             };
@@ -3654,6 +3642,38 @@
         }
 
         // --- Small River (Lake) Helper Functions ---
+        // Create a procedural sandstone brick texture for the banks
+        function createBrickTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128;
+            canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+
+            // Mortar / Sand gap color (Pale Sandy Grey)
+            ctx.fillStyle = '#bcaaa4';
+            ctx.fillRect(0, 0, 128, 128);
+
+            // Desert Sand & Yellow hues
+            const brickColors = ['#f9e79f', '#f7dc6f', '#fcf3cf', '#f4d03f', '#edc9af'];
+
+            const w = 60, h = 26, g = 4;
+            for (let y = 0; y < 128; y += h + g) {
+                const off = (Math.floor(y / (h + g)) % 2 === 0) ? 0 : w / 2;
+                for (let x = -w; x < 128; x += w + g) {
+                    ctx.fillStyle = brickColors[Math.floor(Math.random() * brickColors.length)];
+                    ctx.fillRect(x + off + g / 2, y + g / 2, w, h);
+
+                    // Subtle sun-bleached highlight
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+                    ctx.strokeRect(x + off + g / 2, y + g / 2, w, h);
+                }
+            }
+
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+            return tex;
+        }
+
         // Create a procedural texture for water movement (optimized)
         function sr_createWaterTexture() {
             const canvas = document.createElement('canvas');
@@ -3740,7 +3760,8 @@
             transformGeo(bankGeo, 0.2);
 
             const WATER_COLOR = 0xc8ffff;
-            const SOIL_COLOR = 0x768c4b;
+            const brickTex = createBrickTexture();
+            brickTex.repeat.set(5, riverLength / 25);
 
             const riverMat = new THREE.MeshStandardMaterial({
                 color: WATER_COLOR,
@@ -3759,8 +3780,8 @@
             });
 
             const bankMat = new THREE.MeshStandardMaterial({
-                color: SOIL_COLOR,
-                roughness: 1.0,
+                map: brickTex,
+                roughness: 0.8,
                 side: THREE.DoubleSide,
                 polygonOffset: true,
                 polygonOffsetFactor: -1,
@@ -3780,7 +3801,7 @@
                 const tangent = curve.getTangentAt(t);
                 const side = new THREE.Vector3().crossVectors(tangent, new THREE.Vector3(0, 1, 0)).normalize();
 
-                const tree = Math.random() > 0.5 ? sr_createTree() : createGTree(1.0);
+                const tree = sr_createTree();
 
                 const sideOffset = (Math.random() > 0.5 ? 1 : -1) * (config.width / 2 + 4 + Math.random() * 4);
                 tree.position.copy(point).addScaledVector(side, sideOffset);
@@ -3825,7 +3846,8 @@
                 poolOX = 0, poolOZ = 0,
                 carOX = 0, carOZ = 0,
                 playOX = 0, playOZ = 0,
-                carW = 80, carL = 160
+                carW = 80, carL = 160,
+                totalHouses = null
             } = options;
 
             const igx = (typeof innerGapScale === 'object') ? (innerGapScale.x !== undefined ? innerGapScale.x : 1) : innerGapScale;
@@ -3880,7 +3902,7 @@
                 polygonOffsetUnits: -3
             });
             const landMesh = new THREE.Mesh(landGeo, landMat);
-            landMesh.position.y = 0.10;
+            landMesh.position.y = 0.02;
             group.add(landMesh);
 
             // --- Curved Boundary Trees ---
@@ -3895,23 +3917,60 @@
                 const bino = new THREE.Vector3().crossVectors(tangent, new THREE.Vector3(0, 1, 0)).normalize();
 
                 // Left Edge
-                const tL = Math.random() > 0.8 ? createGTree(1.0) : createTree();
+                const tL = createTree();
                 tL.position.copy(p).add(bino.clone().multiplyScalar(edgeOffset));
                 // House scale (0.015) * tree scale (20) = 0.3 world units
                 tL.scale.set(0.3, 0.3, 0.3); // Consistent with boundary trees height
                 group.add(tL);
 
                 // Right Edge
-                const tR = Math.random() > 0.8 ? createGTree(1.0) : createTree();
+                const tR = createTree();
                 tR.position.copy(p).add(bino.clone().multiplyScalar(-edgeOffset));
                 tR.scale.set(0.3, 0.3, 0.3); // Consistent with boundary trees height
                 group.add(tR);
             }
 
             // Place houses and trees
-            for (let i = 0; i < loopCount; i++) {
-                // Map i to t within [tStart, tEnd] to keep houses inside land boundaries
-                const t = loopCount > 1 ? tStart + (i / (loopCount - 1)) * (tEnd - tStart) : 0.5;
+            let housesPlaced = 0;
+            const targetTotal = totalHouses || (separateRows ? loopCount * 2 : loopCount);
+
+            // For paired placement, stepsCount = number of pairs along the curve
+            const stepsCount = separateRows ? Math.ceil(targetTotal / 2) : targetTotal;
+
+            const sampleTs = [];
+
+            // Logic: Isolate the new Fixed-Gap system to Western Link ONLY
+            // Proportional system for Zones A, B, C, D
+            if (totalHouses !== null && stepsCount > 1) {
+                let currentDist = 0;
+                sampleTs.push(tStart);
+                const unitGap = houseSpacing;
+
+                for (let i = 1; i < stepsCount; i++) {
+                    const lastT = sampleTs[sampleTs.length - 1];
+                    const tangent = curve.getTangentAt(lastT).normalize();
+                    const peekT = Math.min(lastT + 0.05, 1);
+                    const tangentNext = curve.getTangentAt(peekT).normalize();
+
+                    const curveAngle = tangent.angleTo(tangentNext);
+                    const junctionBuffer = (curveAngle > 0.1) ? (curveAngle * offsetDistance * 1.5) : 0;
+
+                    currentDist += unitGap + junctionBuffer;
+                    const nextT = tStart + (currentDist / totalLen);
+
+                    if (nextT > tEnd) break;
+                    sampleTs.push(nextT);
+                }
+            } else {
+                // Restore proportional spacing (Auto-spacing for A, B, C, D)
+                for (let i = 0; i < stepsCount; i++) {
+                    const t = stepsCount > 1 ? tStart + (i / (stepsCount - 1)) * (tEnd - tStart) : 0.5;
+                    sampleTs.push(t);
+                }
+            }
+
+            for (let i = 0; i < sampleTs.length; i++) {
+                const t = sampleTs[i];
                 const p = curve.getPointAt(t);
                 const tangent = curve.getTangentAt(t).normalize();
                 const normal = new THREE.Vector3(0, 1, 0);
@@ -3921,30 +3980,46 @@
                 const hRotRad = houseRotation * (Math.PI / 180);
 
                 if (separateRows) {
-                    // Place pair (Even on Side A, Odd on Side B)
-                    // Row A
-                    const housePosA = p.clone().add(binormal.clone().multiplyScalar(offsetDistance));
-                    const houseA = createHouse("CH-" + (startId + (i * 2)), plotWidth, plotDepth, null, hasPool, carCount, hasPlayground, hDepth, hWidth, !isTerrace, hFloorH, houseOX, houseOZ, poolOX, poolOZ, carOX, carOZ, playOX, playOZ, carW, carL, innerGapScale, isTerrace);
-                    houseA.position.copy(housePosA);
-                    houseA.position.y = 0.2;
-                    houseA.rotation.y = angle + (flipped ? -Math.PI / 2 : Math.PI / 2) + hRotRad;
-                    group.add(houseA);
+                    // Paired Serial System: 1->2, 3->4, 5->6 matching across the road
 
-                    // Row B
-                    const housePosB = p.clone().add(binormal.clone().multiplyScalar(-offsetDistance));
-                    const houseB = createHouse("CH-" + (startId + (i * 2) + 1), plotWidth, plotDepth, null, hasPool, carCount, hasPlayground, hDepth, hWidth, !isTerrace, hFloorH, houseOX, houseOZ, poolOX, poolOZ, carOX, carOZ, playOX, playOZ, carW, carL, innerGapScale, isTerrace);
-                    houseB.position.copy(housePosB);
-                    houseB.position.y = 0.2;
-                    houseB.rotation.y = angle + (flipped ? Math.PI / 2 : -Math.PI / 2) + hRotRad;
-                    group.add(houseB);
+                    // House A (Side A)
+                    if (housesPlaced < targetTotal) {
+                        const sideDirA = flipped ? -1 : 1;
+                        const housePosA = p.clone().add(binormal.clone().multiplyScalar(offsetDistance * sideDirA));
+                        const houseA = createHouse("CH-" + (startId + housesPlaced), plotWidth, plotDepth, null, hasPool, carCount, hasPlayground, hDepth, hWidth, !isTerrace, hFloorH, houseOX, houseOZ, poolOX, poolOZ, carOX, carOZ, playOX, playOZ, carW, carL, innerGapScale, isTerrace);
+
+                        houseA.position.copy(housePosA);
+                        houseA.position.y = 0.2;
+                        houseA.rotation.y = angle + (flipped ? -Math.PI / 2 : Math.PI / 2) + hRotRad;
+
+                        group.add(houseA);
+                        housesPlaced++;
+                    }
+
+                    // House B (Side B - Matching Pair)
+                    if (housesPlaced < targetTotal) {
+                        const sideDirB = flipped ? 1 : -1;
+                        const housePosB = p.clone().add(binormal.clone().multiplyScalar(offsetDistance * sideDirB));
+                        const houseB = createHouse("CH-" + (startId + housesPlaced), plotWidth, plotDepth, null, hasPool, carCount, hasPlayground, hDepth, hWidth, !isTerrace, hFloorH, houseOX, houseOZ, poolOX, poolOZ, carOX, carOZ, playOX, playOZ, carW, carL, innerGapScale, isTerrace);
+
+                        houseB.position.copy(housePosB);
+                        houseB.position.y = 0.2;
+                        houseB.rotation.y = angle + (flipped ? Math.PI / 2 : -Math.PI / 2) + hRotRad;
+
+                        group.add(houseB);
+                        housesPlaced++;
+                    }
                 } else {
                     // Single row placement
-                    const housePos = p.clone().add(binormal.clone().multiplyScalar(offsetDistance));
-                    const house = createHouse("CH-" + (startId + i), plotWidth, plotDepth, null, hasPool, carCount, hasPlayground, hDepth, hWidth, !isTerrace, hFloorH, houseOX, houseOZ, poolOX, poolOZ, carOX, carOZ, playOX, playOZ, carW, carL, innerGapScale, isTerrace);
-                    house.position.copy(housePos);
-                    house.position.y = 0.2;
-                    house.rotation.y = angle + (flipped ? -Math.PI / 2 : Math.PI / 2) + hRotRad;
-                    group.add(house);
+                    if (housesPlaced < targetTotal) {
+                        const housePos = p.clone().add(binormal.clone().multiplyScalar(offsetDistance));
+                        const house = createHouse("CH-" + (startId + housesPlaced), plotWidth, plotDepth, null, hasPool, carCount, hasPlayground, hDepth, hWidth, !isTerrace, hFloorH, houseOX, houseOZ, poolOX, poolOZ, carOX, carOZ, playOX, playOZ, carW, carL, innerGapScale, isTerrace);
+                        house.position.copy(housePos);
+                        house.position.y = 0.2;
+                        house.rotation.y = angle + (flipped ? -Math.PI / 2 : Math.PI / 2) + hRotRad;
+                        group.add(house);
+                        housesPlaced++;
+                    }
                 }
             }
             return group;
@@ -4402,7 +4477,6 @@
             init();
         }
     </script>
-
 
 </body>
 
