@@ -16,6 +16,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <!-- Load OrbitControls -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- Load BufferGeometryUtils -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/BufferGeometryUtils.js"></script>
     <script>
         let scene, camera, renderer, controls, flagObj, lakeObj, river;
         let sr_riverMesh, sr_bankMesh, sr_waterTexture, sr_treeGroup;
@@ -65,6 +67,9 @@
         let finalFogDensity = 0.0005;
         let fogRevealComplete = false;
         let initialCameraY = null;
+
+        // --- Performance Optimization: Animation Lists ---
+        const breathingObjects = [];
 
 
 
@@ -286,7 +291,7 @@
                     new THREE.Vector3(0, 0, 0),
                     new THREE.Vector3(0, 0, -2000)
                 ],
-                segments: 2000,
+                segments: 500,
                 position: { x: -34, y: 0, z: 428 },
                 rotation: { x: 0, y: 0, z: 0 },
                 skipLamps: true
@@ -310,7 +315,7 @@
                     new THREE.Vector3(670, 0, -30),
                     new THREE.Vector3(700, 0, 30),
                 ],
-                segments: 2000,
+                segments: 500,
                 position: { x: -334, y: 0, z: 427 },
                 rotation: { x: 0, y: 0, z: 0 },
                 skipLamps: true
@@ -324,7 +329,7 @@
                     new THREE.Vector3(0, 0, 150),
                     new THREE.Vector3(0, 0, 0),
                 ],
-                segments: 2000,
+                segments: 500,
                 position: { x: -334, y: 0, z: 577 },
                 rotation: { x: 0, y: 0, z: 0 },
                 skipLamps: true
@@ -335,7 +340,7 @@
                     new THREE.Vector3(0, 0, 0),
                     new THREE.Vector3(0, 0, -300)
                 ],
-                segments: 2000,
+                segments: 500,
                 position: { x: -634, y: 0, z: 328 },
                 rotation: { x: 0, y: 0, z: 0 },
                 skipLamps: true
@@ -348,7 +353,7 @@
                     new THREE.Vector3(0, 0, 0),
                     new THREE.Vector3(0, 0, 380)
                 ],
-                segments: 2000,
+                segments: 500,
                 position: { x: -30, y: 0, z: -3 },
                 rotation: { x: 0, y: -11, z: 0 },
                 skipLamps: true
@@ -359,7 +364,7 @@
                     new THREE.Vector3(0, 0, 0),
                     new THREE.Vector3(0, 0, 332)
                 ],
-                segments: 2000,
+                segments: 500,
                 position: { x: -30, y: 0, z: 50 },
                 rotation: { x: 0, y: -11, z: 0 },
                 skipLamps: true
@@ -370,7 +375,7 @@
                     new THREE.Vector3(0, 0, 0),
                     new THREE.Vector3(0, 0, 300)
                 ],
-                segments: 2000,
+                segments: 500,
                 position: { x: -30, y: 0, z: 105 },
                 rotation: { x: 0, y: -11, z: 0 },
                 skipLamps: true
@@ -381,7 +386,7 @@
                     new THREE.Vector3(0, 0, 0),
                     new THREE.Vector3(0, 0, 297)
                 ],
-                segments: 2000,
+                segments: 500,
                 position: { x: -30, y: 0, z: 160 },
                 rotation: { x: 0, y: -11, z: 0 },
                 skipLamps: true
@@ -392,7 +397,7 @@
                     new THREE.Vector3(0, 0, 0),
                     new THREE.Vector3(0, 0, 308)
                 ],
-                segments: 2000,
+                segments: 500,
                 position: { x: -30, y: 0, z: 215 },
                 rotation: { x: 0, y: -11, z: 0 },
                 skipLamps: true
@@ -403,7 +408,7 @@
                     new THREE.Vector3(0, 0, 0),
                     new THREE.Vector3(0, 0, 316)
                 ],
-                segments: 2000,
+                segments: 500,
                 position: { x: -30, y: 0, z: 270 },
                 rotation: { x: 0, y: -11, z: 0 },
                 skipLamps: true
@@ -415,7 +420,7 @@
                     new THREE.Vector3(0, 0, 0),
                     new THREE.Vector3(0, 0, 254)
                 ],
-                segments: 2000,
+                segments: 500,
                 position: { x: -30, y: 0, z: -220 },
                 rotation: { x: 0, y: -11, z: 0 },
                 skipLamps: true
@@ -426,7 +431,7 @@
                     new THREE.Vector3(0, 0, 0),
                     new THREE.Vector3(0, 0, 258)
                 ],
-                segments: 2000,
+                segments: 500,
                 position: { x: -30, y: 0, z: -358 },
                 rotation: { x: 0, y: -11, z: 0 },
                 skipLamps: true
@@ -437,7 +442,7 @@
                     new THREE.Vector3(0, 0, 0),
                     new THREE.Vector3(0, 0, 298)
                 ],
-                segments: 2000,
+                segments: 500,
                 position: { x: -30, y: 0, z: -289 },
                 rotation: { x: 0, y: -11, z: 0 },
                 skipLamps: true
@@ -449,7 +454,7 @@
                     new THREE.Vector3(0, 0, 0),
                     new THREE.Vector3(0, 0, 340)
                 ],
-                segments: 2000,
+                segments: 500,
                 position: { x: -378, y: 0, z: -427 },
                 rotation: { x: 0, y: -11, z: 0 },
                 skipLamps: true
@@ -460,7 +465,7 @@
                     new THREE.Vector3(0, 0, 0),
                     new THREE.Vector3(0, 0, 335)
                 ],
-                segments: 2000,
+                segments: 500,
                 position: { x: -374, y: 0, z: -358 },
                 rotation: { x: 0, y: -11, z: 0 },
                 skipLamps: true
@@ -471,7 +476,7 @@
                     new THREE.Vector3(0, 0, 0),
                     new THREE.Vector3(0, 0, 331)
                 ],
-                segments: 2000,
+                segments: 500,
                 position: { x: -370, y: 0, z: -289 },
                 rotation: { x: 0, y: -11, z: 0 },
                 skipLamps: true
@@ -482,7 +487,7 @@
                     new THREE.Vector3(0, 0, 0),
                     new THREE.Vector3(0, 0, 332)
                 ],
-                segments: 2000,
+                segments: 500,
                 position: { x: -370, y: 0, z: -220 },
                 rotation: { x: 0, y: -11, z: 0 },
                 skipLamps: true
@@ -494,7 +499,7 @@
                     new THREE.Vector3(0, 0, 0),
                     new THREE.Vector3(0, 0, 310)
                 ],
-                segments: 2000,
+                segments: 500,
                 position: { x: -350, y: 0, z: -3 },
                 rotation: { x: 0, y: -11, z: 0 },
                 skipLamps: true
@@ -505,7 +510,7 @@
                     new THREE.Vector3(0, 0, 0),
                     new THREE.Vector3(0, 0, 312)
                 ],
-                segments: 2000,
+                segments: 500,
                 position: { x: -350, y: 0, z: 45 },
                 rotation: { x: 0, y: -11, z: 0 },
                 skipLamps: true
@@ -516,7 +521,7 @@
                     new THREE.Vector3(0, 0, 0),
                     new THREE.Vector3(0, 0, 312)
                 ],
-                segments: 2000,
+                segments: 500,
                 position: { x: -350, y: 0, z: 95 },
                 rotation: { x: 0, y: -11, z: 0 },
                 skipLamps: true
@@ -527,7 +532,7 @@
                     new THREE.Vector3(0, 0, 0),
                     new THREE.Vector3(0, 0, 307)
                 ],
-                segments: 2000,
+                segments: 500,
                 position: { x: -345, y: 0, z: 140 },
                 rotation: { x: 0, y: -11, z: 0 },
                 skipLamps: true
@@ -538,7 +543,7 @@
                     new THREE.Vector3(0, 0, 0),
                     new THREE.Vector3(0, 0, 302)
                 ],
-                segments: 2000,
+                segments: 500,
                 position: { x: -340, y: 0, z: 185 },
                 rotation: { x: 0, y: -11, z: 0 },
                 skipLamps: true
@@ -549,7 +554,7 @@
                     new THREE.Vector3(0, 0, 0),
                     new THREE.Vector3(0, 0, 302)
                 ],
-                segments: 2000,
+                segments: 500,
                 position: { x: -340, y: 0, z: 229 },
                 rotation: { x: 0, y: -11, z: 0 },
                 skipLamps: true
@@ -560,7 +565,7 @@
                     new THREE.Vector3(0, 0, 0),
                     new THREE.Vector3(0, 0, 300)
                 ],
-                segments: 2000,
+                segments: 500,
                 position: { x: -338, y: 0, z: 275 },
                 rotation: { x: 0, y: -11, z: 0 },
                 skipLamps: true
@@ -571,7 +576,7 @@
                     new THREE.Vector3(0, 0, 0),
                     new THREE.Vector3(0, 0, 920)
                 ],
-                segments: 2000,
+                segments: 500,
                 position: { x: -630, y: 0, z: 324 },
                 rotation: { x: 0, y: -11, z: 0 },
                 skipLamps: true
@@ -583,7 +588,7 @@
                     new THREE.Vector3(0, 0, 0),
                     new THREE.Vector3(0, 0, 292)
                 ],
-                segments: 2000,
+                segments: 500,
                 position: { x: -630, y: 0, z: 182 },
                 rotation: { x: 0, y: -11, z: 0 },
                 skipLamps: true
@@ -594,7 +599,7 @@
                     new THREE.Vector3(0, 0, 0),
                     new THREE.Vector3(0, 0, 292)
                 ],
-                segments: 2000,
+                segments: 500,
                 position: { x: -630, y: 0, z: 229 },
                 rotation: { x: 0, y: -11, z: 0 },
                 skipLamps: true
@@ -605,7 +610,7 @@
                     new THREE.Vector3(0, 0, 0),
                     new THREE.Vector3(0, 0, 292)
                 ],
-                segments: 2000,
+                segments: 500,
                 position: { x: -630, y: 0, z: 275 },
                 rotation: { x: 0, y: -11, z: 0 },
                 skipLamps: true
@@ -617,7 +622,7 @@
                     new THREE.Vector3(0, 0, 0),
                     new THREE.Vector3(0, 0, 292)
                 ],
-                segments: 2000,
+                segments: 500,
                 position: { x: -330, y: 0, z: 375 },
                 rotation: { x: 0, y: -11, z: 0 },
                 skipLamps: true
@@ -628,7 +633,7 @@
                     new THREE.Vector3(0, 0, 0),
                     new THREE.Vector3(0, 0, 100)
                 ],
-                segments: 2000,
+                segments: 500,
                 position: { x: -175, y: 0, z: 328 },
                 rotation: { x: 0, y: 0, z: 0 },
                 skipLamps: true
@@ -639,7 +644,7 @@
                     new THREE.Vector3(0, 0, 0),
                     new THREE.Vector3(0, 0, -2600)
                 ],
-                segments: 2000,
+                segments: 500,
                 position: { x: -550, y: 0, z: -2820 },
                 rotation: { x: 0, y: 0, z: 0 },
                 skipLamps: true
@@ -652,7 +657,7 @@
                     new THREE.Vector3(-50, 0, 0),
                     new THREE.Vector3(0, 0, 980)
                 ],
-                segments: 2000,
+                segments: 500,
                 position: { x: -330, y: 0, z: 995 },
                 rotation: { x: 0, y: -11, z: 0 },
                 skipLamps: true
@@ -665,7 +670,7 @@
                     new THREE.Vector3(-50, 0, 0),
                     new THREE.Vector3(50, 0, 980)
                 ],
-                segments: 2000,
+                segments: 500,
                 position: { x: -330, y: 0, z: 990 },
                 rotation: { x: 0, y: -11, z: 0 },
                 skipLamps: true
@@ -774,6 +779,79 @@
 
 
 
+        // --- Global Optimization System ---
+        function optimizeScene() {
+            const startTime = performance.now();
+            const treeData = { stdTree: [], hqTree: [], wallGTree: [], wallStdTree: [] };
+
+            scene.updateMatrixWorld(true);
+            const toRemove = [];
+            scene.traverse(node => {
+                if (treeData[node.name]) {
+                    treeData[node.name].push(node.matrixWorld.clone());
+                    toRemove.push(node);
+                }
+            });
+
+            function getSharedIMesh(key, geo, mat, count) {
+                if (!scene.userData.iMeshes) scene.userData.iMeshes = {};
+                if (!scene.userData.iMeshes[key]) {
+                    const iMesh = new THREE.InstancedMesh(geo, mat, count);
+                    iMesh.castShadow = true;
+                    iMesh.receiveShadow = true;
+                    scene.add(iMesh);
+                    scene.userData.iMeshes[key] = iMesh;
+                    iMesh.userData.instanceCount = 0;
+                }
+                return scene.userData.iMeshes[key];
+            }
+
+            if (treeData.stdTree.length > 0) {
+                const temp = createTree();
+                const comps = []; temp.traverse(c => { if (c.isMesh) comps.push({ geo: c.geometry, mat: c.material, pos: c.position, sc: c.scale, rot: c.rotation }); });
+                comps.forEach(comp => {
+                    const iMesh = getSharedIMesh(`stdTree_${comp.geo.type}_${comp.mat.uuid}`, comp.geo, comp.mat, treeData.stdTree.length);
+                    treeData.stdTree.forEach((mWorld, idx) => {
+                        const m = new THREE.Matrix4().copy(mWorld);
+                        m.multiply(new THREE.Matrix4().compose(comp.pos, new THREE.Quaternion().setFromEuler(comp.rot), comp.sc));
+                        iMesh.setMatrixAt(idx, m);
+                    });
+                });
+            }
+
+            if (treeData.hqTree.length > 0) {
+                const temp = createHighQualityTree();
+                const comps = []; temp.traverse(c => { if (c.isMesh) comps.push({ geo: c.geometry, mat: c.material, pos: c.position, sc: c.scale, rot: c.rotation }); });
+                comps.forEach(comp => {
+                    const iMesh = getSharedIMesh(`hqTree_${comp.geo.type}_${comp.mat.uuid}`, comp.geo, comp.mat, treeData.hqTree.length);
+                    treeData.hqTree.forEach((mWorld, idx) => {
+                        const m = new THREE.Matrix4().copy(mWorld);
+                        m.multiply(new THREE.Matrix4().compose(comp.pos, new THREE.Quaternion().setFromEuler(comp.rot), comp.sc));
+                        iMesh.setMatrixAt(idx, m);
+                    });
+                });
+            }
+
+            ['wallGTree', 'wallStdTree'].forEach(type => {
+                if (treeData[type].length > 0) {
+                    const temp = type === 'wallGTree' ? createGTree(1.0) : createHighQualityTree();
+                    temp.traverse(c => {
+                        if (c.isMesh) {
+                            const iMesh = getSharedIMesh(`${type}_mesh_${c.id}`, c.geometry, c.material, treeData[type].length);
+                            treeData[type].forEach((mWorld, idx) => {
+                                const m = new THREE.Matrix4().copy(mWorld);
+                                c.updateMatrix(); m.multiply(c.matrix);
+                                iMesh.setMatrixAt(idx, m);
+                            });
+                        }
+                    });
+                }
+            });
+
+            toRemove.forEach(obj => { if (obj.parent) obj.parent.remove(obj); });
+            console.log(`Optimization complete in ${(performance.now() - startTime).toFixed(2)}ms. Replaced ${toRemove.length} nodes.`);
+        }
+
         function init() {
             console.log("Initializing 3D Masterplan...");
             scene = new THREE.Scene();
@@ -818,7 +896,7 @@
                 precision: "highp" // High precision for quality
             });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Cap at 2x for performance
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1)); // Limit to 1x for performance
             renderer.shadowMap.enabled = true; // Enable shadows
             renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Smoother shadows
             renderer.shadowMap.autoUpdate = false; // Only update shadows when needed (performance boost)
@@ -862,7 +940,7 @@
             scene.add(nightSkyGroup);
 
             // 1. Enhanced Stars with Blinking
-            const starCount = 12000;
+            const starCount = 1000; // Further reduced for performance
             const starGeometry = new THREE.BufferGeometry();
             const starPositions = new Float32Array(starCount * 3);
             const starSizes = new Float32Array(starCount);
@@ -935,7 +1013,7 @@
             nightSkyGroup.add(stars);
 
             // 1.5. Night Clouds
-            const cloudCount = 40;
+            const cloudCount = 5; // Reduced cloud count for smoother rendering
             const cloudGroup = new THREE.Group();
             nightSkyGroup.add(cloudGroup);
             stars.userData.cloudGroup = cloudGroup;
@@ -1655,6 +1733,10 @@
             });
 
             console.log("Masterplan Initialization Complete. Rendering started.");
+
+            // --- Final Scene Optimization ---
+            optimizeScene();
+
             requestAnimationFrame(sceneRender);
         }
 
@@ -2051,7 +2133,7 @@
                 // Improved easing function for ultra-smooth transition (ease-in-out-cubic)
                 const easedProgress = progress < 0.5
                     ? 4 * progress * progress * progress
-                    : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+                    : 1 - Math.pow(-2 * progress + 2, 3) / 2; // unchanged but clarified
 
                 // Interpolate fog density with smooth curve
                 // const currentDensity = initialFogDensity - (initialFogDensity - finalFogDensity) * (easedProgress + 0.020) ;
@@ -2070,7 +2152,7 @@
 
                 if (progress >= 1.0) {
                     fogRevealComplete = true;
-                    console.log('City fog reveal animation complete!');
+                    // Fog reveal complete
                     // Update shadows once after fog reveal (performance)
                     renderer.shadowMap.needsUpdate = true;
                 }
@@ -2126,16 +2208,13 @@
                 sr_waterTexture.offset.y -= 0.00278; // 6-second flow cycle
             }
 
-            // Removed ripple animation to prevent zigzagging/blinking
-
-            // --- Gaming Walking Mode Logic (WASD + Arrows) ---
+            // --- Gaming Walking Mode Logic ---
             if (isWalkingMode && agent) {
-                const moveSpeed = 1.8; // Reduced for a calm, normal walking pace
+                const moveSpeed = 1.8;
                 const direction = new THREE.Vector3();
                 const frontVector = new THREE.Vector3();
                 const sideVector = new THREE.Vector3();
 
-                // Get camera direction (ignoring pitch)
                 camera.getWorldDirection(frontVector);
                 frontVector.y = 0;
                 frontVector.normalize();
@@ -2153,10 +2232,7 @@
 
                 if (direction.length() > 0) {
                     direction.normalize();
-                    // Rotate agent to face direction
-                    const targetAngle = Math.atan2(direction.x, direction.z);
-                    agent.rotation.y = targetAngle;
-
+                    agent.rotation.y = Math.atan2(direction.x, direction.z);
                     direction.multiplyScalar(moveSpeed);
                     agent.position.add(direction);
                     animateAgent(agent, time);
@@ -2164,34 +2240,26 @@
                     resetAgentAnimation();
                 }
 
-                // Third-Person Camera System
-                // Focus slightly above the agent
                 const targetFocus = agent.position.clone().add(new THREE.Vector3(0, 3, 0));
-
-                // Move camera by the exact same amount the target is moving, 
-                // so OrbitControls distance and angle are perfectly preserved.
                 const offset = targetFocus.clone().sub(controls.target);
                 camera.position.add(offset);
                 controls.target.copy(targetFocus);
-
                 controls.update();
-
-                // Ensure agent is visible
                 agent.visible = true;
             }
 
-
-            // --- Final Safety Check: Never go under ground ---
+            // --- Final Safety Check ---
             if (camera.position.y < 2.0) camera.position.y = 2.0;
             if (controls.target.y < 0) controls.target.y = 0;
 
-            // GTree Leaf Animation (Swaying Breath) - Use the 't' (seconds) defined earlier
-            scene.traverse((child) => {
-                if (child.isMesh && child.userData && child.userData.originalPos) {
+            // --- Optimized Breathing Animation (No scene.traverse) ---
+            for (let i = 0, l = breathingObjects.length; i < l; i++) {
+                const child = breathingObjects[i];
+                if (child.userData && child.userData.originalPos) {
                     child.position.x = child.userData.originalPos.x + Math.sin(t + child.id) * 0.15;
                     child.position.y = child.userData.originalPos.y + Math.cos(t * 0.8 + child.id) * 0.15;
                 }
-            });
+            }
 
             renderer.render(scene, camera)
         }
@@ -2431,6 +2499,7 @@
 
         function createTree() {
             const treeGroup = new THREE.Group();
+            treeGroup.name = 'stdTree';
             // Internal height is 1.15. Normalize to 1.0 (1/1.15 = 0.869)
             treeGroup.scale.set(0.87, 0.87, 0.87);
 
@@ -2461,6 +2530,7 @@
          */
         function createHighQualityTree() {
             const treeGroup = new THREE.Group();
+            treeGroup.name = 'hqTree';
             // Internal height is 2.5. Normalize to 1.0 (1/2.5 = 0.4)
             treeGroup.scale.set(0.4, 0.4, 0.4);
 
@@ -2519,23 +2589,24 @@
 
             // Recursive growth scoped to this tree instance
             function growBranch(startPos, direction, length, thickness, depth) {
-                if (depth > 7) return; // Increased depth from 6 to 7 for exponentially more branches
+                if (depth > 5) return; // Reduced depth from 7 to 5 for better performance
 
                 const endPos = new THREE.Vector3().addVectors(startPos, direction.clone().multiplyScalar(length));
                 const midpoint = new THREE.Vector3().addVectors(startPos, endPos).multiplyScalar(0.5);
 
-                const branchGeo = new THREE.CylinderGeometry(thickness * 0.7, thickness, length, 5);
+                const branchGeo = getSharedGeometry('animatedTreeBranch', () => new THREE.CylinderGeometry(0.7, 1.0, 1, 5));
                 const branch = new THREE.Mesh(branchGeo, barkMat);
 
                 branch.position.copy(midpoint);
                 branch.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.clone().normalize());
+                branch.scale.set(thickness, length, thickness);
                 branch.castShadow = true;
                 branch.receiveShadow = true;
                 treeGroup.add(branch);
 
                 // Add leaves much earlier in the tree and in huge quantities
                 if (depth > 2) {
-                    const leafCount = Math.floor(Math.random() * 8) + 5; // Spawn 5 to 12 leaves per branch instead of 1-3
+                    const leafCount = Math.floor(Math.random() * 4) + 3; // Spawn 3 to 6 leaves per branch
                     for (let i = 0; i < leafCount; i++) {
                         const leafMat = leafMats[Math.floor(Math.random() * leafMats.length)];
                         const leaf = new THREE.Mesh(leafGeo, leafMat);
@@ -2585,6 +2656,7 @@
 
         function createGTree(scale = 1.0) {
             const treeGroup = new THREE.Group();
+            treeGroup.name = 'gtree';
             // Internal height for depth 2: Seg(10) + Child(7.5) + GChild(5.625) = 23.125
             // Normalize to 1.0: 1 / 23.125 = 0.043
             const internalScale = 0.043;
@@ -2606,21 +2678,23 @@
                 subBranch.position.y = radius * 4;
                 bunchGroup.add(subBranch);
 
-                const leafDensity = 2;
+                const leafDensity = 1;
                 for (let i = 0; i < leafDensity; i++) {
                     const leafSize = radius * (10 + Math.random() * 5); // Slimmer bushy look
                     const leafGeo = getSharedGeometry('gtreeLeafSphere', () => new THREE.SphereGeometry(1, 7, 7));
                     const leaf = new THREE.Mesh(leafGeo, leafMaterial);
                     leaf.scale.setScalar(leafSize);
 
+                    // _-- GTREE LEAF SET Y POSITION __
                     leaf.position.set(
                         (Math.random() - 0.5) * radius * 12,
-                        (radius * 3) + (Math.random() * radius * 4),
+                        10,
                         (Math.random() - 0.5) * radius * 12
                     );
 
                     // Store for animation
                     leaf.userData.originalPos = leaf.position.clone();
+                    breathingObjects.push(leaf);
                     bunchGroup.add(leaf);
                 }
                 return bunchGroup;
@@ -2678,29 +2752,17 @@
             return treeGroup;
         }
 
-        /**
-         * Creates the new L-Wing house model from the provided CONFIG and logic.
-         * Scaled down to fit the city proportions.
-         */
-        /**
-         * Creates the new L-Wing house model including a stylish boundary wall and gate.
-         */
         function createHouse(id, plotW = 500, plotD = 600, skipWall = null, hasPool = false, carCount = 0, hasPlayground = false, hDepth = 280, hWidth = 220, hasWing = true, hFloorH = 100, houseOX = 0, houseOZ = 0, poolOX = 0, poolOZ = 0, carOX = 0, carOZ = 0, playOX = 0, playOZ = 0, carW = 80, carL = 160, innerGapScale = 1, isTerrace = false) {
+            const house = new THREE.Group();
+            house.name = 'house';
             const igScaleRaw = innerGapScale;
             const igx = (typeof igScaleRaw === 'object') ? (igScaleRaw.x !== undefined ? igScaleRaw.x : 1) : igScaleRaw;
             const igy = (typeof igScaleRaw === 'object') ? (igScaleRaw.y !== undefined ? igScaleRaw.y : 1) : igScaleRaw;
 
-            const CONFIG = {
-                houseWidth: hWidth,
-                houseDepth: hDepth,
-                wingLen: Math.max(260, hWidth * 0.8),
-                floorH: hFloorH,
-                wingW: Math.max(100, hWidth * 0.45),
-                roofH: 80
-            };
-            const house = new THREE.Group();
+            const CONFIG = { houseWidth: hWidth, houseDepth: hDepth, wingLen: Math.max(260, hWidth * 0.8), floorH: hFloorH, wingW: Math.max(100, hWidth * 0.45), roofH: 80 };
+            const { houseWidth, houseDepth, wingLen, floorH, wingW, roofH } = CONFIG;
+            const wallH = 30; const wallT = 8; const gateW = 100;
 
-            // Materials (Shared/Cached)
             const bodyMat = getSharedMaterial('houseBody', () => new THREE.MeshStandardMaterial({ color: 0xe8e4d9, roughness: 0.8 }));
             const roofMat = getSharedMaterial('houseRoof', () => new THREE.MeshStandardMaterial({ color: 0xC47460, roughness: 0.7 }));
             const winMat = getSharedMaterial('houseWin', () => new THREE.MeshStandardMaterial({ color: 0xadd8e6, emissive: 0x111111 }));
@@ -2709,49 +2771,47 @@
             const glassMat = getSharedMaterial('houseGlass', () => new THREE.MeshStandardMaterial({ color: 0x88ccff, transparent: true, opacity: 0.5 }));
             const beamMat = getSharedMaterial('houseBeam', () => new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5 }));
 
-            const { houseWidth, houseDepth, wingLen, floorH, wingW, roofH } = CONFIG;
-            const wallH = 30; const wallT = 8; const gateW = 100;
+            // --- Merged Geometries ---
+            const wallGeos = [];
+            const gateGeos = [];
 
-            // Shared geometries
-            const backWallGeo = getSharedGeometry('backWall_' + plotW, () => new THREE.BoxGeometry(plotW, wallH, wallT));
-            const sideWallGeo = getSharedGeometry('sideWall_' + plotD, () => new THREE.BoxGeometry(wallT, wallH, plotD));
-
-            const bw = new THREE.Mesh(backWallGeo, wallMat); bw.position.set(0, wallH / 2, plotD / 2 - wallT / 2); house.add(bw);
-
-            if (skipWall !== 'left') {
-                const lw = new THREE.Mesh(sideWallGeo, wallMat); lw.position.set(-plotW / 2 + wallT / 2, wallH / 2, 0); house.add(lw);
-            }
-            if (skipWall !== 'right') {
-                const rw = new THREE.Mesh(sideWallGeo, wallMat); rw.position.set(plotW / 2 - wallT / 2, wallH / 2, 0); house.add(rw);
-            }
+            // Walls
+            const bwG = new THREE.BoxGeometry(plotW, wallH, wallT); bwG.translate(0, wallH / 2, plotD / 2 - wallT / 2); wallGeos.push(bwG);
+            const sideWallG = new THREE.BoxGeometry(wallT, wallH, plotD);
+            if (skipWall !== 'left') { const lw = sideWallG.clone(); lw.translate(-plotW / 2 + wallT / 2, wallH / 2, 0); wallGeos.push(lw); }
+            if (skipWall !== 'right') { const rw = sideWallG.clone(); rw.translate(plotW / 2 - wallT / 2, wallH / 2, 0); wallGeos.push(rw); }
 
             const frontSegW = (plotW - gateW) / 2;
-            const frontWallGeo = getSharedGeometry('frontWallSeg_' + frontSegW, () => new THREE.BoxGeometry(frontSegW, wallH, wallT));
-            const fwL = new THREE.Mesh(frontWallGeo, wallMat); fwL.position.set(-plotW / 2 + frontSegW / 2, wallH / 2, -plotD / 2 + wallT / 2); house.add(fwL);
-            const fwR = new THREE.Mesh(frontWallGeo, wallMat); fwR.position.set(plotW / 2 - frontSegW / 2, wallH / 2, -plotD / 2 + wallT / 2); house.add(fwR);
+            const frontWallG = new THREE.BoxGeometry(frontSegW, wallH, wallT);
+            const fwL = frontWallG.clone(); fwL.translate(-plotW / 2 + frontSegW / 2, wallH / 2, -plotD / 2 + wallT / 2); wallGeos.push(fwL);
+            const fwR = frontWallG.clone(); fwR.translate(plotW / 2 - frontSegW / 2, wallH / 2, -plotD / 2 + wallT / 2); wallGeos.push(fwR);
 
-            const pillarGeo = getSharedGeometry('gatePillar', () => new THREE.BoxGeometry(15, wallH + 15, 15));
-            const pL = new THREE.Mesh(pillarGeo, gateMat); pL.position.set(-gateW / 2, (wallH + 15) / 2, -plotD / 2 + wallT / 2); house.add(pL);
-            const pR = new THREE.Mesh(pillarGeo, gateMat); pR.position.set(gateW / 2, (wallH + 15) / 2, -plotD / 2 + wallT / 2); house.add(pR);
+            const pillarG = new THREE.BoxGeometry(15, wallH + 15, 15);
+            const pL = pillarG.clone(); pL.translate(-gateW / 2, (wallH + 15) / 2, -plotD / 2 + wallT / 2); gateGeos.push(pL);
+            const pR = pillarG.clone(); pR.translate(gateW / 2, (wallH + 15) / 2, -plotD / 2 + wallT / 2); gateGeos.push(pR);
+
+            const wallMesh = new THREE.Mesh(THREE.BufferGeometryUtils.mergeBufferGeometries(wallGeos), wallMat);
+            house.add(wallMesh);
+            const gateMesh = new THREE.Mesh(THREE.BufferGeometryUtils.mergeBufferGeometries(gateGeos), gateMat);
+            house.add(gateMesh);
 
             const building = new THREE.Group();
-            // Manual Building Offsets
-            building.position.x = houseOX;
-            building.position.z = houseOZ;
+            building.position.set(houseOX, 0, houseOZ);
             house.add(building);
 
-            const mbKey = `mainBody_${houseWidth}_${houseDepth}_${floorH}`;
-            const mainBodyGeo = getSharedGeometry(mbKey, () => new THREE.BoxGeometry(houseWidth, floorH * 2, houseDepth));
-            const mb = new THREE.Mesh(mainBodyGeo, bodyMat); mb.position.set(0, floorH, 0); mb.castShadow = true; building.add(mb);
-
+            // Building Body Merging
+            const bodyGeos = [];
+            const mbG = new THREE.BoxGeometry(houseWidth, floorH * 2, houseDepth); mbG.translate(0, floorH, 0); bodyGeos.push(mbG);
             if (hasWing) {
-                const wbKey = `wingBody_${wingLen}_${wingW}_${floorH}`;
-                const wingBodyGeo = getSharedGeometry(wbKey, () => new THREE.BoxGeometry(wingLen, floorH * 2, wingW));
-                const wb = new THREE.Mesh(wingBodyGeo, bodyMat); wb.position.set(-(houseWidth / 2 + wingLen / 2), floorH, houseDepth / 2 - wingW / 2);
-                wb.castShadow = true; building.add(wb);
+                const wbG = new THREE.BoxGeometry(wingLen, floorH * 2, wingW);
+                wbG.translate(-(houseWidth / 2 + wingLen / 2), floorH, houseDepth / 2 - wingW / 2);
+                bodyGeos.push(wbG);
             }
+            const bodyMesh = new THREE.Mesh(THREE.BufferGeometryUtils.mergeBufferGeometries(bodyGeos), bodyMat);
+            bodyMesh.castShadow = true;
+            building.add(bodyMesh);
 
-            // Doors (Ground and 1st Floor)
+            // Doors and unique parts
             const doorGeo = getSharedGeometry('houseDoor', () => new THREE.BoxGeometry(45, 75, 5));
             const doorMat = getSharedMaterial('doorMat_' + id, () => {
                 const canvas = document.createElement('canvas'); canvas.width = 64; canvas.height = 128;
@@ -2759,94 +2819,59 @@
                 ctx.fillStyle = '#FFF'; ctx.font = 'bold 30px Arial'; ctx.textAlign = 'center'; ctx.fillText(id, 32, 40);
                 return new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(canvas) });
             });
+            const dG = new THREE.Mesh(doorGeo, doorMat); dG.position.set(0, 37.5, -(houseDepth / 2 + 2)); building.add(dG);
+            const dF = dG.clone(); dF.position.y = floorH + 37.5; building.add(dF);
 
-            const doorGround = new THREE.Mesh(doorGeo, doorMat);
-            doorGround.position.set(0, 37.5, -(houseDepth / 2 + 2));
-            building.add(doorGround);
-
-            const doorFirst = new THREE.Mesh(doorGeo, doorMat);
-            doorFirst.position.set(0, floorH + 37.5, -(houseDepth / 2 + 2));
-            building.add(doorFirst);
-
-            const porchGeoKey = `housePorch_${houseWidth}`;
-            const porchGeo = getSharedGeometry(porchGeoKey, () => new THREE.BoxGeometry(houseWidth - 20, 10, 80));
+            // Porch
+            const porchG = new THREE.BoxGeometry(houseWidth - 20, 10, 80);
             const porchMat = getSharedMaterial('porchMat', () => new THREE.MeshStandardMaterial({ color: 0xcccccc }));
-            const p1 = new THREE.Mesh(porchGeo, porchMat); p1.position.set(0, 5, -(houseDepth / 2 + 40)); building.add(p1);
+            const p1 = new THREE.Mesh(porchG, porchMat); p1.position.set(0, 5, -(houseDepth / 2 + 40)); building.add(p1);
             const p2 = p1.clone(); p2.position.y = floorH + 5; building.add(p2);
 
-            // House Porch Light Bulb - Positioned dynamically under the porch
-            const houseBulbGeo = getSharedGeometry('houseBulb', () => new THREE.SphereGeometry(15, 8, 8));
-            const houseBulbMat = getSharedMaterial('houseBulbMat', () => new THREE.MeshStandardMaterial({ color: 0xffffaa, emissive: 0x000000, emissiveIntensity: 0 }));
-            const hb = new THREE.Mesh(houseBulbGeo, houseBulbMat);
-            hb.position.set(0, floorH - 15, -(houseDepth / 2 + 15)); // Dynamic Y based on building height
-            hb.name = 'houseBulb';
-            building.add(hb);
+            // Railing and Win (Merged)
+            const glassGeos = [];
+            const railH = 35;
+            const gfG = new THREE.BoxGeometry(houseWidth - 20, railH, 2); gfG.translate(0, floorH + 10 + railH / 2, -(houseDepth / 2 + 80)); glassGeos.push(gfG);
+            const gsG = new THREE.BoxGeometry(2, railH, 80);
+            const glL = gsG.clone(); glL.translate(-(houseWidth - 20) / 2, floorH + 10 + railH / 2, -(houseDepth / 2 + 40)); glassGeos.push(glL);
+            const glR = gsG.clone(); glR.translate((houseWidth - 20) / 2, floorH + 10 + railH / 2, -(houseDepth / 2 + 40)); glassGeos.push(glR);
 
-            const winGeo = getSharedGeometry('houseWin', () => new THREE.PlaneGeometry(40, 50));
+            if (hasWing) {
+                const wgfG = new THREE.BoxGeometry(wingLen - 40, railH, 2); wgfG.translate(-(houseWidth / 2 + wingLen / 2), floorH + 10 + railH / 2, houseDepth / 2 - wingW - 60); glassGeos.push(wgfG);
+                const wgsG = new THREE.BoxGeometry(2, railH, 60);
+                const wglL = wgsG.clone(); wglL.translate(-(houseWidth / 2 + wingLen / 2) - (wingLen - 40) / 2, floorH + 10 + railH / 2, houseDepth / 2 - wingW - 30); glassGeos.push(wglL);
+                const wglR = wgsG.clone(); wglR.translate(-(houseWidth / 2 + wingLen / 2) + (wingLen - 40) / 2, floorH + 10 + railH / 2, houseDepth / 2 - wingW - 30); glassGeos.push(wglR);
+
+                const wdoor = new THREE.Mesh(doorGeo, doorMat); wdoor.position.set(-(houseWidth / 2 + 80), floorH + 37.5, houseDepth / 2 - wingW - 2); wdoor.rotation.y = Math.PI; building.add(wdoor);
+            }
+            const glassMesh = new THREE.Mesh(THREE.BufferGeometryUtils.mergeBufferGeometries(glassGeos), glassMat);
+            building.add(glassMesh);
+
+            // Windows
+            const winG = new THREE.PlaneGeometry(40, 50);
             if (hasWing) {
                 [-(houseWidth / 2 + 80), -(houseWidth / 2 + 220)].forEach(x => {
-                    const w = new THREE.Mesh(winGeo, winMat); w.position.set(x, 45, houseDepth / 2 - wingW - 1.5);
-                    w.rotation.y = Math.PI; building.add(w);
-                    const wTop = w.clone(); wTop.position.y = floorH + 45; building.add(wTop);
+                    const w = new THREE.Mesh(winG, winMat); w.position.set(x, 45, houseDepth / 2 - wingW - 1.5); w.rotation.y = Math.PI; building.add(w);
+                    const wT = w.clone(); wT.position.y = floorH + 45; building.add(wT);
                 });
             }
 
-            // Glass Railing for Balcony (above door)
-            const railH = 35;
-            const glassFrontKey = `glassFront_${houseWidth}`;
-            const glassGeoFront = getSharedGeometry(glassFrontKey, () => new THREE.BoxGeometry(houseWidth - 20, railH, 2));
-            const glassGeoSide = getSharedGeometry('glassSide', () => new THREE.BoxGeometry(2, railH, 80));
+            // House Porch Light Bulb
+            const houseBulbGeo = getSharedGeometry('houseBulb', () => new THREE.SphereGeometry(15, 8, 8));
+            const houseBulbMat = getSharedMaterial('houseBulbMat', () => new THREE.MeshStandardMaterial({ color: 0xffffaa, emissive: 0x000000, emissiveIntensity: 0 }));
+            const hb = new THREE.Mesh(houseBulbGeo, houseBulbMat);
+            hb.position.set(0, floorH - 15, -(houseDepth / 2 + 15));
+            hb.name = 'houseBulb';
+            building.add(hb);
 
-            const gFront = new THREE.Mesh(glassGeoFront, glassMat);
-            gFront.position.set(0, floorH + 5 + railH / 2 + 5, -(houseDepth / 2 + 80));
-            building.add(gFront);
+            // Beams (Merged)
+            const beamGeos = [];
+            const bGeo = new THREE.CylinderGeometry(5, 5, floorH);
+            const b1G = bGeo.clone(); b1G.translate(-(houseWidth / 2 - 30), floorH / 2 + 5, -(houseDepth / 2 + 60)); beamGeos.push(b1G);
+            const b2G = bGeo.clone(); b2G.translate(houseWidth / 2 - 30, floorH / 2 + 5, -(houseDepth / 2 + 60)); beamGeos.push(b2G);
+            const beamMesh = new THREE.Mesh(THREE.BufferGeometryUtils.mergeBufferGeometries(beamGeos), beamMat); building.add(beamMesh);
 
-            const gL = new THREE.Mesh(glassGeoSide, glassMat);
-            gL.position.set(-(houseWidth - 20) / 2, floorH + 5 + railH / 2 + 5, -(houseDepth / 2 + 40));
-            building.add(gL);
-
-            const gR = new THREE.Mesh(glassGeoSide, glassMat);
-            gR.position.set((houseWidth - 20) / 2, floorH + 5 + railH / 2 + 5, -(houseDepth / 2 + 40));
-            building.add(gR);
-
-            // Beams (connecting structures - GROUND to 1st FLOOR BALCONY)
-            const beamKey = `houseBeam_${floorH}`;
-            const beamGeo = getSharedGeometry(beamKey, () => new THREE.CylinderGeometry(5, 5, floorH));
-            const b1 = new THREE.Mesh(beamGeo, beamMat);
-            b1.position.set(-(houseWidth / 2 - 30), floorH / 2 + 5, -(houseDepth / 2 + 60)); // Added +5 for alignment
-            building.add(b1);
-            const b2 = b1.clone(); b2.position.x = houseWidth / 2 - 30;
-            building.add(b2);
-
-            // --- WING BALCONY (for the "L" extension) ---
-            if (hasWing) {
-                const wingBalconyKey = `wingBalcony_${wingLen}`;
-                const wingBalconyGeo = getSharedGeometry(wingBalconyKey, () => new THREE.BoxGeometry(wingLen - 40, 10, 60));
-                const wbFloor = new THREE.Mesh(wingBalconyGeo, porchMat);
-                wbFloor.position.set(-(houseWidth / 2 + wingLen / 2), floorH + 5, houseDepth / 2 - wingW - 30);
-                building.add(wbFloor);
-
-                const wgFrontKey = `wingGlassFront_${wingLen}`;
-                const wingGlassFrontGeo = getSharedGeometry(wgFrontKey, () => new THREE.BoxGeometry(wingLen - 40, railH, 2));
-                const wgFront = new THREE.Mesh(wingGlassFrontGeo, glassMat);
-                wgFront.position.set(-(houseWidth / 2 + wingLen / 2), floorH + 5 + railH / 2 + 5, houseDepth / 2 - wingW - 60);
-                building.add(wgFront);
-
-                const wingGlassSideGeo = getSharedGeometry('wingGlassSide', () => new THREE.BoxGeometry(2, railH, 60));
-                const wgL = new THREE.Mesh(wingGlassSideGeo, glassMat);
-                wgL.position.set(-(houseWidth / 2 + wingLen / 2) - (wingLen - 40) / 2, floorH + 5 + railH / 2 + 5, houseDepth / 2 - wingW - 30);
-                building.add(wgL);
-
-                const wgR = new THREE.Mesh(wingGlassSideGeo, glassMat);
-                wgR.position.set(-(houseWidth / 2 + wingLen / 2) + (wingLen - 40) / 2, floorH + 5 + railH / 2 + 5, houseDepth / 2 - wingW - 30);
-                building.add(wgR);
-
-                // Wing Door for Balcony Access
-                const wingDoor = new THREE.Mesh(doorGeo, doorMat);
-                wingDoor.position.set(-(houseWidth / 2 + 80), floorH + 37.5, houseDepth / 2 - wingW - 2);
-                wingDoor.rotation.y = Math.PI;
-                building.add(wingDoor);
-            }
+            // Swimming Pool
 
             // --- ADDED SWIMMING POOL ---
             if (hasPool) {
@@ -3649,12 +3674,12 @@
             canvas.height = 128;
             const ctx = canvas.getContext('2d');
 
-            // Mortar / Sand gap color (Pale Sandy Grey)
-            ctx.fillStyle = '#bcaaa4';
+            // Mortar / Sand gap color
+            ctx.fillStyle = '#8d7b56';
             ctx.fillRect(0, 0, 128, 128);
 
-            // Desert Sand & Yellow hues
-            const brickColors = ['#f9e79f', '#f7dc6f', '#fcf3cf', '#f4d03f', '#edc9af'];
+            // Brick colors based on user request #d6ae64
+            const brickColors = ['#d6ae64', '#e2bf7a', '#c89f50', '#caab6d', '#bf9c56'];
 
             const w = 60, h = 26, g = 4;
             for (let y = 0; y < 128; y += h + g) {
@@ -4118,7 +4143,7 @@
                 camera.aspect = window.innerWidth / window.innerHeight;
                 camera.updateProjectionMatrix();
                 renderer.setSize(window.innerWidth, window.innerHeight);
-                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1));
             }, 100); // Throttle to 100ms
         });
 
