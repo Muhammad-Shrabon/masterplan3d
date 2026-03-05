@@ -3681,7 +3681,7 @@
             // Brick colors based on user request #d6ae64
             const brickColors = ['#d6ae64', '#e2bf7a', '#c89f50', '#caab6d', '#bf9c56'];
 
-            const w = 60, h = 26, g = 4;
+            const w = 60, h = 2, g = 4;
             for (let y = 0; y < 128; y += h + g) {
                 const off = (Math.floor(y / (h + g)) % 2 === 0) ? 0 : w / 2;
                 for (let x = -w; x < 128; x += w + g) {
@@ -3781,8 +3781,61 @@
                 geo.computeVertexNormals();
             };
 
-            transformGeo(riverGeo, 0.4);
-            transformGeo(bankGeo, 0.2);
+            // Geometry for vertical side walls
+            const wallHeight = 2;
+            const wallGeo = new THREE.BufferGeometry();
+            const wallVertices = [];
+            const wallUvs = [];
+            const wallIndices = [];
+
+            const riverHalfW = config.width / 2;
+            const bankY = 2; // Height of the bank
+            const riverY = 2.8; // Height of the river water
+
+            for (let i = 0; i <= config.segments; i++) {
+                const t = i / config.segments;
+                const point = curve.getPointAt(t);
+                const tangent = curve.getTangentAt(t);
+                const up = new THREE.Vector3(0, 1, 0);
+                const side = new THREE.Vector3().crossVectors(tangent, up).normalize();
+
+                // Points for the wall at this segment
+                // Left Side Wall
+                const pLTop = point.clone().addScaledVector(side, -riverHalfW).add(new THREE.Vector3(0, bankY, 0));
+                const pLBottom = point.clone().addScaledVector(side, -riverHalfW).add(new THREE.Vector3(0, riverY, 0));
+                // Right Side Wall
+                const pRTop = point.clone().addScaledVector(side, riverHalfW).add(new THREE.Vector3(0, bankY, 0));
+                const pRBottom = point.clone().addScaledVector(side, riverHalfW).add(new THREE.Vector3(0, riverY, 0));
+
+                wallVertices.push(pLTop.x, pLTop.y, pLTop.z);    // 0 + i*4
+                wallVertices.push(pLBottom.x, pLBottom.y, pLBottom.z); // 1 + i*4
+                wallVertices.push(pRTop.x, pRTop.y, pRTop.z);    // 2 + i*4
+                wallVertices.push(pRBottom.x, pRBottom.y, pRBottom.z); // 3 + i*4
+
+                const uvDist = t * (riverLength / 20);
+                wallUvs.push(0, uvDist);
+                wallUvs.push(1, uvDist);
+                wallUvs.push(0, uvDist);
+                wallUvs.push(1, uvDist);
+
+                if (i < config.segments) {
+                    const base = i * 4;
+                    // Left Wall Faces
+                    wallIndices.push(base, base + 1, base + 5);
+                    wallIndices.push(base, base + 5, base + 4);
+                    // Right Wall Faces
+                    wallIndices.push(base + 2, base + 7, base + 3);
+                    wallIndices.push(base + 2, base + 6, base + 7);
+                }
+            }
+
+            wallGeo.setAttribute('position', new THREE.Float32BufferAttribute(wallVertices, 3));
+            wallGeo.setAttribute('uv', new THREE.Float32BufferAttribute(wallUvs, 2));
+            wallGeo.setIndex(wallIndices);
+            wallGeo.computeVertexNormals();
+
+            transformGeo(riverGeo, riverY);
+            transformGeo(bankGeo, bankY);
 
             const WATER_COLOR = 0xc8ffff;
             const brickTex = createBrickTexture();
@@ -3807,16 +3860,27 @@
             const bankMat = new THREE.MeshStandardMaterial({
                 map: brickTex,
                 roughness: 0.8,
-                side: THREE.DoubleSide,
+                side: THREE.BackSide, // Changed to back side for bank if it is a ground plane
                 polygonOffset: true,
                 polygonOffsetFactor: -1,
                 polygonOffsetUnits: -1
             });
+            // Actually, DoubleSide is safer
+            bankMat.side = THREE.DoubleSide;
+
+            const wallMat = new THREE.MeshStandardMaterial({
+                map: brickTex,
+                roughness: 0.8,
+                side: THREE.DoubleSide
+            });
 
             sr_riverMesh = new THREE.Mesh(riverGeo, riverMat);
             sr_bankMesh = new THREE.Mesh(bankGeo, bankMat);
+            const sr_wallMesh = new THREE.Mesh(wallGeo, wallMat);
+
             sr_group.add(sr_riverMesh);
             sr_group.add(sr_bankMesh);
+            sr_group.add(sr_wallMesh);
 
             // TREE PLACEMENT ALONG BANK
             const treeCount = config.treeCount || 10;
