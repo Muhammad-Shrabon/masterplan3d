@@ -25,12 +25,57 @@
         let isWalkingMode = false;
         let agent, agentAnims = { legL: null, legR: null, armL: null, armR: null, upperBody: null, bodyGroup: null };
 
+        // --- Walking Behavior Controller ---
+        let walkingConfig = {
+            baseSpeed: 0.8,
+            runSpeed: 1.2,
+            acceleration: 0.15,
+            friction: 0.1,
+            smoothness: 0.18,
+            bobbing: 0.005,
+            rotationSpeed: 0.1,
+        };
+
+        let agentVelocity = new THREE.Vector3();
+        let currentWalkingSpeed = 0;
+        let walkingCameraMode = 'behind'; // 'behind' or 'front'
+
+        // --- Camera System Controller ---
+        let cameraSystemConfig = {
+            behindView: false,
+            frontView: false,
+            autoSwitch: true
+        };
+
+        /**
+         * Controller to enable/disable camera systems
+         * Example: setCameraSystemControl({ front: false, auto: false })
+         */
+        function setCameraSystemControl(options = {}) {
+            if (options.behind !== undefined) cameraSystemConfig.behindView = options.behind;
+            if (options.front !== undefined) cameraSystemConfig.frontView = options.front;
+            if (options.auto !== undefined) cameraSystemConfig.autoSwitch = options.auto;
+
+            // Camera button removed as requested
+            console.log("Camera System Control updated:", cameraSystemConfig);
+        }
+
+        function setWalkingBehavior(options = {}) {
+            if (options.speed !== undefined) walkingConfig.baseSpeed = options.speed;
+            if (options.runSpeed !== undefined) walkingConfig.runSpeed = options.runSpeed;
+            if (options.smoothness !== undefined) walkingConfig.smoothness = options.smoothness;
+            if (options.bobbing !== undefined) walkingConfig.bobbing = options.bobbing;
+            if (options.rotationSpeed !== undefined) walkingConfig.rotationSpeed = options.rotationSpeed;
+            console.log("Walking controller updated:", walkingConfig);
+        }
+
         // --- Tree Height Controls ---
         let wallGTreeHeight = 7;
         let wallStdTreeHeight = 70;
 
         // Variables for new animated trees from tree2.html
         let animatedLeaves = [];
+        const CITY_BOUNDS = { minX: -750, maxX: 650, minZ: -1900, maxZ: 1300 };
         const customTreePositions = [
             { x: -625, y: 0, z: 54 },
             { x: -605, y: 0, z: 54 },
@@ -171,8 +216,8 @@
                 points: [
                     new THREE.Vector3(0, 0, 0),
                     new THREE.Vector3(-2, 0, 0),
-                    new THREE.Vector3(20, 0, 100),
-                    new THREE.Vector3(20, 0, 250),
+                    new THREE.Vector3(10, 0, 100),
+                    new THREE.Vector3(10, 0, 250),
                     new THREE.Vector3(-80, 0, 390),
                     new THREE.Vector3(-108, 0, 450),
                     new THREE.Vector3(-95, 0, 475),
@@ -307,13 +352,19 @@
                     new THREE.Vector3(-60, 0, -1060),
                     new THREE.Vector3(-60, 0, -1060),
                     new THREE.Vector3(720, 0, -800),
-                    new THREE.Vector3(800, 0, -650),
-                    new THREE.Vector3(808, 0, -500),
-                    new THREE.Vector3(700, 0, -300),
-                    new THREE.Vector3(700, 0, -200),
-                    new THREE.Vector3(700, 0, -100),
-                    new THREE.Vector3(670, 0, -30),
-                    new THREE.Vector3(700, 0, 30),
+                    new THREE.Vector3(780, 0, -650),
+                    new THREE.Vector3(788, 0, -500),
+                    new THREE.Vector3(775, 0, -450),
+                    new THREE.Vector3(745, 0, -400),
+                    new THREE.Vector3(710, 0, -350),
+                    new THREE.Vector3(678, 0, -300),
+                    new THREE.Vector3(668, 0, -280),
+                    new THREE.Vector3(685, 0, -240),
+                    new THREE.Vector3(690, 0, -200),
+                    new THREE.Vector3(690, 0, -180),
+                    new THREE.Vector3(690, 0, -100),
+                    new THREE.Vector3(670, 0, -10),
+                    new THREE.Vector3(740, 0, 65),
                 ],
                 segments: 500,
                 position: { x: -334, y: 0, z: 427 },
@@ -334,14 +385,15 @@
                 rotation: { x: 0, y: 0, z: 0 },
                 skipLamps: true
             },
+            // Lake Breeze Road
             {
                 width: 10,
                 points: [
                     new THREE.Vector3(0, 0, 0),
-                    new THREE.Vector3(0, 0, -300)
+                    new THREE.Vector3(0, 0, -255)
                 ],
                 segments: 500,
-                position: { x: -634, y: 0, z: 328 },
+                position: { x: -634, y: 0, z: 326 },
                 rotation: { x: 0, y: 0, z: 0 },
                 skipLamps: true
             },
@@ -732,22 +784,27 @@
             rotation: { x: 0, y: Math.PI / 2, z: 0 },
             points: [
                 // new THREE.Vector3(1400, 0, -1800),
-                new THREE.Vector3(1400, 0, -2400),
-                new THREE.Vector3(900, 0, -400),
-                new THREE.Vector3(760, 0, -140),
-                new THREE.Vector3(660, 0, -110),
-                // new THREE.Vector3(560, 0, -70),
-                // new THREE.Vector3(460, 0, -100),
-                new THREE.Vector3(360, 0, -105),
-                new THREE.Vector3(280, 0, -185),
-                new THREE.Vector3(100, 0, -200),
-                new THREE.Vector3(70, 0, -200),
-                new THREE.Vector3(-30, 0, -220),
-                new THREE.Vector3(-40, 0, -200),
-                new THREE.Vector3(-40, 0, -140),
-                new THREE.Vector3(0, 0, 0),
-                new THREE.Vector3(-40, 0, 4),
-                new THREE.Vector3(0, 0, 8),
+                new THREE.Vector3(1410, 0, -2400),
+                new THREE.Vector3(910, 0, -400),
+                new THREE.Vector3(800, 0, -180),
+                new THREE.Vector3(640, 0, -120),
+                new THREE.Vector3(560, 0, -110),
+                new THREE.Vector3(460, 0, -110),
+                new THREE.Vector3(340, 0, -165),
+                new THREE.Vector3(250, 0, -220),
+                new THREE.Vector3(200, 0, -210),
+                new THREE.Vector3(140, 0, -210),
+                new THREE.Vector3(60, 0, -210),
+                new THREE.Vector3(-70, 0, -180),
+                // new THREE.Vector3(180, 0, -180),
+                // new THREE.Vector3(100, 0, -180),
+                // new THREE.Vector3(70, 0, -180),
+                // new THREE.Vector3(-10, 0, -180),
+                // new THREE.Vector3(-20, 0, -180),
+                // new THREE.Vector3(-40, 0, -180),
+                // new THREE.Vector3(0, 0, 0),
+                // new THREE.Vector3(-20, 0, 4),
+                // new THREE.Vector3(0, 0, 8),
             ]
         };
         const SR_LAKE_CONFIG_CENTER_LAKE = {
@@ -915,7 +972,7 @@
             controls.zoomSpeed = 1.9;     // Very fast zoom
             controls.panSpeed = 1.9;      // Very fast move
             controls.minDistance = 0.1;
-            controls.maxDistance = 3200; // Increased to satisfy "less than 5% of ground area" (sqrt(0.05 * 14000^2) ≈ 3130)
+            controls.maxDistance = 2000; // Focused on city land area (diag ~3500, so 2000 is good for zoom out)
             controls.maxPolarAngle = Math.PI / 2.05; // Prevent going under ground (restrict to just above horizon)
             controls.minPolarAngle = 0;
             controls.screenSpacePanning = false; // Disable screen space panning to keep target on ground
@@ -1314,8 +1371,8 @@
             createHouseCluster(subGreenLandCL5, { serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 20, startId: 2, clusterName: "CLUSTER-5" });
             createHouseCluster(subGreenLandCL6, { serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-6" });
             createHouseCluster(subGreenLandCL7, { serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-7" });
-            createHouseCluster(subGreenLandCL8, { serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-8" });
-            createHouseCluster(subGreenLandCL9, { serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-9" });
+            createHouseCluster(subGreenLandCL8, { serialCount: 36, startX: 0, startZ: 210, unitSpacing: 15.4, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-8" });
+            createHouseCluster(subGreenLandCL9, { serialCount: 36, startX: 0, startZ: 210, unitSpacing: 15.5, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-9" });
             createHouseCluster(subGreenLandCL10, { serialCount: 22, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-10" });
             // BLOCK B -1
             createHouseCluster(subGreenLandBB1, {
@@ -1724,13 +1781,15 @@
             //     hScale: 0.8
             // });
 
-            // --- Create Custom Animated Trees (from tree2.html) ---
+            // --- Create Custom Animated Trees (Removed as requested) ---
+            /*
             customTreePositions.forEach(pos => {
                 createAnimatedTree(
                     new THREE.Vector3(pos.x, pos.y, pos.z),
                     new THREE.Euler(0, Math.random() * Math.PI * 2, 0)
                 );
             });
+            */
 
             console.log("Masterplan Initialization Complete. Rendering started.");
 
@@ -1930,7 +1989,8 @@
          */
         const keys = {
             w: false, a: false, s: false, d: false,
-            ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false
+            ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false,
+            Shift: false
         };
 
         // Event listeners for keyboard input
@@ -1948,154 +2008,222 @@
 
         function createCharacterAgent() {
             const group = new THREE.Group();
-            group.scale.set(0.7, 0.7, 0.7); // Made agent smaller
+            group.scale.set(0.68, 0.68, 0.68);
 
-            // Materials
-            const skinMat = new THREE.MeshPhongMaterial({ color: 0xffdbac });
-            const shirtMat = new THREE.MeshPhongMaterial({ color: 0x3b82f6 });
-            const clothMat = new THREE.MeshPhongMaterial({ color: 0x1e293b });
-            const hairMat = new THREE.MeshPhongMaterial({ color: 0x2e1503 });
-            const eyeMat = new THREE.MeshPhongMaterial({ color: 0x000000 });
-            const whiteEyeMat = new THREE.MeshPhongMaterial({ color: 0xffffff });
-            const shoeMat = new THREE.MeshPhongMaterial({ color: 0x111111 });
+            // --- High-Quality Materials ---
+            const skinMat = new THREE.MeshStandardMaterial({ color: 0xffdbac, roughness: 0.5, metalness: 0.05 });
+            const hoodieMat = new THREE.MeshStandardMaterial({ color: 0xff4757, roughness: 0.7 });
+            const clothMat = new THREE.MeshStandardMaterial({ color: 0x2f3542, roughness: 0.8 });
+            const eyeMat = new THREE.MeshStandardMaterial({ color: 0x000000, roughness: 0.02, metalness: 0.9 });
+            const whiteEyeMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.1 });
+            const shoeMat = new THREE.MeshStandardMaterial({ color: 0x3742fa, roughness: 0.4 });
+            const soleMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8 });
+            const accessoryMat = new THREE.MeshStandardMaterial({ color: 0x2f3542, roughness: 0.4, metalness: 0.2 });
 
-            // Helper to create smooth rounded shapes since r128 lacks CapsuleGeometry
+            function applyShadows(obj) {
+                obj.traverse(child => {
+                    if (child.isMesh) {
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                    }
+                });
+            }
+
+            // High-Poly Capsule
             function createSmoothCapsule(radius, length, mat) {
                 const grp = new THREE.Group();
-                const cyl = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, length, 16), mat);
-                const top = new THREE.Mesh(new THREE.SphereGeometry(radius, 16, 16), mat);
+                const cyl = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, length, 32), mat);
+                const top = new THREE.Mesh(new THREE.SphereGeometry(radius, 32, 24), mat);
                 top.position.y = length / 2;
-                const bottom = new THREE.Mesh(new THREE.SphereGeometry(radius, 16, 16), mat);
+                const bottom = new THREE.Mesh(new THREE.SphereGeometry(radius, 32, 24), mat);
                 bottom.position.y = -length / 2;
                 grp.add(cyl, top, bottom);
                 return grp;
             }
 
-            // Upper Body
+            // --- Upper Body ---
             const upperBody = new THREE.Group();
-            upperBody.position.y = 1.0;
+            upperBody.position.y = 0.9;
             group.add(upperBody);
             agentAnims.upperBody = upperBody;
 
-            // Main body
-            const body = createSmoothCapsule(0.35, 0.6, shirtMat);
-            body.position.y = 0.2;
-            upperBody.add(body);
+            // Smoother Torso
+            const torso = new THREE.Mesh(new THREE.SphereGeometry(0.38, 48, 36), hoodieMat);
+            torso.scale.set(1, 1.15, 0.95);
+            torso.position.y = 0.3;
+            upperBody.add(torso);
 
-            // Head Group
+            const hood = new THREE.Mesh(new THREE.SphereGeometry(0.3, 32, 24, 0, Math.PI * 2, 0, Math.PI / 1.4), hoodieMat);
+            hood.rotation.x = Math.PI * 1.05;
+            hood.position.set(0, 0.45, -0.18);
+            upperBody.add(hood);
+
+            const pocket = new THREE.Mesh(new THREE.SphereGeometry(0.18, 24, 16, 0, Math.PI, 0, Math.PI / 2), hoodieMat);
+            pocket.scale.set(1.1, 0.6, 0.5);
+            pocket.position.set(0, 0.15, 0.3);
+            upperBody.add(pocket);
+
+            // --- Backpack ---
+            const backpackGroup = new THREE.Group();
+            backpackGroup.position.set(0, 0.35, -0.38);
+            upperBody.add(backpackGroup);
+
+            const packMain = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.45, 0.18), accessoryMat);
+            backpackGroup.add(packMain);
+
+            const packPocket = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.2, 0.08), accessoryMat);
+            packPocket.position.z = -0.12;
+            packPocket.position.y = -0.1;
+            backpackGroup.add(packPocket);
+
+            // --- Head Group ---
             const headGroup = new THREE.Group();
-            headGroup.position.y = 1.0; // position relative to upperBody
+            headGroup.position.y = 0.9;
             upperBody.add(headGroup);
 
-            const head = new THREE.Mesh(new THREE.SphereGeometry(0.35, 32, 32), skinMat);
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.34, 48, 36), skinMat);
+            head.scale.set(1.05, 1.1, 1.05);
             headGroup.add(head);
 
-            // Hair
-            const hair = new THREE.Mesh(new THREE.SphereGeometry(0.37, 32, 32, 0, Math.PI * 2, 0, Math.PI / 1.7), hairMat);
-            hair.position.y = 0.02;
-            headGroup.add(hair);
+            // Baseball Cap
+            const capGroup = new THREE.Group();
+            capGroup.position.y = 0.08;
+            headGroup.add(capGroup);
 
-            // Hair puff/fringe
-            const hairPuff = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 16), hairMat);
-            hairPuff.position.set(0, 0.25, 0.25);
-            hairPuff.scale.set(1.2, 0.8, 1);
-            headGroup.add(hairPuff);
+            const capBase = new THREE.Mesh(new THREE.SphereGeometry(0.36, 48, 24, 0, Math.PI * 2, 0, Math.PI / 2), accessoryMat);
+            capGroup.add(capBase);
 
-            // Eyes
-            const eyeGroupL = new THREE.Group();
-            eyeGroupL.position.set(-0.12, 0.05, 0.3);
-            const eyeWhiteL = new THREE.Mesh(new THREE.SphereGeometry(0.06, 16, 16), whiteEyeMat);
-            const pupilL = new THREE.Mesh(new THREE.SphereGeometry(0.03, 16, 16), eyeMat);
-            pupilL.position.z = 0.05;
-            eyeGroupL.add(eyeWhiteL, pupilL);
-            headGroup.add(eyeGroupL);
+            const capBrim = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.03, 0.32), accessoryMat);
+            capBrim.position.set(0, 0.05, 0.35);
+            capBrim.rotation.x = 0.12;
+            capGroup.add(capBrim);
 
-            const eyeGroupR = new THREE.Group();
-            eyeGroupR.position.set(0.12, 0.05, 0.3);
-            const eyeWhiteR = new THREE.Mesh(new THREE.SphereGeometry(0.06, 16, 16), whiteEyeMat);
-            const pupilR = new THREE.Mesh(new THREE.SphereGeometry(0.03, 16, 16), eyeMat);
-            pupilR.position.z = 0.05;
-            eyeGroupR.add(eyeWhiteR, pupilR);
-            headGroup.add(eyeGroupR);
+            // Smoother Eyes
+            function createProEye(isLeft) {
+                const eGrp = new THREE.Group();
+                const white = new THREE.Mesh(new THREE.SphereGeometry(0.08, 24, 24), whiteEyeMat);
+                white.scale.set(1, 1.1, 0.4);
 
-            // Nose
-            const nose = new THREE.Mesh(new THREE.SphereGeometry(0.04, 16, 16), skinMat);
-            nose.position.set(0, -0.05, 0.35);
+                const iris = new THREE.Mesh(new THREE.SphereGeometry(0.05, 16, 16), eyeMat);
+                iris.scale.z = 0.2;
+                iris.position.z = 0.05;
+
+                const highlight = new THREE.Mesh(new THREE.SphereGeometry(0.015, 8, 8), whiteEyeMat);
+                highlight.position.set(0.02, 0.02, 0.06);
+
+                eGrp.add(white, iris, highlight);
+                eGrp.position.set(isLeft ? -0.14 : 0.14, 0.08, 0.32);
+                return eGrp;
+            }
+            headGroup.add(createProEye(true), createProEye(false));
+
+            const nose = new THREE.Mesh(new THREE.SphereGeometry(0.045, 16, 16), skinMat);
+            nose.scale.set(1, 1.2, 1);
+            nose.position.set(0, -0.02, 0.38);
             headGroup.add(nose);
 
-            // Mouth (rounded now)
-            const mouth = new THREE.Mesh(new THREE.SphereGeometry(0.03, 16, 16), eyeMat);
-            mouth.scale.set(1.5, 0.5, 0.5);
-            mouth.position.set(0, -0.15, 0.33);
+            const mouth = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.015, 16, 24, Math.PI * 0.8), accessoryMat);
+            mouth.rotation.x = Math.PI / 2;
+            mouth.position.set(0, -0.2, 0.32);
             headGroup.add(mouth);
 
-            // Limbs
-            function createArm(isLeft) {
+            // --- Limbs ---
+            function createSmoothArm(isLeft) {
                 const pivot = new THREE.Group();
-                pivot.position.set(isLeft ? -0.48 : 0.48, 0.55, 0);
-                const arm = createSmoothCapsule(0.1, 0.45, skinMat);
-                arm.position.y = -0.3;
-                pivot.add(arm);
+                pivot.position.set(isLeft ? -0.42 : 0.42, 0.6, 0);
 
-                // Sleeve
-                const sleeve = createSmoothCapsule(0.12, 0.2, shirtMat);
+                const sleeve = createSmoothCapsule(0.13, 0.3, hoodieMat);
                 sleeve.position.y = -0.15;
                 pivot.add(sleeve);
 
+                const arm = createSmoothCapsule(0.09, 0.22, skinMat);
+                arm.position.y = -0.4;
+                pivot.add(arm);
+
+                const hand = new THREE.Mesh(new THREE.SphereGeometry(0.12, 24, 24), skinMat);
+                hand.position.y = -0.55;
+                pivot.add(hand);
+
                 return pivot;
             }
-            agentAnims.armL = createArm(true);
-            agentAnims.armR = createArm(false);
+            agentAnims.armL = createSmoothArm(true);
+            agentAnims.armR = createSmoothArm(false);
             upperBody.add(agentAnims.armL, agentAnims.armR);
 
-            // Lower Body / Legs
             const lowerBody = new THREE.Group();
             group.add(lowerBody);
 
-            function createLeg(isLeft) {
+            function createSmoothLeg(isLeft) {
                 const pivot = new THREE.Group();
-                pivot.position.set(isLeft ? -0.18 : 0.18, 0.55, 0); // start a bit higher inside body
-                const leg = createSmoothCapsule(0.13, 0.5, clothMat);
-                leg.position.y = -0.35;
+                pivot.position.set(isLeft ? -0.18 : 0.18, 0.6, 0);
+
+                const leg = createSmoothCapsule(0.15, 0.55, clothMat);
+                leg.position.y = -0.28;
                 pivot.add(leg);
 
-                // Shoe (rounded)
-                const shoe = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 16), shoeMat);
-                shoe.scale.set(0.95, 0.6, 1.4);
-                shoe.position.set(0, -0.65, 0.05);
-                pivot.add(shoe);
+                const shoeGroup = new THREE.Group();
+                shoeGroup.position.set(0, -0.65, 0.1);
+                pivot.add(shoeGroup);
+
+                const sneaker = new THREE.Mesh(new THREE.SphereGeometry(0.16, 24, 24), shoeMat);
+                sneaker.scale.set(1, 0.8, 1.5);
+                shoeGroup.add(sneaker);
+
+                const sole = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.08, 0.48), soleMat);
+                sole.position.y = -0.08;
+                shoeGroup.add(sole);
 
                 return pivot;
             }
-            agentAnims.legL = createLeg(true);
-            agentAnims.legR = createLeg(false);
+            agentAnims.legL = createSmoothLeg(true);
+            agentAnims.legR = createSmoothLeg(false);
             lowerBody.add(agentAnims.legL, agentAnims.legR);
 
+            applyShadows(group);
             return group;
         }
 
-        function animateAgent(agent, time) {
+        function animateAgent(agent, time, speedFactor = 1.0) {
             const t = time * 0.001;
-            const speed = 4.0; // Slower, relaxed walking speed
-            const cycle = Math.sin(t * speed);
+            const animSpeed = 4.0 + (speedFactor * 6.0); // Animation frequency scale with speed
+            const cycle = Math.sin(t * animSpeed);
+
+            // Movement amplitude adjusts with speed
+            const footSwing = 0.3 + (speedFactor * 0.5);
+            const armSwing = 0.2 + (speedFactor * 0.4);
 
             // Walking movement
-            agentAnims.legL.rotation.x = cycle * 0.4;
-            agentAnims.legR.rotation.x = -cycle * 0.4;
-            agentAnims.armL.rotation.x = -cycle * 0.25;
-            agentAnims.armR.rotation.x = cycle * 0.25;
+            agentAnims.legL.rotation.x = cycle * footSwing;
+            agentAnims.legR.rotation.x = -cycle * footSwing;
+            agentAnims.armL.rotation.x = -cycle * armSwing;
+            agentAnims.armR.rotation.x = cycle * armSwing;
 
-            // Natural body bobbing
-            agent.position.y = 0.5 + Math.abs(cycle) * 0.05;
-            agentAnims.upperBody.rotation.y = cycle * 0.05; // Subtle shoulder swing
+            // Natural body bobbing and tilt
+            const bobAmount = (walkingConfig.bobbing || 0.05) * (0.8 + speedFactor);
+            agent.position.y = 0.5 + Math.abs(cycle) * bobAmount;
+
+            // Dynamic body lean (forward based on speed)
+            agentAnims.upperBody.rotation.x = 0.05 + (speedFactor * 0.15);
+            agentAnims.upperBody.rotation.y = cycle * 0.08; // Shoulder swing
         }
 
-        function resetAgentAnimation() {
-            agentAnims.legL.rotation.x *= 0.8;
-            agentAnims.legR.rotation.x *= 0.8;
-            agentAnims.armL.rotation.x *= 0.8;
-            agentAnims.armR.rotation.x *= 0.8;
-            agentAnims.upperBody.rotation.y *= 0.8;
+        function resetAgentAnimation(time) {
+            const t = time * 0.001;
+            // Smoothly return to neutral
+            agentAnims.legL.rotation.x *= 0.85;
+            agentAnims.legR.rotation.x *= 0.85;
+            agentAnims.armL.rotation.x *= 0.85;
+            agentAnims.armR.rotation.x *= 0.85;
+            agentAnims.upperBody.rotation.y *= 0.85;
+            agentAnims.upperBody.rotation.x *= 0.85;
+
+            // Subtle idle breathing & weight shift
+            const breathe = Math.sin(t * 1.5) * 0.015;
+            const sway = Math.cos(t * 0.8) * 0.01;
+
+            agentAnims.upperBody.position.y = 0.95 + breathe; // Breathing height shift
+            agentAnims.upperBody.rotation.z = sway; // Subtle sway
+
             agent.position.y += (0.5 - agent.position.y) * 0.2;
         }
 
@@ -2113,6 +2241,9 @@
             // Only update controls if damping is enabled (performance)
             if (controls.enableDamping && !isWalkingMode) {
                 controls.update();
+                // Limit panning/movement area to city bounds
+                controls.target.x = THREE.MathUtils.clamp(controls.target.x, CITY_BOUNDS.minX, CITY_BOUNDS.maxX);
+                controls.target.z = THREE.MathUtils.clamp(controls.target.z, CITY_BOUNDS.minZ, CITY_BOUNDS.maxZ);
             }
 
             flagObj.animateFlag(time);
@@ -2208,10 +2339,12 @@
                 sr_waterTexture.offset.y -= 0.00278; // 6-second flow cycle
             }
 
-            // --- Gaming Walking Mode Logic ---
+            // --- Enhanced Gaming Walking Mode Logic ---
             if (isWalkingMode && agent) {
-                const moveSpeed = 1.8;
-                const direction = new THREE.Vector3();
+                const isSprinting = keys.Shift;
+                const targetSpeed = isSprinting ? walkingConfig.runSpeed : walkingConfig.baseSpeed;
+
+                const inputDirection = new THREE.Vector3();
                 const frontVector = new THREE.Vector3();
                 const sideVector = new THREE.Vector3();
 
@@ -2225,25 +2358,72 @@
                 const left = keys.a || keys.ArrowLeft;
                 const right = keys.d || keys.ArrowRight;
 
-                if (up) direction.add(frontVector);
-                if (down) direction.sub(frontVector);
-                if (left) direction.add(sideVector);
-                if (right) direction.sub(sideVector);
+                if (up) inputDirection.add(frontVector);
+                if (down) inputDirection.sub(frontVector);
+                if (left) inputDirection.add(sideVector);
+                if (right) inputDirection.sub(sideVector);
 
-                if (direction.length() > 0) {
-                    direction.normalize();
-                    agent.rotation.y = Math.atan2(direction.x, direction.z);
-                    direction.multiplyScalar(moveSpeed);
-                    agent.position.add(direction);
-                    animateAgent(agent, time);
-                } else {
-                    resetAgentAnimation();
+                // --- Auto-detect View Mode based on Mouse Rotation ---
+                if (cameraSystemConfig.autoSwitch && controls) {
+                    // Check azimuthal angle to see if camera is in front or behind agent
+                    // OrbitControls angle 0 is usually 'behind' if agent starts facing forward
+                    const az = controls.getAzimuthalAngle();
+                    const isFrontAngle = Math.abs(az) < Math.PI / 2; // Simple heuristic for front viewing
+
+                    if (isFrontAngle && cameraSystemConfig.frontView) {
+                        walkingCameraMode = 'front';
+                    } else if (!isFrontAngle && cameraSystemConfig.behindView) {
+                        walkingCameraMode = 'behind';
+                    }
                 }
 
-                const targetFocus = agent.position.clone().add(new THREE.Vector3(0, 3, 0));
-                const offset = targetFocus.clone().sub(controls.target);
-                camera.position.add(offset);
+                if (inputDirection.length() > 0) {
+                    inputDirection.normalize();
+
+                    // Character Rotation Smoothness
+                    let targetRotation = Math.atan2(inputDirection.x, inputDirection.z);
+                    if (walkingCameraMode === 'front') targetRotation += Math.PI;
+
+                    let diff = targetRotation - agent.rotation.y;
+                    while (diff < -Math.PI) diff += Math.PI * 2;
+                    while (diff > Math.PI) diff -= Math.PI * 2;
+
+                    // High interpolation for buttery smooth rotation
+                    agent.rotation.y += diff * 0.12;
+
+                    // Acceleration with smoothing
+                    currentWalkingSpeed += (targetSpeed - currentWalkingSpeed) * 0.08;
+                } else {
+                    // Friction/Braking
+                    currentWalkingSpeed *= (1 - (walkingConfig.friction || 0.1));
+                    if (currentWalkingSpeed < 0.01) currentWalkingSpeed = 0;
+                }
+
+                // Apply velocity
+                if (currentWalkingSpeed > 0) {
+                    // Character always moves according to input, but faces mirror direction in front mode
+                    const moveDir = inputDirection.clone();
+                    agent.position.addScaledVector(moveDir, currentWalkingSpeed);
+
+                    // Animation intensity
+                    const speedRatio = currentWalkingSpeed / (walkingConfig.runSpeed || 1.2);
+                    animateAgent(agent, time, speedRatio);
+                } else {
+                    resetAgentAnimation(time);
+                }
+
+                // Boundary clamping
+                agent.position.x = THREE.MathUtils.clamp(agent.position.x, CITY_BOUNDS.minX, CITY_BOUNDS.maxX);
+                agent.position.z = THREE.MathUtils.clamp(agent.position.z, CITY_BOUNDS.minZ, CITY_BOUNDS.maxZ);
+
+                // --- Game Standard Camera Follow (Exact Speed Sync) ---
+                const cameraOffset = new THREE.Vector3(0, 1.8, 0);
+                const targetFocus = agent.position.clone().add(cameraOffset);
+                const frameOffset = targetFocus.clone().sub(controls.target);
+
+                camera.position.add(frameOffset);
                 controls.target.copy(targetFocus);
+
                 controls.update();
                 agent.visible = true;
             }
@@ -3431,30 +3611,7 @@
             clusterGroup.add(landMesh);
 
             // --- Add Trees to Block Perimeter (Wall Boundary) ---
-            const treeInset = 1.2;
-            const tSpacing = 8;
-
-            const addBlockTree = (lx, lz) => {
-                const tree = createTree();
-                tree.position.set(lx, 0, lz);
-                tree.scale.set(0.4, 0.4, 0.4);
-                clusterGroup.add(tree);
-            };
-
-            // Calculate land edges in clusterGroup local space
-            const left = centerX - landWidth / 2 + treeInset;
-            const right = centerX + landWidth / 2 - treeInset;
-            const top = centerZ + landDepth / 2 - treeInset;
-            const bottom = centerZ - landDepth / 2 + treeInset;
-
-            for (let x = left; x <= right; x += tSpacing) {
-                addBlockTree(x, top);
-                addBlockTree(x, bottom);
-            }
-            for (let z = bottom + tSpacing; z <= top - tSpacing; z += tSpacing) {
-                addBlockTree(left, z);
-                addBlockTree(right, z);
-            }
+            // Removed extra trees outside plot boundaries
 
             const oddRow = new THREE.Group();
             const evenRow = new THREE.Group();
@@ -3518,15 +3675,7 @@
                     }
                 }
 
-                // Add tree at the front side of the house area
-                const tree = createTree();
-                // Tree position scaled to plot depth
-                const treeOffset = (hPlotScaledDepth / 2) + 2;
-                // If house is rotated 180, tree should probably be on the other side?
-                // But let's keep it simple first.
-                const treeZ = (serialNum % 2 !== 0) ? -treeOffset : (evenRow.position.z + treeOffset);
-                tree.position.set(unitGroup.position.x + 2.5, 0, treeZ);
-                clusterGroup.add(tree);
+                // Removed extra tree at the front side of the house area (near road)
             }
 
             return clusterGroup;
@@ -3882,22 +4031,7 @@
             sr_group.add(sr_bankMesh);
             sr_group.add(sr_wallMesh);
 
-            // TREE PLACEMENT ALONG BANK
-            const treeCount = config.treeCount || 10;
-            for (let i = 0; i < treeCount; i++) {
-                const t = Math.random();
-                const point = curve.getPointAt(t);
-                const tangent = curve.getTangentAt(t);
-                const side = new THREE.Vector3().crossVectors(tangent, new THREE.Vector3(0, 1, 0)).normalize();
-
-                const tree = sr_createTree();
-
-                const sideOffset = (Math.random() > 0.5 ? 1 : -1) * (config.width / 2 + 4 + Math.random() * 4);
-                tree.position.copy(point).addScaledVector(side, sideOffset);
-                tree.scale.set(0.3, 0.3, 0.3);
-                tree.rotation.y = Math.random() * Math.PI * 2;
-                sr_group.add(tree);
-            }
+            // Removed tree placement along river banks
 
             sr_group.position.set(config.position.x || 0, config.position.y || 0, config.position.z || 0);
             sr_group.rotation.set(config.rotation.x || 0, config.rotation.y || 0, config.rotation.z || 0);
@@ -3994,30 +4128,7 @@
             landMesh.position.y = 0.02;
             group.add(landMesh);
 
-            // --- Curved Boundary Trees ---
-            const edgeTreeSpacing = 15;
-            const treeDensity = Math.floor(totalLen / edgeTreeSpacing);
-            const edgeOffset = (finalLandWidth * (separateRows ? 2 : 1) / 2) - 2.5;
-
-            for (let i = 0; i <= treeDensity; i++) {
-                const t = i / treeDensity;
-                const p = landCurve.getPointAt(t);
-                const tangent = landCurve.getTangentAt(t).normalize();
-                const bino = new THREE.Vector3().crossVectors(tangent, new THREE.Vector3(0, 1, 0)).normalize();
-
-                // Left Edge
-                const tL = createTree();
-                tL.position.copy(p).add(bino.clone().multiplyScalar(edgeOffset));
-                // House scale (0.015) * tree scale (20) = 0.3 world units
-                tL.scale.set(0.3, 0.3, 0.3); // Consistent with boundary trees height
-                group.add(tL);
-
-                // Right Edge
-                const tR = createTree();
-                tR.position.copy(p).add(bino.clone().multiplyScalar(-edgeOffset));
-                tR.scale.set(0.3, 0.3, 0.3); // Consistent with boundary trees height
-                group.add(tR);
-            }
+            // Removed curved boundary trees outside plot areas
 
             // Place houses and trees
             let housesPlaced = 0;
@@ -4354,6 +4465,8 @@
                     white-space: nowrap;
                 }
                 #walking-mode-btn.active .controls-hint { opacity: 1; }
+
+                /* Camera button removed */
             `;
             document.head.appendChild(style);
 
@@ -4379,6 +4492,8 @@
             `;
             document.body.appendChild(walkingBtn);
 
+            /* View toggle button removed */
+
             walkingBtn.addEventListener('click', () => {
                 isWalkingMode = !isWalkingMode;
                 walkingBtn.classList.toggle('active', isWalkingMode);
@@ -4390,9 +4505,16 @@
                 }
 
                 if (isWalkingMode) {
+                    // Standard Game Mode: Request Pointer Lock for true mouse look if clicked again
+                    renderer.domElement.requestPointerLock = renderer.domElement.requestPointerLock || renderer.domElement.mozRequestPointerLock;
+                    const requestLock = () => {
+                        if (isWalkingMode) renderer.domElement.requestPointerLock();
+                    };
+                    renderer.domElement.addEventListener('mousedown', requestLock);
+                    walkingBtn._lockHandler = requestLock;
                     // Set walk-friendly controls
-                    controls.maxDistance = 30; // Closer 3rd person orbiting
-                    controls.minDistance = 2;
+                    controls.maxDistance = 12; // Standard close 3rd person (was 30)
+                    controls.minDistance = 3;  // Prevent clipping into character
                     controls.enablePan = false;
                     controls.maxPolarAngle = Math.PI / 2.05; // Prevent going underground
 
@@ -4406,16 +4528,21 @@
                         forward.normalize();
                         agent.rotation.y = Math.atan2(forward.x, forward.z);
 
-                        // Teleport camera instantly to prevent "fly-in" move
+                        // Teleport camera instantly
+                        const distance = (walkingCameraMode === 'behind' ? -5.5 : 5.5);
                         const eyePos = agent.position.clone()
-                            .sub(forward.multiplyScalar(8.0)) // Closer to agent
-                            .add(new THREE.Vector3(0, 4.0, 0)); // Lower height
+                            .add(forward.multiplyScalar(distance))
+                            .add(new THREE.Vector3(0, 2.5, 0));
                         camera.position.copy(eyePos);
-                        controls.target.copy(agent.position.clone().add(new THREE.Vector3(0, 3, 0))); // Focus slightly lower
+                        controls.target.copy(agent.position.clone().add(new THREE.Vector3(0, 1.8, 0)));
                         controls.update();
                     }
                 } else {
                     agent.visible = false;
+                    currentWalkingSpeed = 0;
+                    document.exitPointerLock();
+                    renderer.domElement.removeEventListener('mousedown', walkingBtn._lockHandler);
+
                     // Restore original controls
                     controls.maxDistance = 3200;
                     controls.minDistance = 0.1;
