@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Architect Engine - Drag & Drop Builder</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/controls/DragControls.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #0f172a;
+            font-family: 'Inter', sans-serif;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        #sidebar {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 340px;
+            height: 100vh;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(16px);
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 24px;
+            color: white;
+            z-index: 100;
+            overflow-y: auto;
+        }
+
+        .asset-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .asset-card:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: #ef4444;
+        }
+
+        .control-input {
+            width: 100%;
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 0.8rem;
+            margin-top: 4px;
+        }
+
+        .label-text {
+            font-size: 0.7rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="sidebar">
+        <h1 class="text-2xl font-black mb-1 bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-orange-400">
+            BUILDER PRO</h1>
+        <p class="text-xs text-slate-400 mb-6">Drag elements in 3D or add from sidebar</p>
+
+        <div class="mb-8">
+            <h2 class="label-text mb-3">Add Components</h2>
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="addComponent('wall')" class="asset-card flex flex-col items-center">
+                    <span class="text-xl">🧱</span>
+                    <span class="text-[10px] mt-1">Wall</span>
+                </button>
+                <button onclick="addComponent('floor')" class="asset-card flex flex-col items-center">
+                    <span class="text-xl">🏁</span>
+                    <span class="text-[10px] mt-1">Floor</span>
+                </button>
+                <button onclick="addComponent('beam')" class="asset-card flex flex-col items-center">
+                    <span class="text-xl">🏗️</span>
+                    <span class="text-[10px] mt-1">Beams</span>
+                </button>
+                <button onclick="addComponent('stair')" class="asset-card flex flex-col items-center">
+                    <span class="text-xl">🪜</span>
+                    <span class="text-[10px] mt-1">Stairs</span>
+                </button>
+                <button onclick="addComponent('door')" class="asset-card flex flex-col items-center">
+                    <span class="text-xl">🚪</span>
+                    <span class="text-[10px] mt-1">Door</span>
+                </button>
+                <button onclick="addComponent('window')" class="asset-card flex flex-col items-center">
+                    <span class="text-xl">🪟</span>
+                    <span class="text-[10px] mt-1">Window</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="inspector" class="hidden">
+            <h2 class="label-text mb-3">Inspector</h2>
+            <div class="asset-card bg-red-950/20 border-red-500/30">
+                <div class="flex justify-between items-center mb-4">
+                    <span id="selectedName" class="font-bold text-sm">Component</span>
+                    <button onclick="deleteSelected()" class="text-red-500 hover:text-red-400 text-xs">Delete</button>
+                </div>
+
+                <div class="space-y-3" id="transformControls">
+                    <div>
+                        <span class="label-text">Position X / Y / Z</span>
+                        <div class="flex gap-1">
+                            <input type="number" id="posX" step="0.1" class="control-input"
+                                onchange="updateTransform()">
+                            <input type="number" id="posY" step="0.1" class="control-input"
+                                onchange="updateTransform()">
+                            <input type="number" id="posZ" step="0.1" class="control-input"
+                                onchange="updateTransform()">
+                        </div>
+                    </div>
+                    <div>
+                        <span class="label-text">Rotation Y (Degrees)</span>
+                        <input type="range" id="rotY" min="0" max="360"
+                            class="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-red-500"
+                            oninput="updateTransform()">
+                    </div>
+                    <div id="dimensionRow">
+                        <span class="label-text">Scale (W / H / D)</span>
+                        <div class="flex gap-1">
+                            <input type="number" id="scaleX" min="0.1" step="0.1" value="1" class="control-input"
+                                onchange="updateTransform()">
+                            <input type="number" id="scaleY" min="0.1" step="0.1" value="1" class="control-input"
+                                onchange="updateTransform()">
+                            <input type="number" id="scaleZ" min="0.1" step="0.1" value="1" class="control-input"
+                                onchange="updateTransform()">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-Auto pt-8 border-t border-white/5">
+            <button onclick="saveArchitecture()"
+                class="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-red-900/20 mb-3">
+                SAVE CODE 💾
+            </button>
+            <button onclick="exportJSON()"
+                class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2 rounded-xl text-xs transition-all">
+                Export Data (JSON)
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let scene, camera, renderer, controls, dragControls;
+        let components = [];
+        let selectedObject = null;
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0f172a);
+
+            camera = new THREE.PerspectiveCamera(50, (window.innerWidth - 340) / window.innerHeight, 0.1, 1000);
+            camera.position.set(15, 12, 15);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth - 340, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            document.body.appendChild(renderer.domElement);
+
+            // Grid & Lights
+            const grid = new THREE.GridHelper(40, 40, 0x334155, 0x1e293b);
+            scene.add(grid);
+
+            scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+            const sun = new THREE.DirectionalLight(0xffffff, 0.8);
+            sun.position.set(10, 20, 10);
+            sun.castShadow = true;
+            scene.add(sun);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+
+            window.addEventListener('resize', onResize);
+            renderer.domElement.addEventListener('click', onClick);
+
+            // Load saved state if exists
+            const saved = localStorage.getItem('architect_save');
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    data.forEach(d => addComponent(d.type, d.transform));
+                } catch (e) { console.error("Load failed", e); }
+            }
+
+            animate();
+        }
+
+        function addComponent(type, existingTransform = null) {
+            let geometry, material;
+            let mesh;
+
+            const defaultColor = {
+                wall: 0xef4444, floor: 0x334155, beam: 0x94a3b8,
+                stair: 0x475569, door: 0x78350f, window: 0x0ea5e9
+            }[type];
+
+            if (type === 'wall') {
+                geometry = new THREE.BoxGeometry(4, 3, 0.2);
+                geometry.translate(0, 1.5, 0);
+            } else if (type === 'floor') {
+                geometry = new THREE.BoxGeometry(6, 0.2, 6);
+                geometry.translate(0, 0.1, 0);
+            } else if (type === 'beam') {
+                geometry = new THREE.BoxGeometry(0.3, 4, 0.3);
+                geometry.translate(0, 2, 0);
+            } else if (type === 'stair') {
+                const group = new THREE.Group();
+                for (let i = 0; i < 5; i++) {
+                    const step = new THREE.Mesh(new THREE.BoxGeometry(2, 0.2, 0.4), new THREE.MeshStandardMaterial({ color: defaultColor }));
+                    step.position.set(0, i * 0.2 + 0.1, i * 0.4);
+                    group.add(step);
+                }
+                mesh = group;
+            } else if (type === 'door') {
+                geometry = new THREE.BoxGeometry(1.2, 2.2, 0.1);
+                geometry.translate(0, 1.1, 0);
+            } else if (type === 'window') {
+                geometry = new THREE.BoxGeometry(1.5, 1.5, 0.1);
+                geometry.translate(0, 0.75, 0);
+            }
+
+            if (!mesh) {
+                material = new THREE.MeshStandardMaterial({ color: defaultColor });
+                mesh = new THREE.Mesh(geometry, material);
+            }
+
+            mesh.userData.type = type;
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+
+            if (existingTransform) {
+                mesh.position.copy(existingTransform.pos);
+                mesh.rotation.copy(existingTransform.rot);
+                mesh.scale.copy(existingTransform.scale);
+            } else {
+                mesh.position.y = 0;
+            }
+
+            scene.add(mesh);
+            components.push(mesh);
+            setupDragControls();
+            selectObject(mesh);
+        }
+
+        function setupDragControls() {
+            if (dragControls) dragControls.dispose();
+            dragControls = new THREE.DragControls(components, camera, renderer.domElement);
+
+            dragControls.addEventListener('dragstart', (e) => {
+                controls.enabled = false;
+                selectObject(e.object);
+            });
+
+            dragControls.addEventListener('dragend', () => {
+                controls.enabled = true;
+                updateInspector();
+            });
+        }
+
+        function onClick(event) {
+            mouse.x = (event.clientX / (window.innerWidth - 340)) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(components, true);
+            if (intersects.length > 0) {
+                let obj = intersects[0].object;
+                while (obj.parent && obj.parent !== scene) obj = obj.parent;
+                selectObject(obj);
+            } else {
+                deselect();
+            }
+        }
+
+        function selectObject(obj) {
+            if (selectedObject) {
+                setOpacity(selectedObject, 1);
+            }
+            selectedObject = obj;
+            setOpacity(selectedObject, 0.8);
+            document.getElementById('inspector').classList.remove('hidden');
+            document.getElementById('selectedName').innerText = obj.userData.type.toUpperCase();
+            updateInspector();
+        }
+
+        function deselect() {
+            if (selectedObject) setOpacity(selectedObject, 1);
+            selectedObject = null;
+            document.getElementById('inspector').classList.add('hidden');
+        }
+
+        function setOpacity(obj, val) {
+            obj.traverse(child => {
+                if (child.material) {
+                    child.material.transparent = val < 1;
+                    child.material.opacity = val;
+                }
+            });
+        }
+
+        function updateInspector() {
+            if (!selectedObject) return;
+            document.getElementById('posX').value = selectedObject.position.x.toFixed(1);
+            document.getElementById('posY').value = selectedObject.position.y.toFixed(1);
+            document.getElementById('posZ').value = selectedObject.position.z.toFixed(1);
+            document.getElementById('rotY').value = (selectedObject.rotation.y * (180 / Math.PI)).toFixed(0);
+            document.getElementById('scaleX').value = selectedObject.scale.x.toFixed(1);
+            document.getElementById('scaleY').value = selectedObject.scale.y.toFixed(1);
+            document.getElementById('scaleZ').value = selectedObject.scale.z.toFixed(1);
+        }
+
+        function updateTransform() {
+            if (!selectedObject) return;
+            selectedObject.position.set(
+                parseFloat(document.getElementById('posX').value),
+                parseFloat(document.getElementById('posY').value),
+                parseFloat(document.getElementById('posZ').value)
+            );
+            selectedObject.rotation.y = parseFloat(document.getElementById('rotY').value) * (Math.PI / 180);
+            selectedObject.scale.set(
+                parseFloat(document.getElementById('scaleX').value),
+                parseFloat(document.getElementById('scaleY').value),
+                parseFloat(document.getElementById('scaleZ').value)
+            );
+        }
+
+        function deleteSelected() {
+            if (!selectedObject) return;
+            scene.remove(selectedObject);
+            components = components.filter(c => c !== selectedObject);
+            deselect();
+            setupDragControls();
+        }
+
+        function saveArchitecture() {
+            const data = components.map(c => ({
+                type: c.userData.type,
+                transform: {
+                    pos: c.position,
+                    rot: c.rotation,
+                    scale: c.scale
+                }
+            }));
+            localStorage.setItem('architect_save', JSON.stringify(data));
+
+            // Generate actual JS Code for use in customeHouse.html
+            let code = "// AUTO-GENERATED ARCHITECTURE CODE\n";
+            data.forEach(d => {
+                let func = "";
+                switch (d.type) {
+                    case 'wall': func = "createWall"; break;
+                    case 'floor': func = "createFloor"; break;
+                    case 'beam': func = "createBeamSet"; break;
+                    case 'stair': func = "createStairs"; break;
+                    case 'door': func = "createDoor"; break;
+                    case 'window': func = "createWindow"; break;
+                }
+                code += `${func}({ x: ${d.transform.pos.x.toFixed(2)}, y: ${d.transform.pos.y.toFixed(2)}, z: ${d.transform.pos.z.toFixed(2)}, ry: ${d.transform.rot.y.toFixed(2)}, w: ${(4 * d.transform.scale.x).toFixed(2)}, h: ${(3 * d.transform.scale.y).toFixed(2)} });\n`;
+            });
+
+            console.log(code);
+            alert("Success! Architecture saved to local storage.\nCheck console for the generated function calls.");
+        }
+
+        function exportJSON() {
+            const data = components.map(c => ({
+                type: c.userData.type,
+                pos: c.position,
+                rot: c.rotation,
+                scale: c.scale
+            }));
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = "house_design.json";
+            a.click();
+        }
+
+        function onResize() {
+            camera.aspect = (window.innerWidth - 340) / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth - 340, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        window.onload = init;
+    </script>
+
+</body>
+
+</html>

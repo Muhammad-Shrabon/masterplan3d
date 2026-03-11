@@ -75,6 +75,37 @@
 
         // Variables for new animated trees from tree2.html
         let animatedLeaves = [];
+
+        // --- Bottom Area / Stone Base Controls ---
+        let stoneBaseW = 60;
+        let stoneBaseD = 60;
+        let stoneBaseHT = 4;
+        let stoneBaseY = 2;
+
+        // --- Pool Water Geometries ---
+        const poolWaterGeometries = new Set();
+
+        function createStoneTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256; canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#6a737b';
+            ctx.fillRect(0, 0, 256, 256);
+            for (let i = 0; i < 400; i++) {
+                const x = Math.random() * 256;
+                const y = Math.random() * 256;
+                const radius = Math.random() * 4 + 2;
+                ctx.fillStyle = Math.random() > 0.5 ? '#8c98a3' : '#4d555c';
+                ctx.beginPath();
+                ctx.arc(x, y, radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(2, 2);
+            return tex;
+        }
+
         const CITY_BOUNDS = { minX: -750, maxX: 650, minZ: -1900, maxZ: 1300 };
         const customTreePositions = [
             { x: -625, y: 0, z: 54 },
@@ -976,7 +1007,7 @@
             controls.zoomSpeed = 1.9;     // Very fast zoom
             controls.panSpeed = 1.9;      // Very fast move
             controls.minDistance = 0.1;
-            controls.maxDistance = 2000; // Focused on city land area (diag ~3500, so 2000 is good for zoom out)
+            controls.maxDistance = 10000; // Increased to 10000 as per requested max zoom
             controls.maxPolarAngle = Math.PI / 2.05; // Prevent going under ground (restrict to just above horizon)
             controls.minPolarAngle = 0;
             controls.screenSpacePanning = false; // Disable screen space panning to keep target on ground
@@ -1361,52 +1392,61 @@
 
 
             // Create House Bunches and Clusters synchronously for guaranteed visibility
-            createHouseBunch(subGreenLand6, { serialCount: 30, startX: 0, startZ: 5, unitSpacing: 16, houseGap: 280, rowSpacing: 25, startId: 1, clusterName: "BUNCH-6" });
-            createHouseBunch(subGreenLand5, { serialCount: 28, startX: 0, startZ: 60, unitSpacing: 16, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-5" });
-            createHouseBunch(subGreenLand4, { serialCount: 24, startX: 0, startZ: 115, unitSpacing: 16, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-4" });
-            createHouseBunch(subGreenLand3, { serialCount: 27, startX: 0, startZ: 170, unitSpacing: 16, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-3" });
-            createHouseBunch(subGreenLand2, { serialCount: 28, startX: 0, startZ: 225, unitSpacing: 16, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-2" });
-            createHouseBunch(subGreenLand1, { serialCount: 36, startX: 0, startZ: 280, unitSpacing: 16, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-1" });
+            createHouseBunch(subGreenLand6, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 30, startX: 0, startZ: 5, unitSpacing: 16, houseGap: 280, rowSpacing: 25, startId: 1, clusterName: "BUNCH-6" });
+            createHouseBunch(subGreenLand5, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 28, startX: 0, startZ: 60, unitSpacing: 16, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-5" });
+            createHouseBunch(subGreenLand4, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 24, startX: 0, startZ: 115, unitSpacing: 16, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-4" });
+            createHouseBunch(subGreenLand3, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 27, startX: 0, startZ: 170, unitSpacing: 16, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-3" });
+            createHouseBunch(subGreenLand2, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 28, startX: 0, startZ: 225, unitSpacing: 16, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-2" });
+            createHouseBunch(subGreenLand1, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 280, unitSpacing: 16, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-1" });
 
-            createHouseCluster(subGreenLandCL1, { serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 23, startId: 2, clusterName: "CLUSTER-1" });
-            createHouseCluster(subGreenLandCL2, { serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 20, startId: 2, clusterName: "CLUSTER-2" });
-            createHouseCluster(subGreenLandCL3, { serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 20, startId: 2, clusterName: "CLUSTER-3" });
-            createHouseCluster(subGreenLandCL4, { serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 20, startId: 2, clusterName: "CLUSTER-4" });
-            createHouseCluster(subGreenLandCL5, { serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 20, startId: 2, clusterName: "CLUSTER-5" });
-            createHouseCluster(subGreenLandCL6, { serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-6" });
-            createHouseCluster(subGreenLandCL7, { serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-7" });
-            createHouseCluster(subGreenLandCL8, { serialCount: 36, startX: 0, startZ: 210, unitSpacing: 15.4, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-8" });
-            createHouseCluster(subGreenLandCL9, { serialCount: 36, startX: 0, startZ: 210, unitSpacing: 15.5, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-9" });
-            createHouseCluster(subGreenLandCL10, { serialCount: 22, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-10" });
+            createHouseCluster(subGreenLandCL1, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 23, startId: 2, clusterName: "CLUSTER-1" });
+            createHouseCluster(subGreenLandCL2, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 20, startId: 2, clusterName: "CLUSTER-2" });
+            createHouseCluster(subGreenLandCL3, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 20, startId: 2, clusterName: "CLUSTER-3" });
+            createHouseCluster(subGreenLandCL4, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 20, startId: 2, clusterName: "CLUSTER-4" });
+            createHouseCluster(subGreenLandCL5, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 20, startId: 2, clusterName: "CLUSTER-5" });
+            createHouseCluster(subGreenLandCL6, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-6" });
+            createHouseCluster(subGreenLandCL7, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-7" });
+            createHouseCluster(subGreenLandCL8, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 15.4, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-8" });
+            createHouseCluster(subGreenLandCL9, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 15.5, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-9" });
+            createHouseCluster(subGreenLandCL10, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 22, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-10" });
             // BLOCK B -1
             createHouseCluster(subGreenLandBB1, {
                 serialCount: 36, startX: 0, startZ: 210, unitSpacing: 8.9, houseGap: 10, rowSpacing: 16, startId: 2,
                 clusterName: "BLOCK B - 1", hScale: 2,
                 innerGapScale: { x: 0.53, y: .8 },
                 outerGapScale: 0.5,
-                houseOX: 50,
-                houseOZ: 50
+                houseOX: 80,
+                houseOZ: 200,
+                carOX: 160, carOZ: 200,
+                hasCarParking: true,
+                hasPool: true,
             });
             // BLOCK B - 2
             createHouseCluster(subGreenLandBB2, {
                 serialCount: 36, startX: 0, startZ: 210, unitSpacing: 8.9, houseGap: 10, rowSpacing: 16, startId: 2,
                 clusterName: "BLOCK B - 2", hScale: 2,
                 innerGapScale: { x: 0.53, y: .8 },
-                outerGapScale: 0.5
+                outerGapScale: 0.5,
+                houseOX: 80,
+                houseOZ: 200,
             });
             // BLOCK B - 3
             createHouseCluster(subGreenLandBB3, {
                 serialCount: 36, startX: 0, startZ: 210, unitSpacing: 8.9, houseGap: 10, rowSpacing: 16, startId: 2,
                 clusterName: "BLOCK B - 3", hScale: 2,
                 innerGapScale: { x: 0.53, y: .8 },
-                outerGapScale: 0.5
+                outerGapScale: 0.5,
+                houseOX: 80,
+                houseOZ: 200,
             });
             // BLOCK B - 4
             createHouseCluster(subGreenLandBB4, {
                 serialCount: 36, startX: 0, startZ: 210, unitSpacing: 8.9, houseGap: 10, rowSpacing: 16, startId: 2,
                 clusterName: "BLOCK B -4", hScale: 2,
                 innerGapScale: { x: 0.53, y: .8 },
-                outerGapScale: 0.5
+                outerGapScale: 0.5,
+                houseOX: 80,
+                houseOZ: 200,
             });
             // BLOCK A - 1
             // createHouseCluster(subGreenLandBA1, {
@@ -1420,21 +1460,27 @@
                 serialCount: 20, startX: 0, startZ: 210, unitSpacing: 8.9, houseGap: 10, rowSpacing: 16, startId: 2,
                 clusterName: "BLOCK A - 2", hScale: 2,
                 innerGapScale: { x: 0.53, y: .8 },
-                outerGapScale: 0.5
+                outerGapScale: 0.5,
+                houseOX: 80,
+                houseOZ: 200,
             });
             // BLOCK A - 3
             createHouseCluster(subGreenLandBA3, {
                 serialCount: 31, startX: 0, startZ: 210, unitSpacing: 8.9, houseGap: 10, rowSpacing: 16, startId: 2,
                 clusterName: "BLOCK A - 3", hScale: 2,
                 innerGapScale: { x: 0.53, y: .8 },
-                outerGapScale: 0.5
+                outerGapScale: 0.5,
+                houseOX: 80,
+                houseOZ: 200,
             });
             // BLOCK A - 4
             createHouseCluster(subGreenLandBA4, {
                 serialCount: 21, startX: 0, startZ: 210, unitSpacing: 8.9, houseGap: 10, rowSpacing: 16, startId: 2,
                 clusterName: "BLOCK A - 4", hScale: 2,
                 innerGapScale: { x: 0.53, y: .8 },
-                outerGapScale: 0.5
+                outerGapScale: 0.5,
+                houseOX: 80,
+                houseOZ: 200,
             });
 
 
@@ -2326,6 +2372,23 @@
             // Update River animation
             if (river) river.update(time);
 
+            // --- Pool Water Animation ---
+            poolWaterGeometries.forEach(geo => {
+                if (geo.attributes.position && geo.attributes.normal) {
+                    const pos = geo.attributes.position;
+                    const norm = geo.attributes.normal;
+                    for (let v = 0; v < pos.count; v++) {
+                        if (norm.getY(v) > 0.5) {
+                            const px = pos.getX(v);
+                            const pz = pos.getZ(v);
+                            const wave = Math.sin(px * 0.05 + t * 2.5) * 0.4 + Math.cos(pz * 0.05 + t * 2.0) * 0.4;
+                            pos.setY(v, 4 + wave);
+                        }
+                    }
+                    pos.needsUpdate = true;
+                }
+            });
+
             // Animate Sky
             if (isNight && stars) {
                 stars.rotation.y += 0.0001; // Slow rotation of starfield
@@ -2936,7 +2999,7 @@
             return treeGroup;
         }
 
-        function createHouse(id, plotW = 500, plotD = 600, skipWall = null, hasPool = false, carCount = 0, hasPlayground = false, hDepth = 280, hWidth = 220, hasWing = true, hFloorH = 100, houseOX = 0, houseOZ = 0, poolOX = 0, poolOZ = 0, carOX = 0, carOZ = 0, playOX = 0, playOZ = 0, carW = 80, carL = 160, innerGapScale = 1, isTerrace = false) {
+        function createHouse(id, plotW = 500, plotD = 600, skipWall = null, hasPool = false, carCount = 0, hasPlayground = false, hDepth = 280, hWidth = 220, hasWing = true, hFloorH = 100, houseOX = 0, houseOZ = 0, poolOX = 0, poolOZ = 0, carOX = 0, carOZ = 0, playOX = 0, playOZ = 0, carW = 80, carL = 160, innerGapScale = 1, isTerrace = false, hasCarParking = true) {
             const house = new THREE.Group();
             house.name = 'house';
             const igScaleRaw = innerGapScale;
@@ -2945,15 +3008,15 @@
 
             const CONFIG = { houseWidth: hWidth, houseDepth: hDepth, wingLen: Math.max(260, hWidth * 0.8), floorH: hFloorH, wingW: Math.max(100, hWidth * 0.45), roofH: 80 };
             const { houseWidth, houseDepth, wingLen, floorH, wingW, roofH } = CONFIG;
-            const wallH = 30; const wallT = 8; const gateW = 100;
+            const wallH = 35; const wallT = 10; const gateW = 160;
 
             const bodyMat = getSharedMaterial('houseBody', () => new THREE.MeshStandardMaterial({ color: 0xe8e4d9, roughness: 0.8 }));
             const roofMat = getSharedMaterial('houseRoof', () => new THREE.MeshStandardMaterial({ color: 0xC47460, roughness: 0.7 }));
             const winMat = getSharedMaterial('houseWin', () => new THREE.MeshStandardMaterial({ color: 0xadd8e6, emissive: 0x111111 }));
             const wallMat = getSharedMaterial('houseWall', () => new THREE.MeshBasicMaterial({ color: 0xeeeeee }));
-            const gateMat = getSharedMaterial('houseGate', () => new THREE.MeshBasicMaterial({ color: 0x222222 }));
+            const gateMat = getSharedMaterial('houseGate', () => new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.8, roughness: 0.3 }));
             const glassMat = getSharedMaterial('houseGlass', () => new THREE.MeshStandardMaterial({ color: 0x88ccff, transparent: true, opacity: 0.5 }));
-            const beamMat = getSharedMaterial('houseBeam', () => new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5 }));
+            const beamMat = getSharedMaterial('houseBeam', () => new THREE.MeshStandardMaterial({ color: 0xFAF9F6, roughness: 0.5 }));
 
             // --- Merged Geometries ---
             const wallGeos = [];
@@ -2970,14 +3033,51 @@
             const fwL = frontWallG.clone(); fwL.translate(-plotW / 2 + frontSegW / 2, wallH / 2, -plotD / 2 + wallT / 2); wallGeos.push(fwL);
             const fwR = frontWallG.clone(); fwR.translate(plotW / 2 - frontSegW / 2, wallH / 2, -plotD / 2 + wallT / 2); wallGeos.push(fwR);
 
-            const pillarG = new THREE.BoxGeometry(15, wallH + 15, 15);
-            const pL = pillarG.clone(); pL.translate(-gateW / 2, (wallH + 15) / 2, -plotD / 2 + wallT / 2); gateGeos.push(pL);
-            const pR = pillarG.clone(); pR.translate(gateW / 2, (wallH + 15) / 2, -plotD / 2 + wallT / 2); gateGeos.push(pR);
+            // Concrete/Beam elements (Pillars and Top Beams) - Off-white
+            const concreteGeos = [];
+
+            // Gate Pillars
+            const pillarG = new THREE.BoxGeometry(28, wallH + 30, 28);
+            const pL = pillarG.clone(); pL.translate(-gateW / 2, (wallH + 30) / 2, -plotD / 2 + wallT / 2); concreteGeos.push(pL);
+            const pR = pillarG.clone(); pR.translate(gateW / 2, (wallH + 30) / 2, -plotD / 2 + wallT / 2); concreteGeos.push(pR);
+
+            // Horizontal Gate Beam (Top)
+            const gBeamG = new THREE.BoxGeometry(gateW + 40, 12, 32);
+            gBeamG.translate(0, wallH + 30 + 6, -plotD / 2 + wallT / 2);
+            concreteGeos.push(gBeamG);
+
+            // Stylish Pillar Globes (Top of pillars)
+            const capG = new THREE.SphereGeometry(16, 16, 16);
+            const cL = capG.clone(); cL.translate(-gateW / 2, wallH + 30 + 12 + 10, -plotD / 2 + wallT / 2); concreteGeos.push(cL);
+            const cR = capG.clone(); cR.translate(gateW / 2, wallH + 30 + 12 + 10, -plotD / 2 + wallT / 2); concreteGeos.push(cR);
+
+            // Vertical Gate Iron Bars - Arched top with spearheads
+            for (let ax = -gateW / 2 + 12; ax <= gateW / 2 - 12; ax += 12) {
+                const xNorm = ax / (gateW / 2 - 12);
+                const archH = 20 * (1 - xNorm * xNorm); // Parabolic arch
+                const barH = wallH + 5 + archH;
+                const bar = new THREE.CylinderGeometry(2, 2, barH, 8);
+                bar.translate(ax, barH / 2, -plotD / 2 + wallT / 2);
+                gateGeos.push(bar);
+
+                // Spear top
+                const spear = new THREE.ConeGeometry(4, 15, 4);
+                spear.translate(ax, barH + 7, -plotD / 2 + wallT / 2);
+                gateGeos.push(spear);
+            }
+            // Gate Iron Horizontals
+            const hBar = new THREE.BoxGeometry(gateW, 5, 5);
+            const hTop = hBar.clone(); hTop.translate(0, wallH + 10, -plotD / 2 + wallT / 2); gateGeos.push(hTop);
+            const hBot = hBar.clone(); hBot.translate(0, 15, -plotD / 2 + wallT / 2); gateGeos.push(hBot);
 
             const wallMesh = new THREE.Mesh(THREE.BufferGeometryUtils.mergeBufferGeometries(wallGeos), wallMat);
             house.add(wallMesh);
             const gateMesh = new THREE.Mesh(THREE.BufferGeometryUtils.mergeBufferGeometries(gateGeos), gateMat);
             house.add(gateMesh);
+
+            // Add concrete elements to house directly (boundary elements)
+            const gateConcreteMesh = new THREE.Mesh(THREE.BufferGeometryUtils.mergeBufferGeometries(concreteGeos), beamMat);
+            house.add(gateConcreteMesh);
 
             const building = new THREE.Group();
             building.position.set(houseOX, 0, houseOZ);
@@ -2994,6 +3094,19 @@
             const bodyMesh = new THREE.Mesh(THREE.BufferGeometryUtils.mergeBufferGeometries(bodyGeos), bodyMat);
             bodyMesh.castShadow = true;
             building.add(bodyMesh);
+
+            // --- HOUSE PERIMETER STONES ---
+            const stoneWidth = houseWidth + stoneBaseW;
+            const stoneDepth = houseDepth + stoneBaseD;
+            const stoneGeo = getSharedGeometry(`houseStone_${stoneWidth}_${stoneDepth}_${stoneBaseHT}`, () => new THREE.BoxGeometry(stoneWidth, stoneBaseHT, stoneDepth));
+            const stoneMat = getSharedMaterial('houseStoneMatTex', () => {
+                const mat = new THREE.MeshStandardMaterial({ roughness: 1.0, bumpScale: 0.2 });
+                mat.map = createStoneTexture();
+                return mat;
+            });
+            const stoneMesh = new THREE.Mesh(stoneGeo, stoneMat);
+            stoneMesh.position.set(0, stoneBaseY, 0);
+            building.add(stoneMesh);
 
             // Doors and unique parts
             const doorGeo = getSharedGeometry('houseDoor', () => new THREE.BoxGeometry(45, 75, 5));
@@ -3061,13 +3174,15 @@
             if (hasPool) {
                 const poolGroup = new THREE.Group();
                 const poolW = Math.max(200, plotW * 0.3), poolD = Math.max(350, plotD * 0.3), poolH = 10;
-                const poolKey = `poolBody_${poolW}_${poolD}`;
-                const poolGeo = getSharedGeometry(poolKey, () => new THREE.BoxGeometry(poolW, poolH, poolD));
-                const poolMat = getSharedMaterial('poolMat', () => new THREE.MeshStandardMaterial({ color: 0x00aaff, roughness: 0.1, metalness: 0.5, transparent: true, opacity: 0.8 }));
-                const pool = new THREE.Mesh(poolGeo, poolMat);
-                // Pool position scaled by padding
-                pool.position.set(poolOX, 0.5, poolOZ);
-                poolGroup.add(pool);
+                const poolKey = `poolWater_${poolW}_${poolD}`;
+
+                const poolGeo = getSharedGeometry(poolKey, () => new THREE.BoxGeometry(poolW, poolH, poolD, 12, 1, 12));
+                poolWaterGeometries.add(poolGeo);
+
+                const poolMat = getSharedMaterial('poolWaterMat', () => new THREE.MeshStandardMaterial({ color: 0x00aaff, roughness: 0.1, metalness: 0.5, transparent: true, opacity: 0.8 }));
+                const poolWater = new THREE.Mesh(poolGeo, poolMat);
+                poolWater.position.set(poolOX, 0.5, poolOZ);
+                poolGroup.add(poolWater);
 
                 const borderKey = `poolBorder_${poolW}_${poolD}`;
                 const borderGeo = getSharedGeometry(borderKey, () => new THREE.BoxGeometry(poolW + 20, 5, poolD + 20));
@@ -3076,82 +3191,178 @@
                 border.position.set(poolOX, 0.1, poolOZ);
                 poolGroup.add(border);
 
+                // --- Pool Stairs ---
+                const stairW = 35; // Narrow stairs so handles are very close to each other
+                const stairMat = getSharedMaterial('poolStairMat', () => new THREE.MeshStandardMaterial({ color: 0xf0f4f8, roughness: 0.9 }));
+                for (let s = 0; s < 5; s++) {
+                    const stepD = 18;
+                    const stepH = 2.0;
+                    const stepGeo = getSharedGeometry(`poolStep_${stairW}_${s}`, () => new THREE.BoxGeometry(stairW, stepH, stepD));
+                    const step = new THREE.Mesh(stepGeo, stairMat);
+                    // Elevate the steps slightly so they naturally peek out of the water
+                    step.position.set(poolOX, 2.5 - poolH / 2 + (s + 0.5) * stepH, poolOZ - poolD / 2 + (s + 0.5) * stepD + 5);
+                    poolGroup.add(step);
+                }
+
+                // --- Pool Handles (2 Side Rails) ---
+                const handleMat = getSharedMaterial('poolHandleMat', () => new THREE.MeshStandardMaterial({ color: 0xdddddd, metalness: 0.9, roughness: 0.1 }));
+                const handleGeo = getSharedGeometry('poolHandle', () => {
+                    const curveOptions = [
+                        new THREE.Vector3(0, 0, 0),
+                        new THREE.Vector3(0, 15, 0),
+                        new THREE.Vector3(5, 20, 0),
+                        new THREE.Vector3(20, 20, 0),
+                        new THREE.Vector3(20, 0, 0)
+                    ];
+                    return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(curveOptions), 20, 1.2, 8, false);
+                });
+
+                const handleL = new THREE.Mesh(handleGeo, handleMat);
+                handleL.position.set(poolOX - stairW / 2 + 1.5, 3.5, poolOZ - poolD / 2 + 10);
+                handleL.rotation.y = Math.PI / 2;
+                poolGroup.add(handleL);
+
+                const handleR = new THREE.Mesh(handleGeo, handleMat);
+                handleR.position.set(poolOX + stairW / 2 - 1.5, 3.5, poolOZ - poolD / 2 + 10);
+                handleR.rotation.y = Math.PI / 2;
+                poolGroup.add(handleR);
+
                 house.add(poolGroup);
             }
 
-            // --- HIGH QUALITY 3D CARS ---
-            for (let i = 0; i < carCount; i++) {
-                const car = new THREE.Group();
-                const carColors = [0xff2222, 0x2244ff, 0x111111, 0xeeeeee, 0x555555];
-                const carColor = carColors[Math.floor(Math.random() * carColors.length)];
-                const mainMat = new THREE.MeshStandardMaterial({ color: carColor, metalness: 0.6, roughness: 0.2 });
-                const glassMat = new THREE.MeshStandardMaterial({ color: 0x111111, transparent: true, opacity: 0.7 });
-                const lightMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 1 });
-                const tailLightMat = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 1 });
-                const blackMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+            // --- CAR PARKING PAD & CARPORT (Conditional) ---
+            if (hasCarParking) {
+                const parkingColors = [0x707070, 0x5a5a5a, 0x6e6259, 0x505a5f, 0x8a7b6b];
+                const pColor = parkingColors[Math.floor(Math.random() * parkingColors.length)];
+                const padW = 220; const padD = 350;
+                const padGeo = getSharedGeometry(`parkingPadGeo`, () => new THREE.BoxGeometry(padW, 2, padD));
+                const padMat = new THREE.MeshStandardMaterial({ color: pColor, roughness: 0.9 });
+                const padMesh = new THREE.Mesh(padGeo, padMat);
+                const rGap = 80 * igx;
+                const fGap = 160 * igy;
+                const padX = plotW / 2 - (padW / 2 + rGap) + carOX;
+                const padZ = -plotD / 2 + padD / 2 + fGap + carOZ;
+                padMesh.position.set(padX, 1, padZ);
+                house.add(padMesh);
 
-                // Body Base
-                const body = new THREE.Mesh(getSharedGeometry(`carBody_${carW}_${carL}`, () => new THREE.BoxGeometry(carW, carW * 0.3, carL)), mainMat);
-                body.position.y = carW * 0.2; body.castShadow = true; car.add(body);
-
-                // Cabin / Roof
-                const cabin = new THREE.Mesh(getSharedGeometry(`carCabin_${carW}_${carL}`, () => new THREE.BoxGeometry(carW * 0.9, carW * 0.35, carL * 0.55)), mainMat);
-                cabin.position.set(0, carW * 0.525, -carL * 0.05); cabin.castShadow = true; car.add(cabin);
-
-                // Windows (Front/Back)
-                const fWin = new THREE.Mesh(getSharedGeometry(`winF_${carW}`, () => new THREE.BoxGeometry(carW * 0.85, carW * 0.3, 5)), glassMat);
-                fWin.position.set(0, carW * 0.525, carL * 0.22); fWin.rotation.x = -0.3; car.add(fWin);
-                const bWin = fWin.clone(); bWin.position.z = -carL * 0.32; bWin.rotation.x = 0.3; car.add(bWin);
-
-                // Headlights
-                const hLightGeo = getSharedGeometry(`hLight_${carW}`, () => new THREE.BoxGeometry(carW * 0.2, carW * 0.1, 5));
-                const hlL = new THREE.Mesh(hLightGeo, lightMat); hlL.position.set(-carW * 0.35, carW * 0.25, carL * 0.5); car.add(hlL);
-                const hlR = hlL.clone(); hlR.position.x = carW * 0.35; car.add(hlR);
-
-                // Taillights
-                const tlL = new THREE.Mesh(hLightGeo, tailLightMat); tlL.position.set(-carW * 0.35, carW * 0.25, -carL * 0.5); car.add(tlL);
-                const tlR = tlL.clone(); tlR.position.x = carW * 0.35; car.add(tlR);
-
-                // Bumpers
-                const bumperGeo = getSharedGeometry(`bumper_${carW}`, () => new THREE.BoxGeometry(carW * 1.05, carW * 0.15, 15));
-                const fBumper = new THREE.Mesh(bumperGeo, blackMat); fBumper.position.set(0, carW * 0.1, carL * 0.5 + 5); car.add(fBumper);
-                const bBumper = fBumper.clone(); bBumper.position.z = -carL * 0.5 - 5; car.add(bBumper);
-
-                // Side Mirrors
-                const mirrorGeo = getSharedGeometry(`mirror_${carW}`, () => new THREE.BoxGeometry(carW * 0.1, carW * 0.08, carW * 0.15));
-                const smL = new THREE.Mesh(mirrorGeo, mainMat); smL.position.set(-carW * 0.55, carW * 0.45, carL * 0.15); car.add(smL);
-                const smR = smL.clone(); smR.position.x = carW * 0.55; car.add(smR);
-
-                // Spoiler (for big cars)
-                if (carL > 400) {
-                    const spBase = new THREE.Mesh(getSharedGeometry(`spBase_${carW}`, () => new THREE.BoxGeometry(5, carW * 0.15, 10)), blackMat);
-                    const spL = spBase.clone(); spL.position.set(-carW * 0.4, carW * 0.4, -carL * 0.45); car.add(spL);
-                    const spR = spBase.clone(); spR.position.set(carW * 0.4, carW * 0.4, -carL * 0.45); car.add(spR);
-                    const spTop = new THREE.Mesh(getSharedGeometry(`spTop_${carW}`, () => new THREE.BoxGeometry(carW * 0.9, 5, 40)), mainMat);
-                    spTop.position.set(0, carW * 0.475, -carL * 0.45); car.add(spTop);
-                }
-
-                // Wheels with Rims
-                const wheelGeo = getSharedGeometry(`tire_${carW}`, () => new THREE.CylinderGeometry(carW * 0.18, carW * 0.18, carW * 0.12, 16));
-                const rimGeo = getSharedGeometry(`rim_${carW}`, () => new THREE.CylinderGeometry(carW * 0.12, carW * 0.12, carW * 0.13, 8));
-                const rimMat = getSharedMaterial('rimMat', () => new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.8, roughness: 0.2 }));
-
-                const wOffsets = [[-carW * 0.5, carW * 0.18, carL * 0.32], [carW * 0.5, carW * 0.18, carL * 0.32], [-carW * 0.5, carW * 0.18, -carL * 0.32], [carW * 0.5, carW * 0.18, -carL * 0.32]];
-                wOffsets.forEach(pos => {
-                    const wWrap = new THREE.Group();
-                    const tire = new THREE.Mesh(wheelGeo, blackMat); tire.rotation.z = Math.PI / 2; wWrap.add(tire);
-                    const rim = new THREE.Mesh(rimGeo, rimMat); rim.rotation.z = Math.PI / 2; wWrap.add(rim);
-                    wWrap.position.set(pos[0], pos[1], pos[2]);
-                    car.add(wWrap);
+                // Carport / Shade Structure
+                const cpGroup = new THREE.Group();
+                const cpPoleGeo = getSharedGeometry('cpPole', () => new THREE.CylinderGeometry(3, 3, 110, 8));
+                const cpPoleMat = getSharedMaterial('cpPoleMat', () => new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.8, roughness: 0.3 }));
+                const pPositions = [
+                    [-padW / 2 + 15, 55 + 2, -padD / 2 + 25],
+                    [padW / 2 - 15, 55 + 2, -padD / 2 + 25],
+                    [-padW / 2 + 15, 55 + 2, padD / 2 - 25],
+                    [padW / 2 - 15, 55 + 2, padD / 2 - 25]
+                ];
+                pPositions.forEach(pos => {
+                    const pole = new THREE.Mesh(cpPoleGeo, cpPoleMat);
+                    pole.position.set(pos[0], pos[1], pos[2]);
+                    cpGroup.add(pole);
                 });
+                const cpRoofGeo = getSharedGeometry('cpRoof', () => new THREE.BoxGeometry(padW + 20, 6, padD + 30));
+                // Semi-transparent stylish blue tinted glass/polycarbonate roof
+                const cpRoofMat = getSharedMaterial('cpRoofMat', () => new THREE.MeshStandardMaterial({ color: 0x2288cc, transparent: true, opacity: 0.65, roughness: 0.1, metalness: 0.3 }));
+                const cpRoof = new THREE.Mesh(cpRoofGeo, cpRoofMat);
+                cpRoof.position.set(0, 110 + 2 + 3, 0);
+                cpGroup.add(cpRoof);
+                cpGroup.position.set(padX, 0, padZ);
+                house.add(cpGroup);
 
-                const spacing = (carL + 80) * igy;
-                const frontGap = 150 * igy;
-                const rightGap = 60 * igx;
-                car.position.set(plotW / 2 - (carL / 2 + rightGap) - (i * spacing) + carOX, 0, -plotD / 2 + frontGap + carOZ);
-                car.rotation.y = Math.PI / 2;
-                house.add(car);
-            }
+                // --- REALISTIC 3D CARS ---
+                for (let i = 0; i < carCount; i++) {
+                    const car = new THREE.Group();
+                    const carColors = [0xffffff, 0x333333, 0x1a73e8, 0xd93025, 0xfbbc04, 0x34a853];
+                    const carColor = carColors[Math.floor(Math.random() * carColors.length)];
+                    const mainMat = new THREE.MeshStandardMaterial({
+                        color: carColor,
+                        metalness: 0.8,
+                        roughness: 0.2,
+                        envMapIntensity: 1.0
+                    });
+                    const glassMat = new THREE.MeshStandardMaterial({ color: 0x111111, transparent: true, opacity: 0.8, roughness: 0.1 });
+                    const blackMat = new THREE.MeshStandardMaterial({ color: 0x080808, roughness: 0.9 });
+                    const chromeMat = new THREE.MeshStandardMaterial({ color: 0xeeeeee, metalness: 1.0, roughness: 0.1 });
+
+                    // Realistic Body with Shape Extrusion
+                    const bodyShape = new THREE.Shape();
+                    bodyShape.moveTo(-carL * 0.5, 0);
+                    bodyShape.lineTo(carL * 0.5, 0);
+                    bodyShape.lineTo(carL * 0.5, carW * 0.25);
+                    bodyShape.lineTo(carL * 0.45, carW * 0.35); // Front Hood
+                    bodyShape.lineTo(carL * 0.15, carW * 0.35); // Windshield base
+                    bodyShape.lineTo(carL * 0.05, carW * 0.65); // Roof start
+                    bodyShape.lineTo(-carL * 0.3, carW * 0.65); // Roof end
+                    bodyShape.lineTo(-carL * 0.45, carW * 0.35); // Back window
+                    bodyShape.lineTo(-carL * 0.5, carW * 0.35); // Trunk end
+                    bodyShape.lineTo(-carL * 0.5, 0);
+
+                    const carBodyGeo = getSharedGeometry(`carBodyGeo_${carW}_${carL}`, () => new THREE.ExtrudeGeometry(bodyShape, {
+                        depth: carW,
+                        bevelEnabled: true,
+                        bevelThickness: 5,
+                        bevelSize: 5,
+                        bevelOffset: 0,
+                        bevelSegments: 3
+                    }));
+                    const bodyMesh = new THREE.Mesh(carBodyGeo, mainMat);
+                    bodyMesh.rotation.y = Math.PI / 2;
+                    bodyMesh.position.set(carW / 2, carW * 0.1, 0);
+                    bodyMesh.castShadow = true;
+                    car.add(bodyMesh);
+
+                    // Windows (Dark Glass)
+                    const winGeo = getSharedGeometry(`carWinGeo_${carW}_${carL}`, () => new THREE.BoxGeometry(carW * 0.92, carW * 0.28, carL * 0.4));
+                    const winMesh = new THREE.Mesh(winGeo, glassMat);
+                    winMesh.position.set(0, carW * 0.5, -carL * 0.1);
+                    car.add(winMesh);
+
+                    // Front Grille (Chrome)
+                    const grilleGeo = getSharedGeometry(`grille_${carW}`, () => new THREE.BoxGeometry(carW * 0.7, carW * 0.15, 5));
+                    const grille = new THREE.Mesh(grilleGeo, chromeMat);
+                    grille.position.set(0, carW * 0.25, carL * 0.5 + 2);
+                    car.add(grille);
+
+                    // Lights
+                    const hLightGeo = getSharedGeometry(`hLight_${carW}`, () => new THREE.SphereGeometry(carW * 0.1, 16, 16));
+                    const lightMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 2 });
+                    [-(carW * 0.35), carW * 0.35].forEach(x => {
+                        const hl = new THREE.Mesh(hLightGeo, lightMat);
+                        hl.scale.set(1, 0.6, 0.2);
+                        hl.position.set(x, carW * 0.28, carL * 0.5);
+                        car.add(hl);
+                    });
+
+                    const tLightMat = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 1.5 });
+                    [-(carW * 0.38), carW * 0.38].forEach(x => {
+                        const tl = new THREE.Mesh(hLightGeo, tLightMat);
+                        tl.scale.set(1.2, 0.5, 0.1);
+                        tl.position.set(x, carW * 0.32, -carL * 0.5);
+                        car.add(tl);
+                    });
+
+                    // Wheels with Rims
+                    const wheelGeo = getSharedGeometry(`tire_${carW}`, () => new THREE.CylinderGeometry(carW * 0.18, carW * 0.18, carW * 0.12, 24));
+                    const rimGeo = getSharedGeometry(`rim_${carW}`, () => new THREE.CylinderGeometry(carW * 0.12, carW * 0.12, carW * 0.13, 12));
+                    const rimMat = getSharedMaterial('rimMat', () => new THREE.MeshStandardMaterial({ color: 0xdddddd, metalness: 0.9, roughness: 0.1 }));
+
+                    const wOffsets = [[-carW * 0.52, carW * 0.18, carL * 0.3], [carW * 0.52, carW * 0.18, carL * 0.3], [-carW * 0.52, carW * 0.18, -carL * 0.32], [carW * 0.52, carW * 0.18, -carL * 0.32]];
+                    wOffsets.forEach(pos => {
+                        const wWrap = new THREE.Group();
+                        const tire = new THREE.Mesh(wheelGeo, blackMat); tire.rotation.z = Math.PI / 2; wWrap.add(tire);
+                        const rim = new THREE.Mesh(rimGeo, rimMat); rim.rotation.z = Math.PI / 2; wWrap.add(rim);
+                        wWrap.position.set(pos[0], pos[1], pos[2]);
+                        car.add(wWrap);
+                    });
+
+                    const spacing = (carL + 100) * igy;
+                    const frontGap = 180 * igy;
+                    const rightGap = 70 * igx;
+                    car.position.set(plotW / 2 - (carL / 2 + rightGap) - (i * spacing) + carOX, 0, -plotD / 2 + frontGap + carOZ);
+                    car.rotation.y = Math.PI / 2;
+                    house.add(car);
+                }
+            } // end hasCarParking
 
             // --- ENHANCED PLAYGROUND ---
             if (hasPlayground) {
@@ -3422,7 +3633,8 @@
                 basePlotW = options.basePlotW || 900,
                 basePlotD = options.basePlotD || 1200,
                 startId = 1,
-                clusterName = "CLUSTER-6"
+                clusterName = "CLUSTER-6",
+                hasCarParking = false
             } = options;
 
             // Calculate the actual Wall Boundary (Plot Width/Depth)
@@ -3485,8 +3697,12 @@
             const evenRow = new THREE.Group();
             evenRow.position.z = rowSpacing;
 
-            bunchGroup.add(oddRow);
-            bunchGroup.add(evenRow);
+            const housesGroup = new THREE.Group();
+            housesGroup.position.set(options.x || 0, options.y || 0, options.z || 0);
+
+            housesGroup.add(oddRow);
+            housesGroup.add(evenRow);
+            bunchGroup.add(housesGroup);
 
             // Add Cluster Label in the middle
             if (clusterName) {
@@ -3519,7 +3735,7 @@
                 unitGroup.position.x = localIdx * unitSpacing;
 
                 // Create Single House
-                const house = createHouse(formattedId, plotWidth, plotDepth, null, false, 0, false, hDepth, hWidth, true, (options.hFloorH || 100) * hScale, 0, 0, 0, 0, 0, 0, 0, 0, 80 * hScale, 160 * hScale, igScaleRaw);
+                const house = createHouse(formattedId, plotWidth, plotDepth, null, false, options.carCount || 1, false, hDepth, hWidth, true, (options.hFloorH || 100) * hScale, 0, 0, 0, 0, 0, 0, 0, 0, 80 * hScale, 160 * hScale, igScaleRaw, false, hasCarParking);
                 unitGroup.add(house);
 
                 if (serialNum % 2 !== 0) {
@@ -3534,7 +3750,7 @@
                 // Front side of row. 
                 const treeZ = (serialNum % 2 !== 0) ? -rowSpacing * 0.4 : rowSpacing + rowSpacing * 0.4;
                 tree.position.set(unitGroup.position.x + 2.5, 0, treeZ);
-                bunchGroup.add(tree);
+                housesGroup.add(tree);
             }
 
             return bunchGroup;
@@ -3564,7 +3780,8 @@
                 startId = 1,
                 clusterName = "CLUSTER-6",
                 hasPool = false,
-                carCount = 0,
+                carCount = 1,
+                hasCarParking = false,
                 hasPlayground = false,
                 singleRow = false,
                 hFloorH = (options.hFloorH || 100) * hScale,
@@ -3624,8 +3841,12 @@
             oddRow.position.z = 0;
             evenRow.position.z = singleRow ? 0 : rowSpacing;
 
-            if (!singleRow) clusterGroup.add(oddRow);
-            clusterGroup.add(evenRow);
+            const housesGroup = new THREE.Group();
+            housesGroup.position.set(options.x || 0, options.y || 0, options.z || 0);
+
+            if (!singleRow) housesGroup.add(oddRow);
+            housesGroup.add(evenRow);
+            clusterGroup.add(housesGroup);
 
             // Add Cluster Label in the middle
             if (clusterName) {
@@ -3659,7 +3880,7 @@
                 unitGroup.position.x = localIdx * unitSpacing;
 
                 // Create Single House
-                const house = createHouse(formattedId, plotWidth, plotDepth, null, hasPool, carCount, hasPlayground, hDepth, hWidth, options.hasWing !== undefined ? options.hasWing : true, hFloorH, (options.houseOX || 0) * hScale, (options.houseOZ || 0) * hScale, (options.poolOX || 0) * hScale, (options.poolOZ || 0) * hScale, (options.carOX || 0) * hScale, (options.carOZ || 0) * hScale, (options.playOX || 0) * hScale, (options.playOZ || 0) * hScale, (options.carW !== undefined ? options.carW : 80) * hScale, (options.carL !== undefined ? options.carL : 160) * hScale, options.innerGapScale || options.paddingScale || 1);
+                const house = createHouse(formattedId, plotWidth, plotDepth, null, hasPool, carCount, hasPlayground, hDepth, hWidth, options.hasWing !== undefined ? options.hasWing : true, hFloorH, (options.houseOX || 0) * hScale, (options.houseOZ || 0) * hScale, (options.poolOX || 0) * hScale, (options.poolOZ || 0) * hScale, (options.carOX || 0) * hScale, (options.carOZ || 0) * hScale, (options.playOX || 0) * hScale, (options.playOZ || 0) * hScale, (options.carW !== undefined ? options.carW : 80) * hScale, (options.carL !== undefined ? options.carL : 160) * hScale, options.innerGapScale || options.paddingScale || 1, false, hasCarParking);
 
                 // Apply individual house rotation if specified
                 if (options.houseRotation) {
@@ -4067,6 +4288,7 @@
                 flipped = false,
                 hasPool = true,
                 carCount = 2,
+                hasCarParking = false,
                 hasPlayground = false,
                 hFloorH = 100,
                 houseOX = 0, houseOZ = 0,
@@ -4109,6 +4331,10 @@
             group.position.set(position.x || 0, position.y || 0, position.z || 0);
             group.rotation.set(rotation.x || 0, rotation.y || 0, rotation.z || 0);
             parent.add(group);
+
+            const housesGroup = new THREE.Group();
+            housesGroup.position.set(options.x || 0, options.y || 0, options.z || 0);
+            group.add(housesGroup);
 
             // Create curved land strip
             const landPoints = [];
@@ -4190,13 +4416,13 @@
                     if (housesPlaced < targetTotal) {
                         const sideDirA = flipped ? -1 : 1;
                         const housePosA = p.clone().add(binormal.clone().multiplyScalar(offsetDistance * sideDirA));
-                        const houseA = createHouse("CH-" + (startId + housesPlaced), plotWidth, plotDepth, null, hasPool, carCount, hasPlayground, hDepth, hWidth, !isTerrace, hFloorH, houseOX, houseOZ, poolOX, poolOZ, carOX, carOZ, playOX, playOZ, carW, carL, innerGapScale, isTerrace);
+                        const houseA = createHouse("CH-" + (startId + housesPlaced), plotWidth, plotDepth, null, hasPool, carCount, hasPlayground, hDepth, hWidth, !isTerrace, hFloorH, houseOX, houseOZ, poolOX, poolOZ, carOX, carOZ, playOX, playOZ, carW, carL, innerGapScale, isTerrace, hasCarParking);
 
                         houseA.position.copy(housePosA);
                         houseA.position.y = 0.2;
                         houseA.rotation.y = angle + (flipped ? -Math.PI / 2 : Math.PI / 2) + hRotRad;
 
-                        group.add(houseA);
+                        housesGroup.add(houseA);
                         housesPlaced++;
                     }
 
@@ -4204,24 +4430,24 @@
                     if (housesPlaced < targetTotal) {
                         const sideDirB = flipped ? 1 : -1;
                         const housePosB = p.clone().add(binormal.clone().multiplyScalar(offsetDistance * sideDirB));
-                        const houseB = createHouse("CH-" + (startId + housesPlaced), plotWidth, plotDepth, null, hasPool, carCount, hasPlayground, hDepth, hWidth, !isTerrace, hFloorH, houseOX, houseOZ, poolOX, poolOZ, carOX, carOZ, playOX, playOZ, carW, carL, innerGapScale, isTerrace);
+                        const houseB = createHouse("CH-" + (startId + housesPlaced), plotWidth, plotDepth, null, hasPool, carCount, hasPlayground, hDepth, hWidth, !isTerrace, hFloorH, houseOX, houseOZ, poolOX, poolOZ, carOX, carOZ, playOX, playOZ, carW, carL, innerGapScale, isTerrace, hasCarParking);
 
                         houseB.position.copy(housePosB);
                         houseB.position.y = 0.2;
                         houseB.rotation.y = angle + (flipped ? Math.PI / 2 : -Math.PI / 2) + hRotRad;
 
-                        group.add(houseB);
+                        housesGroup.add(houseB);
                         housesPlaced++;
                     }
                 } else {
                     // Single row placement
                     if (housesPlaced < targetTotal) {
                         const housePos = p.clone().add(binormal.clone().multiplyScalar(offsetDistance));
-                        const house = createHouse("CH-" + (startId + housesPlaced), plotWidth, plotDepth, null, hasPool, carCount, hasPlayground, hDepth, hWidth, !isTerrace, hFloorH, houseOX, houseOZ, poolOX, poolOZ, carOX, carOZ, playOX, playOZ, carW, carL, innerGapScale, isTerrace);
+                        const house = createHouse("CH-" + (startId + housesPlaced), plotWidth, plotDepth, null, hasPool, carCount, hasPlayground, hDepth, hWidth, !isTerrace, hFloorH, houseOX, houseOZ, poolOX, poolOZ, carOX, carOZ, playOX, playOZ, carW, carL, innerGapScale, isTerrace, hasCarParking);
                         house.position.copy(housePos);
                         house.position.y = 0.2;
                         house.rotation.y = angle + (flipped ? -Math.PI / 2 : Math.PI / 2) + hRotRad;
-                        group.add(house);
+                        housesGroup.add(house);
                         housesPlaced++;
                     }
                 }

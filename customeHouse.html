@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modular 3D Architect - Bangla Bosoti</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #0f172a;
+            font-family: 'Inter', sans-serif;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        #ui-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 320px;
+            max-height: 90vh;
+            overflow-y: auto;
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 20px;
+            color: white;
+            z-index: 100;
+        }
+
+        .control-group {
+            margin-bottom: 12px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #94a3b8;
+            text-transform: uppercase;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: #ef4444;
+        }
+
+        .toggle-btn {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-bottom: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .toggle-btn.active {
+            border-left: 4px solid #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="ui-panel">
+        <h1 class="text-xl font-bold mb-1">Architect Engine</h1>
+        <p class="text-xs text-slate-400 mb-4">Modular Component System</p>
+
+        <div class="control-group">
+            <label>Movement Control</label>
+            <div class="toggle-btn" id="autoRotateBtn" onclick="toggleAutoRotate()">Auto-Rotate Building 🔄</div>
+            <input type="range" id="rotSpeed" min="0" max="0.05" step="0.001" value="0.005">
+        </div>
+
+        <div class="space-y-1">
+            <label>Visibility Toggles</label>
+            <div class="toggle-btn active" onclick="toggleLayer('walls')">Walls 🧱</div>
+            <div class="toggle-btn active" onclick="toggleLayer('floors')">Floors 🏁</div>
+            <div class="toggle-btn active" onclick="toggleLayer('windows')">Windows 🪟</div>
+            <div class="toggle-btn active" onclick="toggleLayer('doors')">Doors 🚪</div>
+            <div class="toggle-btn active" onclick="toggleLayer('beams')">Beams 🏗️</div>
+            <div class="toggle-btn active" onclick="toggleLayer('roof')">Roof 🏠</div>
+            <div class="toggle-btn active" onclick="toggleLayer('balcony')">Balcony 🪵</div>
+            <div class="toggle-btn active" onclick="toggleLayer('stairs')">Stairs 🪜</div>
+        </div>
+    </div>
+
+    <script>
+        let scene, camera, renderer, sunLight, controls;
+        let buildingGroup;
+        let layers = { walls: [], floors: [], windows: [], doors: [], beams: [], roof: [], balcony: [], land: [], stairs: [] };
+        let autoRotate = false;
+        let rotationSpeed = 0.005;
+
+        // Helper to apply common mesh properties and add to layers
+        function finalizeMesh(mesh, layerArray, config) {
+            const { x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0 } = config;
+            mesh.position.set(x, y, z);
+            mesh.rotation.set(rx, ry, rz);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            buildingGroup.add(mesh);
+            layerArray.push(mesh);
+            return mesh;
+        }
+
+        function createWall(config) {
+            const { w = 5, h = 3, t = 0.2, color = 0xffffff, useTexture = false } = config;
+            const geometry = new THREE.BoxGeometry(w, h, t);
+            const material = new THREE.MeshStandardMaterial({
+                color: color,
+                roughness: useTexture ? 0.9 : 0.5,
+                metalness: useTexture ? 0.1 : 0
+            });
+            const wall = new THREE.Mesh(geometry, material);
+            // Pivot adjustment: center the wall vertically relative to its provided Y
+            wall.geometry.translate(0, h / 2, 0);
+            return finalizeMesh(wall, layers.walls, config);
+        }
+
+        function createFloor(config) {
+            const { w = 5, d = 5, t = 0.15, color = 0xcccccc, useTexture = false } = config;
+            const geometry = new THREE.BoxGeometry(w, t, d);
+            const material = new THREE.MeshStandardMaterial({
+                color: color,
+                roughness: useTexture ? 0.8 : 0.4,
+                metalness: useTexture ? 0.1 : 0.2
+            });
+            const floor = new THREE.Mesh(geometry, material);
+            // Floor Y is treated as surface height
+            floor.geometry.translate(0, t / 2, 0);
+            return finalizeMesh(floor, layers.floors, config);
+        }
+
+        function createWindow(config) {
+            const { w = 1.5, h = 1.5, borderT = 0.1 } = config;
+            const group = new THREE.Group();
+            const glass = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.05), new THREE.MeshStandardMaterial({ color: 0x88ccff, transparent: true, opacity: 0.5 }));
+            group.add(glass);
+            const borderMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+            const createPart = (bw, bh, px, py) => {
+                const p = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, 0.15), borderMat);
+                p.position.set(px, py, 0);
+                group.add(p);
+            };
+            createPart(w + borderT * 2, borderT, 0, h / 2 + borderT / 2);
+            createPart(w + borderT * 2, borderT, 0, -h / 2 - borderT / 2);
+            createPart(borderT, h, -w / 2 - borderT / 2, 0);
+            createPart(borderT, h, w / 2 + borderT / 2, 0);
+
+            return finalizeMesh(group, layers.windows, config);
+        }
+
+        function createDoor(config) {
+            const { w = 1.2, h = 2.2, borderT = 0.15 } = config;
+            const group = new THREE.Group();
+            const door = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.1), new THREE.MeshStandardMaterial({ color: 0x4d2a1a }));
+            door.position.set(0, h / 2, 0);
+            group.add(door);
+            const frameMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
+            const createFrame = (fw, fh, px, py) => {
+                const f = new THREE.Mesh(new THREE.BoxGeometry(fw, fh, 0.2), frameMat);
+                f.position.set(px, py, 0);
+                group.add(f);
+            };
+            createFrame(w + borderT * 2, borderT, 0, h + borderT / 2);
+            createFrame(borderT, h + borderT, -w / 2 - borderT / 2, h / 2);
+            createFrame(borderT, h + borderT, w / 2 + borderT / 2, h / 2);
+
+            return finalizeMesh(group, layers.doors, config);
+        }
+
+        function createBeamSet(config) {
+            const { w = 0.3, h = 4, dist = 5, isCircle = false, count = 4 } = config;
+            const group = new THREE.Group();
+            const mat = new THREE.MeshStandardMaterial({ color: 0xdddddd });
+
+            let positions = [];
+            if (count === 4) {
+                // Default square corners
+                positions = [{ px: -dist / 2, pz: -dist / 2 }, { px: dist / 2, pz: -dist / 2 }, { px: -dist / 2, pz: dist / 2 }, { px: dist / 2, pz: dist / 2 }];
+            } else {
+                // Radial distribution for any count (1, 2, 3, 5, 8 etc.)
+                for (let i = 0; i < count; i++) {
+                    const angle = (i / count) * Math.PI * 2;
+                    positions.push({
+                        px: Math.cos(angle) * (dist / 2),
+                        pz: Math.sin(angle) * (dist / 2)
+                    });
+                }
+            }
+
+            positions.forEach(pos => {
+                const geo = isCircle ? new THREE.CylinderGeometry(w / 2, w / 2, h, 16) : new THREE.BoxGeometry(w, h, w);
+                const beam = new THREE.Mesh(geo, mat);
+                beam.position.set(pos.px, h / 2, pos.pz);
+                beam.castShadow = true;
+                group.add(beam);
+            });
+
+            return finalizeMesh(group, layers.beams, config);
+        }
+
+        function createLand(config) {
+            const { w = 30, d = 30, x = 0, y = 0, z = 0, color = 0x567d46, useTexture = true } = config;
+            const geo = new THREE.PlaneGeometry(w, d);
+            const mat = new THREE.MeshStandardMaterial({ color: useTexture ? color : 0x777777, roughness: 1 });
+            const land = new THREE.Mesh(geo, mat);
+            land.rotation.x = -Math.PI / 2;
+            land.position.set(x, y, z);
+            land.receiveShadow = true;
+            scene.add(land);
+            layers.land.push(land);
+        }
+
+        function createBalcony(config) {
+            const { w = 4, d = 1.5 } = config;
+            const group = new THREE.Group();
+            const woodMat = new THREE.MeshStandardMaterial({ color: 0x5d4037 });
+            const base = new THREE.Mesh(new THREE.BoxGeometry(w, 0.15, d), woodMat);
+            group.add(base);
+            for (let i = 0; i < 10; i++) {
+                const bar = new THREE.Mesh(new THREE.BoxGeometry(0.05, 1, 0.05), woodMat);
+                bar.position.set((-w / 2) + (i * w / 9), 0.5, d / 2);
+                group.add(bar);
+            }
+            const rail = new THREE.Mesh(new THREE.BoxGeometry(w, 0.08, 0.08), woodMat);
+            rail.position.set(0, 1, d / 2);
+            group.add(rail);
+
+            return finalizeMesh(group, layers.balcony, config);
+        }
+
+        function createRoof(config) {
+            const { w = 6, d = 8, style = 'pitched', color = 0x8b0000 } = config;
+            const group = new THREE.Group();
+            const roofMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.5, metalness: 0.3 });
+            if (style === 'pitched') {
+                const createS = (rz, ox) => {
+                    const s = new THREE.Group();
+                    const b = new THREE.Mesh(new THREE.BoxGeometry(w / 2 + 0.5, 0.1, d), roofMat);
+                    s.add(b);
+                    for (let i = 0; i < 20; i++) {
+                        const r = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.06, d), roofMat);
+                        r.position.set((-w / 4) + (i * w / 38), 0.05, 0);
+                        s.add(r);
+                    }
+                    s.rotation.z = rz;
+                    s.position.x = ox;
+                    return s;
+                };
+                group.add(createS(Math.PI / 6, -w / 4));
+                group.add(createS(-Math.PI / 6, w / 4));
+            } else {
+                group.add(new THREE.Mesh(new THREE.BoxGeometry(w, 0.2, d), roofMat));
+            }
+
+            return finalizeMesh(group, layers.roof, config);
+        }
+
+        function createStairs(config) {
+            const { steps = 3, w = 1.5, stepH = 0.17, stepD = 0.4, color = 0xeeeeee } = config;
+            const group = new THREE.Group();
+            const mat = new THREE.MeshStandardMaterial({ color: color });
+            const railMat = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.9, roughness: 0.1 });
+
+            for (let i = 0; i < steps; i++) {
+                const step = new THREE.Mesh(new THREE.BoxGeometry(w, stepH, stepD), mat);
+                step.position.set(0, (i * stepH) + stepH / 2, i * stepD);
+                step.castShadow = true;
+                step.receiveShadow = true;
+                group.add(step);
+            }
+
+            // Modern Rail Handles (Both Sides)
+            const railHeight = 0.8;
+            const railT = 0.03;
+
+            [-1, 1].forEach(side => {
+                const curve = new THREE.CatmullRomCurve3([
+                    new THREE.Vector3((w / 2 - 0.05) * side, railHeight, -stepD / 2),
+                    new THREE.Vector3((w / 2 - 0.05) * side, (steps - 1) * stepH + railHeight, (steps - 1) * stepD + stepD / 2)
+                ]);
+                const railGeo = new THREE.TubeGeometry(curve, 20, railT, 8, false);
+                const rail = new THREE.Mesh(railGeo, railMat);
+                group.add(rail);
+
+                // Posts
+                for (let i = 0; i < steps; i += 2) {
+                    const h = railHeight + (i * stepH);
+                    const post = new THREE.Mesh(new THREE.CylinderGeometry(railT, railT, h), railMat);
+                    post.position.set((w / 2 - 0.05) * side, h / 2, i * stepD);
+                    group.add(post);
+                }
+            });
+
+            return finalizeMesh(group, layers.stairs, config);
+        }
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x87ceeb);
+            buildingGroup = new THREE.Group();
+            scene.add(buildingGroup);
+
+            camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(25, 20, 25);
+            camera.lookAt(0, 4, 0);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            document.body.appendChild(renderer.domElement);
+
+            scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+            sunLight = new THREE.DirectionalLight(0xffffff, 1);
+            sunLight.position.set(10, 20, 10);
+            sunLight.castShadow = true;
+            scene.add(sunLight);
+
+            // Orbit Controls for Zoom and Rotation
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.1;
+            controls.minDistance = 5;
+            controls.maxDistance = 100;
+            controls.target.set(0, 2, 0);
+
+            createLand({ w: 40, d: 40, useTexture: true });
+
+            // Floors with demo rx, ry, rz
+            // createFloor({ x: -1.5, y: 0, z: 0, w: 5.5, d: 7, color: 0x888888, useTexture: true }); 
+            // createFloor({ x: -1.5, y: 3, z: 0, w: 5.5, d: 7, rz: 0.05 }); // Tilted floor demo
+            // createFloor({ x: -1.5, y: 6, z: 0, w: 5.5, d: 7 }); 
+
+            createBeamSet({ dist: 6, h: 8, w: 0.4 });
+            createBeamSet({ x: -1.5, y: 0, z: -7.2, dist: 3, h: 8, w: 0.4,count: 2, });
+            createBeamSet({ x: 0, y: 0, z: -7.2, dist: 6, h: 4, w: 0.4, count: 1, isCircle: false });
+            createWall({ x: 3, z: 0, w: 6, h: 4, ry: Math.PI / 2, color: 0xeee8aa });
+            createWall({ x: 0, y: 0, z: -3, w: 6, h: 4, color: 0xeee8aa });
+            createWall({ x: -3, z: 0, w: 6, h: 4, ry: Math.PI / 2, color: 0xeee8aa });
+            createWall({ x: 0, z: 3, w: 6, h: 4, color: 0xeee8aa });
+            createFloor({ x: 0,z:-2, y: 0, w: 11, d: 6.5, color: 0xfcf286, ry: Math.PI / 2 }); // 1st floor
+            createFloor({ x: 0, y: 4, z:-2, w: 11, d: 6.5, color: 0xfcf286, ry: Math.PI / 2 }); // 2nd floor
+            createFloor({ x: 0, y: 8, z:0, w: 6, d: 6.5, color: 0xfcf286, ry: Math.PI / 2 }); // 3rd floor
+            createFloor({ x: -1.5, y: 8, z:-5.2, w: 4.5, d: 3.5, color: 0xfcf286, ry: Math.PI / 2 }); // 3rd floor right extend
+            createDoor({ x: 3.2, y: .5, z: 0, w: 1.2, h: 2.2, ry: Math.PI / 2 });
+            createStairs({ x: 4.2, z: 0, y: 0, ry: -Math.PI / 2, w: 1.8, steps: 3 });
+            // createWall({ ry: 2,x: -1.5, w: 5.5, h: 9, useTexture: true });
+            // createWindow({ x: -1.5, y: 3, z: 3.3, w: 2, h: 1.5 });
+            // createWindow({ x: -1.5, y: 6, z: 3.3, w: 2, h: 1.5 });
+            // createBalcony({ x: -1.5, y: 1.5, z: 3.8, w: 3.5 });
+            // createBalcony({ x: -1.5, y: 4.5, z: 3.8, w: 3.5 });
+            createRoof({ x: -0, z: 0, y: 9, w: 6, d: 7,ry: Math.PI/2, style: 'pitched' });
+            createRoof({ x: -1.5, z: -4.6, y: 8.6, w: 3, d: 5.8,ry: Math.PI/1, style: 'pitched' });
+            // createRoof({ x: 4, y: 9, w: 6, d: 6.5, style: 'flat', ry: Math.PI/8 });
+
+            window.addEventListener('resize', onWindowResize);
+            document.getElementById('rotSpeed').addEventListener('input', (e) => rotationSpeed = parseFloat(e.target.value));
+
+            animate();
+        }
+
+        function toggleLayer(name) {
+            event.currentTarget.classList.toggle('active');
+            layers[name].forEach(obj => obj.visible = !obj.visible);
+        }
+
+        function toggleAutoRotate() {
+            autoRotate = !autoRotate;
+            document.getElementById('autoRotateBtn').classList.toggle('active');
+        }
+
+        function onMouseMove(e) {
+            if (isMouseDown) {
+                buildingGroup.rotation.y += e.movementX * 0.005;
+                buildingGroup.rotation.x += e.movementY * 0.005;
+            }
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            if (autoRotate) {
+                buildingGroup.rotation.y += rotationSpeed;
+            }
+            renderer.render(scene, camera);
+        }
+
+        window.onload = init;
+    </script>
+
+</body>
+
+</html>
