@@ -960,7 +960,7 @@
             // Initialize with dense fog for reveal animation
             scene.fog = new THREE.FogExp2(0x87ceeb, initialFogDensity);
 
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 14000);
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.01, 14000);
 
             camera.position.set(10, 150, 150); // Drone high-altitude start
             camera.lookAt(500, 850, 500);
@@ -991,7 +991,7 @@
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1)); // Limit to 1x for performance
             renderer.shadowMap.enabled = true; // Enable shadows
             renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Smoother shadows
-            renderer.shadowMap.autoUpdate = false; // Only update shadows when needed (performance boost)
+            renderer.shadowMap.autoUpdate = true;
             // Removed ACESFilmicToneMapping and sRGBEncoding to restore original color vibrancy
             document.body.appendChild(renderer.domElement)
 
@@ -1002,12 +1002,12 @@
             // Orbit Controls (Lightning Fast Interaction)
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
-            controls.dampingFactor = 0.85; // Fast response
-            controls.rotateSpeed = 1.9;   // Very fast rotation
-            controls.zoomSpeed = 1.9;     // Very fast zoom
-            controls.panSpeed = 1.9;      // Very fast move
-            controls.minDistance = 0.1;
-            controls.maxDistance = 10000; // Increased to 10000 as per requested max zoom
+            controls.dampingFactor = 0.15; // Smoother natural damping
+            controls.rotateSpeed = 1.2;   
+            controls.zoomSpeed = 1.2;     
+            controls.panSpeed = 1.2;      
+            controls.minDistance = 0.001; // Ultra close zoom allowed
+            controls.maxDistance = 22000;
             controls.maxPolarAngle = Math.PI / 2.05; // Prevent going under ground (restrict to just above horizon)
             controls.minPolarAngle = 0;
             controls.screenSpacePanning = false; // Disable screen space panning to keep target on ground
@@ -1392,23 +1392,23 @@
 
 
             // Create House Bunches and Clusters synchronously for guaranteed visibility
-            createHouseBunch(subGreenLand6, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 30, startX: 0, startZ: 5, unitSpacing: 16, houseGap: 280, rowSpacing: 25, startId: 1, clusterName: "BUNCH-6" });
-            createHouseBunch(subGreenLand5, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 28, startX: 0, startZ: 60, unitSpacing: 16, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-5" });
-            createHouseBunch(subGreenLand4, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 24, startX: 0, startZ: 115, unitSpacing: 16, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-4" });
-            createHouseBunch(subGreenLand3, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 27, startX: 0, startZ: 170, unitSpacing: 16, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-3" });
-            createHouseBunch(subGreenLand2, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 28, startX: 0, startZ: 225, unitSpacing: 16, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-2" });
-            createHouseBunch(subGreenLand1, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 280, unitSpacing: 16, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-1" });
+            createHouseBunch(subGreenLand6, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 30, startX: 0, startZ: 5, unitSpacing: 16, houseGap: 280, rowSpacing: 25, startId: 1, clusterName: "BUNCH-6", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale:4, hRotate:90 });
+            createHouseBunch(subGreenLand5, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 28, startX: 0, startZ: 60, unitSpacing: 16, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-5", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale:4, hRotate:90 });
+            createHouseBunch(subGreenLand4, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 24, startX: 0, startZ: 115, unitSpacing: 16, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-4", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale:4, hRotate:90 });
+            createHouseBunch(subGreenLand3, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 27, startX: 0, startZ: 170, unitSpacing: 16, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-3", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale:4, hRotate:90 });
+            createHouseBunch(subGreenLand2, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 28, startX: 0, startZ: 225, unitSpacing: 16, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-2", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale:4, hRotate:90 });
+            createHouseBunch(subGreenLand1, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 280, unitSpacing: 16, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-1", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale:4, hRotate:90 });
 
-            createHouseCluster(subGreenLandCL1, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 23, startId: 2, clusterName: "CLUSTER-1" });
-            createHouseCluster(subGreenLandCL2, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 20, startId: 2, clusterName: "CLUSTER-2" });
-            createHouseCluster(subGreenLandCL3, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 20, startId: 2, clusterName: "CLUSTER-3" });
-            createHouseCluster(subGreenLandCL4, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 20, startId: 2, clusterName: "CLUSTER-4" });
-            createHouseCluster(subGreenLandCL5, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 20, startId: 2, clusterName: "CLUSTER-5" });
-            createHouseCluster(subGreenLandCL6, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-6" });
-            createHouseCluster(subGreenLandCL7, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-7" });
-            createHouseCluster(subGreenLandCL8, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 15.4, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-8" });
-            createHouseCluster(subGreenLandCL9, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 15.5, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-9" });
-            createHouseCluster(subGreenLandCL10, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 22, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-10" });
+            createHouseCluster(subGreenLandCL1, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 23, startId: 2, clusterName: "CLUSTER-1", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale:4, hRotate:90 });
+            createHouseCluster(subGreenLandCL2, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 20, startId: 2, clusterName: "CLUSTER-2", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale:4, hRotate:90 });
+            createHouseCluster(subGreenLandCL3, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 20, startId: 2, clusterName: "CLUSTER-3", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale:4, hRotate:90 });
+            createHouseCluster(subGreenLandCL4, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 20, startId: 2, clusterName: "CLUSTER-4", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale:4, hRotate:90 });
+            createHouseCluster(subGreenLandCL5, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 20, startId: 2, clusterName: "CLUSTER-5", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale:4, hRotate:90 });
+            createHouseCluster(subGreenLandCL6, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-6", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale:4, hRotate:90 });
+            createHouseCluster(subGreenLandCL7, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-7", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale:4, hRotate:90 });
+            createHouseCluster(subGreenLandCL8, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 15.4, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-8", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale:4, hRotate:90 });
+            createHouseCluster(subGreenLandCL9, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 15.5, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-9", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale:4, hRotate:90 });
+            createHouseCluster(subGreenLandCL10, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 22, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-10", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale:4, hRotate:90 });
             // BLOCK B -1
             createHouseCluster(subGreenLandBB1, {
                 serialCount: 36, startX: 0, startZ: 210, unitSpacing: 8.9, houseGap: 10, rowSpacing: 16, startId: 2,
@@ -1840,7 +1840,6 @@
                 );
             });
             */
-
             console.log("Masterplan Initialization Complete. Rendering started.");
 
             // --- Final Scene Optimization ---
@@ -2999,7 +2998,531 @@
             return treeGroup;
         }
 
-        function createHouse(id, plotW = 500, plotD = 600, skipWall = null, hasPool = false, carCount = 0, hasPlayground = false, hDepth = 280, hWidth = 220, hasWing = true, hFloorH = 100, houseOX = 0, houseOZ = 0, poolOX = 0, poolOZ = 0, carOX = 0, carOZ = 0, playOX = 0, playOZ = 0, carW = 80, carL = 160, innerGapScale = 1, isTerrace = false, hasCarParking = true) {
+        // --- MODULAR HOUSE SYSTEM (srv2) FROM customeHouse.html ---
+        function srv2_finalizeMesh(mesh, parent, config) {
+            const { x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0 } = config;
+            mesh.position.set(x, y, z);
+            mesh.rotation.set(rx, ry, rz);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            parent.add(mesh);
+            return mesh;
+        }
+
+        function srv2_createWall(parent, config) {
+            const { w = 5, h = 3, t = 0.2, color = 0xffffff } = config;
+            const geometry = new THREE.BoxGeometry(w, h, t);
+            const material = new THREE.MeshStandardMaterial({
+                color: color,
+                roughness: 0.5,
+                metalness: 0
+            });
+            const wall = new THREE.Mesh(geometry, material);
+            wall.geometry.translate(0, h / 2, 0);
+            return srv2_finalizeMesh(wall, parent, config);
+        }
+
+        function srv2_createFloor(parent, config) {
+            const { w = 5, d = 5, t = 0.15, color = 0xcccccc } = config;
+            const geometry = new THREE.BoxGeometry(w, t, d);
+            const material = new THREE.MeshStandardMaterial({
+                color: color,
+                roughness: 0.4,
+                metalness: 0.2
+            });
+            const floor = new THREE.Mesh(geometry, material);
+            floor.geometry.translate(0, t / 2, 0);
+            return srv2_finalizeMesh(floor, parent, config);
+        }
+
+        function srv2_createWindow(parent, config) {
+            const { w = 1.5, h = 1.5, borderT = 0.1 } = config;
+            const group = new THREE.Group();
+            const glass = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.05), new THREE.MeshStandardMaterial({ color: 0x88ccff, transparent: true, opacity: 0.5 }));
+            group.add(glass);
+            const borderMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+            const createPart = (bw, bh, px, py) => {
+                const p = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, 0.15), borderMat);
+                p.position.set(px, py, 0);
+                group.add(p);
+            };
+            createPart(w + borderT * 2, borderT, 0, h / 2 + borderT / 2);
+            createPart(w + borderT * 2, borderT, 0, -h / 2 - borderT / 2);
+            createPart(borderT, h, -w / 2 - borderT / 2, 0);
+            createPart(borderT, h, w / 2 + borderT / 2, 0);
+
+            return srv2_finalizeMesh(group, parent, config);
+        }
+
+        function srv2_createDoor(parent, config) {
+            const { w = 1.2, h = 2.2, borderT = 0.15, isOpen = false } = config;
+            const group = new THREE.Group();
+            const doorGroup = new THREE.Group();
+            const doorMat = new THREE.MeshStandardMaterial({ color: 0x4d2a1a });
+            const doorBody = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.1), doorMat);
+            doorBody.position.set(w / 2, h / 2, 0);
+            doorGroup.add(doorBody);
+            const handleMat = new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.9, roughness: 0.1 });
+            const handle = new THREE.Mesh(new THREE.SphereGeometry(0.06, 16, 16), handleMat);
+            handle.position.set(w - 0.2, h / 2, 0.1);
+            doorGroup.add(handle);
+            
+            const handleBack = handle.clone();
+            handleBack.position.z = -0.1;
+            doorGroup.add(handleBack);
+
+            doorGroup.position.x = -w / 2;
+            if (isOpen) doorGroup.rotation.y = -Math.PI / 5.5;
+            group.add(doorGroup);
+            const frameMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
+            const createFrame = (fw, fh, px, py) => {
+                const f = new THREE.Mesh(new THREE.BoxGeometry(fw, fh, 0.2), frameMat);
+                f.position.set(px, py, 0);
+                group.add(f);
+            };
+            createFrame(w + borderT * 2, borderT, 0, h + borderT / 2);
+            createFrame(borderT, h + borderT, -w / 2 - borderT / 2, h / 2);
+            createFrame(borderT, h + borderT, w / 2 + borderT / 2, h / 2);
+            return srv2_finalizeMesh(group, parent, config);
+        }
+
+        function srv2_createBeamSet(parent, config) {
+            const { w = 0.3, h = 4, dist = 5, isCircle = false, count = 4 } = config;
+            const group = new THREE.Group();
+            const mat = new THREE.MeshStandardMaterial({ color: 0xdddddd });
+            let positions = [];
+            if (count === 4) {
+                positions = [{ px: -dist / 2, pz: -dist / 2 }, { px: dist / 2, pz: -dist / 2 }, { px: -dist / 2, pz: dist / 2 }, { px: dist / 2, pz: dist / 2 }];
+            } else {
+                for (let i = 0; i < count; i++) {
+                    const angle = (i / count) * Math.PI * 2;
+                    positions.push({ px: Math.cos(angle) * (dist / 2), pz: Math.sin(angle) * (dist / 2) });
+                }
+            }
+            positions.forEach(pos => {
+                const geo = isCircle ? new THREE.CylinderGeometry(w / 2, w / 2, h, 16) : new THREE.BoxGeometry(w, h, w);
+                const beam = new THREE.Mesh(geo, mat);
+                beam.position.set(pos.px, h / 2, pos.pz);
+                beam.castShadow = true;
+                group.add(beam);
+            });
+            return srv2_finalizeMesh(group, parent, config);
+        }
+
+        function srv2_createBalcony(parent, config) {
+            const { w = 4, d = 1.5, hasLeftRail = true, hasRightRail = true } = config;
+            const group = new THREE.Group();
+            const woodMat = new THREE.MeshStandardMaterial({ color: 0x5d4037 });
+            const base = new THREE.Mesh(new THREE.BoxGeometry(w, 0.15, d), woodMat);
+            group.add(base);
+            const frontBarCount = Math.ceil(w * 3);
+            for (let i = 0; i <= frontBarCount; i++) {
+                const bar = new THREE.Mesh(new THREE.BoxGeometry(0.05, 1, 0.05), woodMat);
+                bar.position.set((-w / 2) + (i * w / frontBarCount), 0.5, d / 2);
+                group.add(bar);
+            }
+            const rail = new THREE.Mesh(new THREE.BoxGeometry(w, 0.08, 0.08), woodMat);
+            rail.position.set(0, 1, d / 2);
+            group.add(rail);
+            if (hasLeftRail) {
+                const sideBarCount = Math.ceil(d * 3);
+                for (let i = 0; i <= sideBarCount; i++) {
+                    const bar = new THREE.Mesh(new THREE.BoxGeometry(0.05, 1, 0.05), woodMat);
+                    bar.position.set(-w / 2, 0.5, (-d / 2) + (i * d / sideBarCount));
+                    group.add(bar);
+                }
+                const sideRail = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.1, d), woodMat);
+                sideRail.position.set(-w / 2, 1, 0);
+                group.add(sideRail);
+            }
+            if (hasRightRail) {
+                const sideBarCount = Math.ceil(d * 3);
+                for (let i = 0; i <= sideBarCount; i++) {
+                    const bar = new THREE.Mesh(new THREE.BoxGeometry(0.05, 1, 0.05), woodMat);
+                    bar.position.set(w / 2, 0.5, (-d / 2) + (i * d / sideBarCount));
+                    group.add(bar);
+                }
+                const sideRail = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.1, d), woodMat);
+                sideRail.position.set(w / 2, 1, 0);
+                group.add(sideRail);
+            }
+            return srv2_finalizeMesh(group, parent, config);
+        }
+
+        function srv2_createRoof(parent, config) {
+            const { w = 6, d = 8, style = 'pitched', color = 0x8b0000 } = config;
+            const group = new THREE.Group();
+            const s2RoofMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.5, metalness: 0.3 });
+            if (style === 'pitched') {
+                const createS = (rz, ox) => {
+                    const s = new THREE.Group();
+                    const b = new THREE.Mesh(new THREE.BoxGeometry(w / 2 + 0.5, 0.1, d), s2RoofMat);
+                    s.add(b);
+                    for (let i = 0; i < 20; i++) {
+                        const r = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.06, d), s2RoofMat);
+                        r.position.set((-w / 4) + (i * w / 38), 0.05, 0);
+                        s.add(r);
+                    }
+                    s.rotation.z = rz;
+                    s.position.x = ox;
+                    return s;
+                };
+                group.add(createS(Math.PI / 6, -w / 4));
+                group.add(createS(-Math.PI / 6, w / 4));
+            } else {
+                group.add(new THREE.Mesh(new THREE.BoxGeometry(w, 0.2, d), s2RoofMat));
+            }
+            return srv2_finalizeMesh(group, parent, config);
+        }
+
+        function srv2_createGable(parent, config) {
+            const { w = 6, h = 1.5, t = 0.2, color = 0xeee8aa } = config;
+            const group = new THREE.Group();
+            const shape = new THREE.Shape();
+            shape.moveTo(-w / 2, 0);
+            shape.lineTo(w / 2, 0);
+            shape.lineTo(0, h);
+            shape.lineTo(-w / 2, 0);
+            const geometry = new THREE.ExtrudeGeometry(shape, { depth: t, bevelEnabled: false });
+            const material = new THREE.MeshStandardMaterial({ color: color });
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.geometry.translate(0, 0, -t / 2);
+            group.add(mesh);
+            return srv2_finalizeMesh(group, parent, config);
+        }
+
+        function srv2_createStairs(parent, config) {
+            const { steps = 3, w = 1.5, stepH = 0.17, stepD = 0.4, color = 0xeeeeee } = config;
+            const group = new THREE.Group();
+            const mat = new THREE.MeshStandardMaterial({ color: color });
+            const railMat = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.9, roughness: 0.1 });
+
+            for (let i = 0; i < steps; i++) {
+                const step = new THREE.Mesh(new THREE.BoxGeometry(w, stepH, stepD), mat);
+                step.position.set(0, (i * stepH) + stepH / 2, i * stepD);
+                step.castShadow = true;
+                step.receiveShadow = true;
+                group.add(step);
+            }
+
+            // Modern Rail Handles (Both Sides)
+            const railHeight = 0.8;
+            const railT = 0.03;
+
+            [-1, 1].forEach(side => {
+                const curve = new THREE.CatmullRomCurve3([
+                    new THREE.Vector3((w / 2 - 0.05) * side, railHeight, -stepD / 2),
+                    new THREE.Vector3((w / 2 - 0.05) * side, (steps - 1) * stepH + railHeight, (steps - 1) * stepD + stepD / 2)
+                ]);
+                const railGeo = new THREE.TubeGeometry(curve, 20, railT, 8, false);
+                const rail = new THREE.Mesh(railGeo, railMat);
+                group.add(rail);
+
+                // Posts
+                for (let i = 0; i < steps; i += 2) {
+                    const h = railHeight + (i * stepH);
+                    const post = new THREE.Mesh(new THREE.CylinderGeometry(railT, railT, h), railMat);
+                    post.position.set((w / 2 - 0.05) * side, h / 2, i * stepD);
+                    group.add(post);
+                }
+            });
+
+            return srv2_finalizeMesh(group, parent, config);
+        }
+
+        function srv2_createWallVine(parent, config) {
+            const { h = 2, w = 1.5, depth = 0.3, leafColor = 0x2d5a27, stemColor = 0x4d2a1a } = config;
+            const group = new THREE.Group();
+            
+            const leafMat = new THREE.MeshStandardMaterial({ color: leafColor, roughness: 0.8 });
+            const stemMat = new THREE.MeshStandardMaterial({ color: stemColor, roughness: 0.9 });
+
+            const vineCount = 6;
+            for (let i = 0; i < vineCount; i++) {
+                const startX = (Math.random() - 0.5) * w;
+                const startZ = (Math.random() - 0.5) * depth;
+                
+                const points = [];
+                const segments = 8;
+                for (let j = 0; j <= segments; j++) {
+                    const ratio = j / segments;
+                    points.push(new THREE.Vector3(
+                        startX + Math.sin(ratio * Math.PI * 2 + i) * 0.2,
+                        -(ratio * h),
+                        startZ + Math.cos(ratio * Math.PI * 2 + i) * 0.2
+                    ));
+                }
+                
+                const curve = new THREE.CatmullRomCurve3(points);
+                const stemGeo = new THREE.TubeGeometry(curve, 20, 0.02, 8, false);
+                const stem = new THREE.Mesh(stemGeo, stemMat);
+                group.add(stem);
+
+                const leafDensity = 15;
+                for (let k = 0; k < leafDensity; k++) {
+                    const t = k / (leafDensity - 1);
+                    const pos = curve.getPoint(t);
+                    const tangent = curve.getTangent(t);
+                    
+                    const leafSize = 0.15 + Math.random() * 0.1;
+                    const leafThickness = 0.02;
+                    const leafGeo = new THREE.CylinderGeometry(leafSize, leafSize, leafThickness, 3);
+                    const leaf = new THREE.Mesh(leafGeo, leafMat);
+                    
+                    leaf.position.copy(pos);
+                    leaf.lookAt(pos.clone().add(tangent));
+                    leaf.rotateX(Math.PI / 2);
+                    leaf.rotateZ(Math.random() * Math.PI);
+                    
+                    group.add(leaf);
+                }
+            }
+
+            return srv2_finalizeMesh(group, parent, config);
+        }
+
+        function srv2_createWoodGril(parent, config) {
+            const { w = 4, h = 1.1, spacing = 0.15, thickness = 0.04, slatW = 0.04, color = 0x5d4037, startPost = true, midPost = false, endPost = false } = config;
+            const group = new THREE.Group();
+            const mat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.6, metalness: 0.3 });
+            const railH = 0.05;
+            const postW = 0.18;
+            const railGeo = new THREE.BoxGeometry(w, railH, thickness * 1.5);
+            const topRail = new THREE.Mesh(railGeo, mat);
+            topRail.position.y = h - railH / 2;
+            group.add(topRail);
+            const bottomRail = new THREE.Mesh(railGeo, mat);
+            bottomRail.position.y = railH / 2 + 0.05;
+            group.add(bottomRail);
+            const picketH = h - railH * 2 - 0.05;
+            const count = Math.floor(w / (slatW + spacing));
+            const startX = -w / 2 + (w - (count * (slatW + spacing))) / 2 + slatW / 2;
+            for (let i = 0; i < count; i++) {
+                const px = startX + i * (slatW + spacing);
+                if (midPost && Math.abs(px) < postW / 2) continue;
+                const picket = new THREE.Mesh(new THREE.BoxGeometry(slatW, picketH, thickness), mat);
+                picket.position.set(px, h / 2 + 0.025, 0);
+                group.add(picket);
+            }
+            const addPost = (px) => {
+                const postH = h + 0.1;
+                const postRect = new THREE.Mesh(new THREE.BoxGeometry(postW, postH, postW), mat);
+                postRect.position.set(px, postH / 2, 0);
+                group.add(postRect);
+                const cap = new THREE.Mesh(new THREE.BoxGeometry(postW * 1.3, 0.05, postW * 1.3), mat);
+                cap.position.set(px, postH + 0.02, 0);
+                group.add(cap);
+                const base = new THREE.Mesh(new THREE.BoxGeometry(postW * 1.3, 0.08, postW * 1.3), mat);
+                base.position.set(px, 0.04, 0);
+                group.add(base);
+            };
+            if (startPost) addPost(-w / 2 - postW / 2);
+            if (midPost) addPost(0);
+            if (endPost) addPost(w / 2 + postW / 2);
+            return srv2_finalizeMesh(group, parent, config);
+        }
+
+        function srv2_createBed(parent, config) {
+            const { w = 2, d = 2.5, h = 0.6 } = config;
+            const group = new THREE.Group();
+            const frame = new THREE.Mesh(new THREE.BoxGeometry(w, 0.2, d), new THREE.MeshStandardMaterial({ color: 0x5d4037 }));
+            frame.position.y = 0.2;
+            group.add(frame);
+            const mattress = new THREE.Mesh(new THREE.BoxGeometry(w - 0.1, 0.3, d - 0.1), new THREE.MeshStandardMaterial({ color: 0xeeeeee }));
+            mattress.position.y = 0.45;
+            group.add(mattress);
+            const pillowGeo = new THREE.BoxGeometry(w / 2.5, 0.1, 0.6);
+            const pillowMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+            const p1 = new THREE.Mesh(pillowGeo, pillowMat);
+            p1.position.set(-w / 4, 0.6, -d / 2 + 0.5);
+            group.add(p1);
+            const p2 = p1.clone();
+            p2.position.x = w / 4;
+            group.add(p2);
+            return srv2_finalizeMesh(group, parent, config);
+        }
+
+        function srv2_createTable(parent, config) {
+            const { w = 1.2, d = 0.8, h = 0.75 } = config;
+            const group = new THREE.Group();
+            const mat = new THREE.MeshStandardMaterial({ color: 0x4d2a1a });
+            const top = new THREE.Mesh(new THREE.BoxGeometry(w, 0.05, d), mat);
+            top.position.y = h;
+            group.add(top);
+            const legGeo = new THREE.BoxGeometry(0.08, h, 0.08);
+            const createLeg = (lx, lz) => {
+                const leg = new THREE.Mesh(legGeo, mat);
+                leg.position.set(lx, h / 2, lz);
+                group.add(leg);
+            };
+            createLeg(-w / 2 + 0.1, -d / 2 + 0.1);
+            createLeg(w / 2 - 0.1, -d / 2 + 0.1);
+            createLeg(-w / 2 + 0.1, d / 2 - 0.1);
+            createLeg(w / 2 - 0.1, d / 2 - 0.1);
+            return srv2_finalizeMesh(group, parent, config);
+        }
+
+        function srv2_createChair(parent, config) {
+            const group = new THREE.Group();
+            const mat = new THREE.MeshStandardMaterial({ color: 0x4d2a1a });
+            const seat = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.05, 0.5), mat);
+            seat.position.y = 0.45;
+            group.add(seat);
+            const back = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.6, 0.05), mat);
+            back.position.set(0, 0.75, -0.22);
+            group.add(back);
+            const legGeo = new THREE.BoxGeometry(0.05, 0.45, 0.05);
+            for (let x = -1; x <= 1; x += 2) {
+                for (let z = -1; z <= 1; z += 2) {
+                    const leg = new THREE.Mesh(legGeo, mat);
+                    leg.position.set(x * 0.2, 0.225, z * 0.2);
+                    group.add(leg);
+                }
+            }
+            return srv2_finalizeMesh(group, parent, config);
+        }
+
+        function srv2_createTV(parent, config) {
+            const { w = 1.2, h = 0.7 } = config;
+            const group = new THREE.Group();
+            const frame = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.05), new THREE.MeshStandardMaterial({ color: 0x111111 }));
+            group.add(frame);
+            const screen = new THREE.Mesh(new THREE.BoxGeometry(w * 0.95, h * 0.9, 0.01), new THREE.MeshStandardMaterial({ color: 0x333333, emissive: 0x112233, roughness: 0 }));
+            screen.position.z = 0.03;
+            group.add(screen);
+            const stand = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.05, 0.3), new THREE.MeshStandardMaterial({ color: 0x111111 }));
+            stand.position.y = -h / 2 - 0.05;
+            group.add(stand);
+            return srv2_finalizeMesh(group, parent, config);
+        }
+
+        function srv2_createLight(parent, config) {
+            const group = new THREE.Group();
+            const bulbGeo = new THREE.SphereGeometry(0.1, 16, 16);
+            const bulbMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffaa });
+            const bulb = new THREE.Mesh(bulbGeo, bulbMat);
+            group.add(bulb);
+            const pLight = new THREE.PointLight(0xffffaa, 1.2, 10);
+            pLight.position.set(0, -0.2, 0);
+            pLight.castShadow = true;
+            group.add(pLight);
+            return srv2_finalizeMesh(group, parent, config);
+        }
+
+        function srv2_createPergola(parent, config) {
+            const { w = 4, d = 4, spacing = 0.25, slatW = 0.08, thickness = 0.04, color = 0x5d4037 } = config;
+            const group = new THREE.Group();
+            const mat = new THREE.MeshStandardMaterial({ color: color });
+
+            // Main Slats (Top)
+            const count = Math.floor(d / (slatW + spacing));
+            for (let i = 0; i <= count; i++) {
+                const slat = new THREE.Mesh(new THREE.BoxGeometry(w, thickness, slatW), mat);
+                slat.position.z = -d / 2 + i * (slatW + spacing);
+                group.add(slat);
+            }
+
+            // Supporting Cross Beams (Bottom)
+            const beamCount = 3;
+            for (let i = 0; i < beamCount; i++) {
+                const beam = new THREE.Mesh(new THREE.BoxGeometry(slatW * 1.5, thickness * 2, d), mat);
+                beam.position.x = -w / 2 + (i * w / (beamCount - 1));
+                beam.position.y = -thickness;
+                group.add(beam);
+            }
+
+            return srv2_finalizeMesh(group, parent, config);
+        }
+
+        function createFancyBuilding(parent, hScale = 1) {
+            const bGrp = new THREE.Group();
+            const finalScale = 13 * hScale;
+            bGrp.scale.set(finalScale, finalScale, finalScale);
+            bGrp.position.y = 0.1;
+            parent.add(bGrp);
+
+            const mergeRegistry = new Map();
+            const collect = (mesh) => {
+                if (!mesh.isMesh) return;
+                const mat = mesh.material;
+                // Unique key for material to group geometries
+                const mKey = mat.uuid;
+                if (!mergeRegistry.has(mKey)) mergeRegistry.set(mKey, { mat: mat, geos: [] });
+                
+                const g = mesh.geometry.clone();
+                // CRITICAL: Use matrixWorld to get correct transform for nested group parts
+                g.applyMatrix4(mesh.matrixWorld);
+                mergeRegistry.get(mKey).geos.push(g);
+            };
+
+            // Use a temporary group to build the structure, then merge parts
+            const tempParent = new THREE.Group();
+            
+            srv2_createBeamSet(tempParent, { dist: 6, h: 8, w: 0.4 });
+            srv2_createBeamSet(tempParent, { x: -1.5, y: 0, z: -7.2, dist: 3, h: 8, w: 0.4, count: 2 });
+            srv2_createBeamSet(tempParent, { x: 0, y: 0, z: -7.2, dist: 6, h: 4, w: 0.4, count: 1, isCircle: false });
+            
+            srv2_createFloor(tempParent, { x: 0, z: -2, y: 0, w: 11, d: 6.5, color: 0xfcf286, ry: Math.PI / 2 });
+            srv2_createWall(tempParent, { x: 3, z: 0, w: 6, h: 4, ry: Math.PI / 2, color: 0xeee8aa });
+            srv2_createWall(tempParent, { x: 0, y: 0, z: -3, w: 6, h: 4, color: 0xeee8aa });
+            srv2_createWall(tempParent, { x: -3, z: 0, w: 6, h: 4, ry: Math.PI / 2, color: 0xeee8aa });
+            srv2_createWall(tempParent, { x: 0, z: 3, w: 6, h: 4, color: 0xeee8aa });
+            srv2_createDoor(tempParent, { x: 3.2, y: .5, z: 0, w: 1.2, h: 2.2, ry: Math.PI / 2, isOpen: false });
+
+            srv2_createWall(tempParent, { x: 3, z: 0, y: 4, w: 6, h: 4, ry: Math.PI / 2, color: 0xeee8aa });
+            srv2_createWall(tempParent, { x: 0, y: 4, z: -3, w: 6, h: 4, color: 0xeee8aa });
+            srv2_createWall(tempParent, { x: -3, z: -2, y: 4, w: 10, h: 4, ry: Math.PI / 2, color: 0xeee8aa });
+            srv2_createWall(tempParent, { x: 0, z: 3, y: 4, w: 6, h: 4, color: 0xeee8aa });
+            srv2_createWall(tempParent, { x: -1.5, z: -7.2, y: 4, w: 3, h: 4, color: 0xeee8aa });
+            srv2_createWall(tempParent, { x: 0, z: -5.2, y: 4, w: 4.5, h: 4, ry: Math.PI / 2, color: 0xeee8aa });
+            srv2_createFloor(tempParent, { x: 0, y: 4, z: -2, w: 11, d: 6.5, color: 0xfcf286, ry: Math.PI / 2 });
+            srv2_createDoor(tempParent, { x: 3.2, y: 4.3, z: 0, w: 1.2, h: 2.2, ry: Math.PI / 2, isOpen: true });
+            srv2_createDoor(tempParent, { x: 0.2, y: 4.3, z: -5.2, w: 1.2, h: 2.2, ry: Math.PI / 2, isOpen: false });
+
+            // Furniture
+            srv2_createBed(tempParent, { x: -1.5, y: 4, z: -1.5, w: 2, d: 2.5 });
+            srv2_createTable(tempParent, { x: 1.5, y: 4, z: -6.5, w: 1, d: 0.8 });
+            srv2_createChair(tempParent, { x: 1.5, y: 4, z: -6.0, ry: Math.PI });
+            srv2_createTV(tempParent, { x: -1.5, y: 4.8, z: 2, ry: Math.PI });
+            srv2_createLight(tempParent, { x: 0, y: 7.8, z: 0 });
+
+            srv2_createFloor(tempParent, { x: 0, y: 8, z: 0, w: 6, d: 6.5, color: 0xfcf286, ry: Math.PI / 2 });
+            srv2_createFloor(tempParent, { x: -1.5, y: 8, z: -5.2, w: 4.5, d: 3.5, color: 0xfcf286, ry: Math.PI / 2 });
+            
+            srv2_createStairs(tempParent, { x: 4.2, z: 0, y: 0, ry: -Math.PI / 2, w: 1.8, steps: 3 });
+            srv2_createWindow(tempParent, { x: 1.0, y: 6, z: 3.3, w: 2, h: 1.5 });
+            srv2_createWindow(tempParent, { x: 1.0, y: 2, z: 3.3, w: 2, h: 1.5 });
+            srv2_createBalcony(tempParent, { x: 3.4, y: 4.2, z: 0, w: 3.5, ry: Math.PI / 2 });
+            srv2_createRoof(tempParent, { x: -0, z: 0, y: 9, w: 6.4, d: 7.2, ry: Math.PI / 2, style: 'pitched' });
+            srv2_createGable(tempParent, { x: 3.3, y: 8.1, z: 0, w: 6, h: 1.7, ry: Math.PI / 2 });
+            srv2_createGable(tempParent, { x: -3.3, y: 8.1, z: 0, w: 6, h: 1.7, ry: Math.PI / 2 });
+
+            srv2_createRoof(tempParent, { x: -1.5, z: -4.3, y: 8.7, w: 3.6, d: 6.2, ry: Math.PI / 1, style: 'pitched' });
+            srv2_createGable(tempParent, { x: -1.5, y: 8.15, z: -1.5, w: 3.1, h: 0.9 });
+            srv2_createGable(tempParent, { x: -1.5, y: 8.15, z: -7.2, w: 3.1, h: 0.9 });
+
+            srv2_createWallVine(tempParent, { x: 3.5, y: 8.5, z: 2.4, h: 7, w: 1.0, ry: Math.PI / 2 });
+            srv2_createWoodGril(tempParent, { x: 3.1, y: 4.15, z: -5.4, w: 3.7, h: 1.2, ry: -Math.PI / 2, startPost: true, midPost: true, endPost: true });
+            srv2_createWoodGril(tempParent, { x: 1.9, y: 4.15, z: -7.35, w: 2.6, h: 1.2, startPost: true, midPost: true, endPost: false });
+            srv2_createPergola(tempParent, { x: 1.5, y: 7.5, z: -5.2, w: 2.6, d: 4, color: 0x5d4037 });
+
+            // Final optimization: Traverse and merge geometries by material
+            tempParent.updateMatrixWorld(true);
+            tempParent.traverse(collect);
+
+            mergeRegistry.forEach(group => {
+                if (group.geos.length > 0) {
+                    const mergedGeo = THREE.BufferGeometryUtils.mergeBufferGeometries(group.geos);
+                    const mesh = new THREE.Mesh(mergedGeo, group.mat);
+                    mesh.castShadow = true;
+                    mesh.receiveShadow = true;
+                    mesh.matrixAutoUpdate = false;
+                    bGrp.add(mesh);
+                }
+            });
+        }
+
+        function createHouse(id, plotW = 500, plotD = 600, skipWall = null, hasPool = false, carCount = 0, hasPlayground = false, hDepth = 280, hWidth = 220, hasWing = true, hFloorH = 100, houseOX = 0, houseOZ = 0, poolOX = 0, poolOZ = 0, carOX = 0, carOZ = 0, playOX = 0, playOZ = 0, carW = 80, carL = 160, innerGapScale = 1, isTerrace = false, hasCarParking = true, houseDesign = 'standard', hScale = 1, hRotate = 0) {
             const house = new THREE.Group();
             house.name = 'house';
             const igScaleRaw = innerGapScale;
@@ -3008,10 +3531,10 @@
 
             const CONFIG = { houseWidth: hWidth, houseDepth: hDepth, wingLen: Math.max(260, hWidth * 0.8), floorH: hFloorH, wingW: Math.max(100, hWidth * 0.45), roofH: 80 };
             const { houseWidth, houseDepth, wingLen, floorH, wingW, roofH } = CONFIG;
-            const wallH = 35; const wallT = 10; const gateW = 160;
+            const wallH = 95; const wallT = 10; const gateW = 160;
 
             const bodyMat = getSharedMaterial('houseBody', () => new THREE.MeshStandardMaterial({ color: 0xe8e4d9, roughness: 0.8 }));
-            const roofMat = getSharedMaterial('houseRoof', () => new THREE.MeshStandardMaterial({ color: 0xC47460, roughness: 0.7 }));
+            const hRoofMat = getSharedMaterial('houseRoof', () => new THREE.MeshStandardMaterial({ color: 0xC47460, roughness: 0.7 }));
             const winMat = getSharedMaterial('houseWin', () => new THREE.MeshStandardMaterial({ color: 0xadd8e6, emissive: 0x111111 }));
             const wallMat = getSharedMaterial('houseWall', () => new THREE.MeshBasicMaterial({ color: 0xeeeeee }));
             const gateMat = getSharedMaterial('houseGate', () => new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.8, roughness: 0.3 }));
@@ -3081,9 +3604,32 @@
 
             const building = new THREE.Group();
             building.position.set(houseOX, 0, houseOZ);
+            // Apply internal house rotation (only the building rotates, not the plot/walls)
+            if (hRotate) building.rotation.y = hRotate * (Math.PI / 180);
             house.add(building);
 
-            // Building Body Merging
+            if (houseDesign === 'custom') {
+                createFancyBuilding(building, hScale);
+                // Also add pool if requested as modular components might not have it
+                if (hasPool) {
+                    // Pool logic remains exactly same as standard
+                    const poolGroup = new THREE.Group();
+                    const poolW_c = Math.max(200, plotW * 0.3), poolD_c = Math.max(350, plotD * 0.3), poolH_c = 10;
+                    const poolKey_c = `poolWater_${poolW_c}_${poolD_c}`;
+                    const poolGeo_c = getSharedGeometry(poolKey_c, () => new THREE.BoxGeometry(poolW_c, poolH_c, poolD_c, 12, 1, 12));
+                    poolWaterGeometries.add(poolGeo_c);
+                    const poolMat_c = getSharedMaterial('poolWaterMat', () => new THREE.MeshStandardMaterial({ color: 0x00aaff, roughness: 0.1, metalness: 0.5, transparent: true, opacity: 0.8 }));
+                    const poolWater_c = new THREE.Mesh(poolGeo_c, poolMat_c);
+                    poolWater_c.position.set(poolOX, 0.5, poolOZ);
+                    poolGroup.add(poolWater_c);
+                    const borderGeo_c = getSharedGeometry(`poolBorder_${poolW_c}_${poolD_c}`, () => new THREE.BoxGeometry(poolW_c + 20, 5, poolD_c + 20));
+                    const border_c = new THREE.Mesh(borderGeo_c, getSharedMaterial('poolBorderMat', () => new THREE.MeshStandardMaterial({ color: 0xdddddd })));
+                    border_c.position.set(poolOX, 0.1, poolOZ);
+                    poolGroup.add(border_c);
+                    house.add(poolGroup);
+                }
+            } else {
+                // Building Body Merging (Original Design)
             const bodyGeos = [];
             const mbG = new THREE.BoxGeometry(houseWidth, floorH * 2, houseDepth); mbG.translate(0, floorH, 0); bodyGeos.push(mbG);
             if (hasWing) {
@@ -3423,7 +3969,7 @@
                 // Terrace Style: Flat roof with railing
                 const roofThickness = 8;
                 const roofGeo = getSharedGeometry(`terraceRoof_${houseWidth}_${houseDepth}`, () => new THREE.BoxGeometry(houseWidth + 40, roofThickness, houseDepth + 40));
-                const terraceRoof = new THREE.Mesh(roofGeo, roofMat);
+                const terraceRoof = new THREE.Mesh(roofGeo, hRoofMat);
                 terraceRoof.position.set(0, floorH * 2 + roofThickness / 2, 0);
                 building.add(terraceRoof);
 
@@ -3455,22 +4001,22 @@
                     const s = new THREE.Shape(); s.moveTo(-houseWidth / 2 - 20, 0); s.lineTo(0, roofH); s.lineTo(houseWidth / 2 + 20, 0);
                     geometryCache[mainRoofKey] = new THREE.ExtrudeGeometry(s, { depth: houseDepth + 40, bevelEnabled: false });
                 }
-                const mR = new THREE.Mesh(geometryCache[mainRoofKey], roofMat);
+                const mR = new THREE.Mesh(geometryCache[mainRoofKey], hRoofMat);
                 mR.position.set(0, floorH * 2, -houseDepth / 2 - 20);
                 building.add(mR);
-
                 if (hasWing) {
                     const wingRoofKey = `wingRoof_${wingW}_${wingLen}`;
                     if (!geometryCache[wingRoofKey]) {
                         const s = new THREE.Shape(); s.moveTo(-wingW / 2 - 20, 0); s.lineTo(0, roofH); s.lineTo(wingW / 2 + 20, 0);
                         geometryCache[wingRoofKey] = new THREE.ExtrudeGeometry(s, { depth: wingLen + 130, bevelEnabled: false });
                     }
-                    const wR = new THREE.Mesh(geometryCache[wingRoofKey], roofMat);
+                    const wR = new THREE.Mesh(geometryCache[wingRoofKey], hRoofMat);
                     wR.rotation.y = -Math.PI / 2;
                     wR.position.set(-(houseWidth / 2 - 112), floorH * 2, houseDepth / 2 - wingW / 2);
                     building.add(wR);
                 }
             }
+        }
 
             // --- Realistic Boundary Trees ---
             const tScale = 20; // Exact uniform height
@@ -3628,8 +4174,8 @@
                 serialCount = 10,
                 startX = 0,
                 startZ = 0,
-                hWidth = (options.hWidth || 220) * hScale,
-                hDepth = (options.hDepth || 280) * hScale,
+                hWidthNominal = options.hWidth || 220,
+                hDepthNominal = options.hDepth || 280,
                 basePlotW = options.basePlotW || 900,
                 basePlotD = options.basePlotD || 1200,
                 startId = 1,
@@ -3637,18 +4183,21 @@
                 hasCarParking = false
             } = options;
 
+            // Decouple building scale from area scale for custom designs
+            const areaHScale = (options.houseDesign === 'custom') ? 1 : hScale;
+
             // Calculate the actual Wall Boundary (Plot Width/Depth)
             // Use Math.max to prevent negative plot sizes if building is larger than base plot
-            const plotWidth = hWidth + Math.max(0, (basePlotW * hScale - hWidth)) * igx;
-            const plotDepth = hDepth + Math.max(0, (basePlotD * hScale - hDepth)) * igy;
+            const plotWidth = (hWidthNominal * areaHScale) + Math.max(0, (basePlotW * areaHScale - (hWidthNominal * areaHScale))) * igx;
+            const plotDepth = (hDepthNominal * areaHScale) + Math.max(0, (basePlotD * areaHScale - (hDepthNominal * areaHScale))) * igy;
 
-            const unitSpacing = options.unitSpacing ? (options.unitSpacing * hScale) : (plotWidth * houseScale);
-            const rowSpacing = options.rowSpacing ? (options.rowSpacing * hScale) : (plotDepth * houseScale);
+            const unitSpacing = options.unitSpacing ? (options.unitSpacing * areaHScale) : (plotWidth * houseScale);
+            const rowSpacing = options.rowSpacing ? (options.rowSpacing * areaHScale) : (plotDepth * houseScale);
 
-            const paddingLeft = (options.paddingLeft || 2) * hScale * ogx;
-            const paddingRight = (options.paddingRight || 2) * hScale * ogx;
-            const paddingTop = (options.paddingTop || 2) * hScale * ogy;
-            const paddingBottom = (options.paddingBottom || 2) * hScale * ogy;
+            const paddingLeft = (options.paddingLeft || 2) * areaHScale * ogx;
+            const paddingRight = (options.paddingRight || 2) * areaHScale * ogx;
+            const paddingTop = (options.paddingTop || 2) * areaHScale * ogy;
+            const paddingBottom = (options.paddingBottom || 2) * areaHScale * ogy;
             const landThickness = 3.5;
 
             const bunchGroup = new THREE.Group();
@@ -3735,7 +4284,9 @@
                 unitGroup.position.x = localIdx * unitSpacing;
 
                 // Create Single House
-                const house = createHouse(formattedId, plotWidth, plotDepth, null, false, options.carCount || 1, false, hDepth, hWidth, true, (options.hFloorH || 100) * hScale, 0, 0, 0, 0, 0, 0, 0, 0, 80 * hScale, 160 * hScale, igScaleRaw, false, hasCarParking);
+                // Create Single House with internal rotation
+                const hRotateVal = options.hRotate || options.houseRotation || 0;
+                const house = createHouse(formattedId, plotWidth, plotDepth, null, false, options.carCount || 1, false, hDepthNominal * areaHScale, hWidthNominal * areaHScale, true, (options.hFloorH || 100) * hScale, (options.houseOX || 0), (options.houseOZ || 0), (options.poolOX || 0), (options.poolOZ || 0), (options.carOX || 0), (options.carOZ || 0), (options.playOX || 0), (options.playOZ || 0), (options.carW !== undefined ? options.carW : 80) * hScale, (options.carL !== undefined ? options.carL : 160) * hScale, igScaleRaw, false, options.hasCarParking !== undefined ? options.hasCarParking : true, options.houseDesign || 'standard', hScale, hRotateVal);
                 unitGroup.add(house);
 
                 if (serialNum % 2 !== 0) {
@@ -3770,11 +4321,11 @@
             const ogy = (typeof ogScaleRaw === 'object') ? (ogScaleRaw.y !== undefined ? ogScaleRaw.y : 1) : ogScaleRaw;
 
             const {
-                serialCount = 10,
+                serialCount = 20,
                 startX = 0,
                 startZ = 0,
-                hWidth = (options.hWidth || 220) * hScale,
-                hDepth = (options.hDepth || 280) * hScale,
+                hWidthNominal = options.hWidth || 220,
+                hDepthNominal = options.hDepth || 280,
                 basePlotW = options.basePlotW || 900,
                 basePlotD = options.basePlotD || 1000,
                 startId = 1,
@@ -3788,18 +4339,21 @@
                 rotation = 0
             } = options;
 
+            // Decouple building scale from area scale for custom designs
+            const areaHScale = (options.houseDesign === 'custom') ? 1 : hScale;
+
             // Calculate Wall Boundary (Plot Width/Depth)
             // Use Math.max to prevent negative plot sizes if building is larger than base plot
-            const plotWidth = hWidth + Math.max(0, (basePlotW * hScale - hWidth)) * igx;
-            const plotDepth = hDepth + Math.max(0, (basePlotD * hScale - hDepth)) * igy;
+            const plotWidth = (hWidthNominal * areaHScale) + Math.max(0, (basePlotW * areaHScale - (hWidthNominal * areaHScale))) * igx;
+            const plotDepth = (hDepthNominal * areaHScale) + Math.max(0, (basePlotD * areaHScale - (hDepthNominal * areaHScale))) * igy;
 
-            const unitSpacing = options.unitSpacing ? (options.unitSpacing * hScale) : (plotWidth * houseScale);
-            const rowSpacing = options.rowSpacing ? (options.rowSpacing * hScale) : (plotDepth * houseScale);
+            const unitSpacing = options.unitSpacing ? (options.unitSpacing * areaHScale) : (plotWidth * houseScale);
+            const rowSpacing = options.rowSpacing ? (options.rowSpacing * areaHScale) : (plotDepth * houseScale);
 
-            const paddingLeft = (options.paddingLeft || 2) * hScale * ogx;
-            const paddingRight = (options.paddingRight || 2) * hScale * ogx;
-            const paddingTop = (options.paddingTop || 3.5) * hScale * ogy;
-            const paddingBottom = (options.paddingBottom || 3.5) * hScale * ogy;
+            const paddingLeft = (options.paddingLeft || 2) * areaHScale * ogx;
+            const paddingRight = (options.paddingRight || 2) * areaHScale * ogx;
+            const paddingTop = (options.paddingTop || 3.5) * areaHScale * ogy;
+            const paddingBottom = (options.paddingBottom || 3.5) * areaHScale * ogy;
             const landThickness = 3.5;
 
             const clusterGroup = new THREE.Group();
@@ -3880,12 +4434,10 @@
                 unitGroup.position.x = localIdx * unitSpacing;
 
                 // Create Single House
-                const house = createHouse(formattedId, plotWidth, plotDepth, null, hasPool, carCount, hasPlayground, hDepth, hWidth, options.hasWing !== undefined ? options.hasWing : true, hFloorH, (options.houseOX || 0) * hScale, (options.houseOZ || 0) * hScale, (options.poolOX || 0) * hScale, (options.poolOZ || 0) * hScale, (options.carOX || 0) * hScale, (options.carOZ || 0) * hScale, (options.playOX || 0) * hScale, (options.playOZ || 0) * hScale, (options.carW !== undefined ? options.carW : 80) * hScale, (options.carL !== undefined ? options.carL : 160) * hScale, options.innerGapScale || options.paddingScale || 1, false, hasCarParking);
-
-                // Apply individual house rotation if specified
-                if (options.houseRotation) {
-                    house.rotation.y = options.houseRotation * (Math.PI / 180);
-                }
+                // Create Single House
+                // Create Single House with internal rotation
+                const hRotateVal = options.hRotate || options.houseRotation || 0;
+                const house = createHouse(formattedId, plotWidth, plotDepth, null, hasPool, carCount, hasPlayground, hDepthNominal * areaHScale, hWidthNominal * areaHScale, options.hasWing !== undefined ? options.hasWing : true, hFloorH, (options.houseOX || 0), (options.houseOZ || 0), (options.poolOX || 0), (options.poolOZ || 0), (options.carOX || 0), (options.carOZ || 0), (options.playOX || 0), (options.playOZ || 0), (options.carW !== undefined ? options.carW : 80) * hScale, (options.carL !== undefined ? options.carL : 160) * hScale, options.innerGapScale || options.paddingScale || 1, false, hasCarParking, options.houseDesign || 'standard', hScale, hRotateVal);
 
                 unitGroup.add(house);
 
@@ -3908,7 +4460,7 @@
 
         // --- METRO MATERIALS ---
         const infraMat = new THREE.MeshPhongMaterial({ color: 0xb9b9b9 });
-        const roofMat = new THREE.MeshPhongMaterial({ color: 0xDAD3C9 });
+        const mRoofMat = new THREE.MeshPhongMaterial({ color: 0xDAD3C9 });
         const greenMat = new THREE.MeshPhongMaterial({ color: 0x22c55e });
         const wheelMat = new THREE.MeshPhongMaterial({ color: 0x14532d });
         const redGlassMat = new THREE.MeshPhongMaterial({
@@ -3964,11 +4516,11 @@
             for (let i = 0; i < config.count; i++) {
                 const carriage = new THREE.Group();
 
-                const body = new THREE.Mesh(new THREE.BoxGeometry(6, 1.5, 3.0), roofMat); // Increased height and depth
+                const body = new THREE.Mesh(new THREE.BoxGeometry(6, 1.5, 3.0), mRoofMat); // Increased height and depth
                 body.position.y = 0.9; // Adjusted position
                 carriage.add(body);
 
-                const roofL = new THREE.Mesh(new THREE.BoxGeometry(6, 0.4, 0.8), roofMat);
+                const roofL = new THREE.Mesh(new THREE.BoxGeometry(6, 0.4, 0.8), mRoofMat);
                 roofL.position.set(0, 1.5, -1.0); // Adjusted for new depth
                 carriage.add(roofL);
 
@@ -3976,7 +4528,7 @@
                 roofR.position.z = 1.0; // Adjusted for new depth
                 carriage.add(roofR);
 
-                const front = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1.5, 3.0), roofMat); // Increased height and depth
+                const front = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1.5, 3.0), mRoofMat); // Increased height and depth
                 front.position.x = 3.2;
                 carriage.add(front);
 
@@ -4284,7 +4836,7 @@
                 basePlotD = 1500,
                 hWidth = 220,
                 hDepth = 280,
-                houseRotation = 0,
+                houseRotation = options.hRotate || options.houseRotation || 0,
                 flipped = false,
                 hasPool = true,
                 carCount = 2,
@@ -4296,7 +4848,9 @@
                 carOX = 0, carOZ = 0,
                 playOX = 0, playOZ = 0,
                 carW = 80, carL = 160,
-                totalHouses = null
+                totalHouses = null,
+                houseDesign = 'standard',
+                hScale = 1
             } = options;
 
             const igx = (typeof innerGapScale === 'object') ? (innerGapScale.x !== undefined ? innerGapScale.x : 1) : innerGapScale;
@@ -4304,9 +4858,12 @@
             const ogx = (typeof outerGapScale === 'object') ? (outerGapScale.x !== undefined ? outerGapScale.x : 1) : outerGapScale;
             const ogy = (typeof outerGapScale === 'object') ? (outerGapScale.y !== undefined ? outerGapScale.y : 1) : outerGapScale;
 
+            // Decouple building scale from area scale for custom designs
+            const areaHScale = (houseDesign === 'custom') ? 1 : hScale;
+
             // Calculate plot dimensions using innerGapScale (consistent with createHouseCluster)
-            const plotWidth = hWidth + Math.max(0, (basePlotW - hWidth)) * igx;
-            const plotDepth = hDepth + Math.max(0, (basePlotD - hDepth)) * igy;
+            const plotWidth = (hWidth * areaHScale) + Math.max(0, (basePlotW * areaHScale - (hWidth * areaHScale))) * igx;
+            const plotDepth = (hDepth * areaHScale) + Math.max(0, (basePlotD * areaHScale - (hDepth * areaHScale))) * igy;
 
             const curve = new THREE.CatmullRomCurve3(points);
             const totalLen = curve.getLength();
@@ -4416,11 +4973,11 @@
                     if (housesPlaced < targetTotal) {
                         const sideDirA = flipped ? -1 : 1;
                         const housePosA = p.clone().add(binormal.clone().multiplyScalar(offsetDistance * sideDirA));
-                        const houseA = createHouse("CH-" + (startId + housesPlaced), plotWidth, plotDepth, null, hasPool, carCount, hasPlayground, hDepth, hWidth, !isTerrace, hFloorH, houseOX, houseOZ, poolOX, poolOZ, carOX, carOZ, playOX, playOZ, carW, carL, innerGapScale, isTerrace, hasCarParking);
+                        const houseA = createHouse("CH-" + (startId + housesPlaced), plotWidth, plotDepth, null, hasPool, carCount, hasPlayground, hDepth * areaHScale, hWidth * areaHScale, !isTerrace, hFloorH, houseOX, houseOZ, poolOX, poolOZ, carOX, carOZ, playOX, playOZ, carW, carL, innerGapScale, isTerrace, hasCarParking, houseDesign, hScale, houseRotation);
 
                         houseA.position.copy(housePosA);
                         houseA.position.y = 0.2;
-                        houseA.rotation.y = angle + (flipped ? -Math.PI / 2 : Math.PI / 2) + hRotRad;
+                        houseA.rotation.y = angle + (flipped ? -Math.PI / 2 : Math.PI / 2);
 
                         housesGroup.add(houseA);
                         housesPlaced++;
@@ -4430,11 +4987,11 @@
                     if (housesPlaced < targetTotal) {
                         const sideDirB = flipped ? 1 : -1;
                         const housePosB = p.clone().add(binormal.clone().multiplyScalar(offsetDistance * sideDirB));
-                        const houseB = createHouse("CH-" + (startId + housesPlaced), plotWidth, plotDepth, null, hasPool, carCount, hasPlayground, hDepth, hWidth, !isTerrace, hFloorH, houseOX, houseOZ, poolOX, poolOZ, carOX, carOZ, playOX, playOZ, carW, carL, innerGapScale, isTerrace, hasCarParking);
+                        const houseB = createHouse("CH-" + (startId + housesPlaced), plotWidth, plotDepth, null, hasPool, carCount, hasPlayground, hDepth * areaHScale, hWidth * areaHScale, !isTerrace, hFloorH, houseOX, houseOZ, poolOX, poolOZ, carOX, carOZ, playOX, playOZ, carW, carL, innerGapScale, isTerrace, hasCarParking, houseDesign, hScale, houseRotation);
 
                         houseB.position.copy(housePosB);
                         houseB.position.y = 0.2;
-                        houseB.rotation.y = angle + (flipped ? Math.PI / 2 : -Math.PI / 2) + hRotRad;
+                        houseB.rotation.y = angle + (flipped ? Math.PI / 2 : -Math.PI / 2);
 
                         housesGroup.add(houseB);
                         housesPlaced++;
@@ -4442,11 +4999,14 @@
                 } else {
                     // Single row placement
                     if (housesPlaced < targetTotal) {
-                        const housePos = p.clone().add(binormal.clone().multiplyScalar(offsetDistance));
-                        const house = createHouse("CH-" + (startId + housesPlaced), plotWidth, plotDepth, null, hasPool, carCount, hasPlayground, hDepth, hWidth, !isTerrace, hFloorH, houseOX, houseOZ, poolOX, poolOZ, carOX, carOZ, playOX, playOZ, carW, carL, innerGapScale, isTerrace, hasCarParking);
+                        const sideDir = flipped ? -1 : 1;
+                        const housePos = p.clone().add(binormal.clone().multiplyScalar(offsetDistance * sideDir));
+                        const house = createHouse("CH-" + (startId + housesPlaced), plotWidth, plotDepth, null, hasPool, carCount, hasPlayground, hDepth * areaHScale, hWidth * areaHScale, !isTerrace, hFloorH, houseOX, houseOZ, poolOX, poolOZ, carOX, carOZ, playOX, playOZ, carW, carL, innerGapScale, isTerrace, hasCarParking, houseDesign, hScale, houseRotation);
+
                         house.position.copy(housePos);
                         house.position.y = 0.2;
-                        house.rotation.y = angle + (flipped ? -Math.PI / 2 : Math.PI / 2) + hRotRad;
+                        house.rotation.y = angle + (flipped ? -Math.PI / 2 : Math.PI / 2);
+
                         housesGroup.add(house);
                         housesPlaced++;
                     }
