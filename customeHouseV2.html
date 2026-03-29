@@ -108,6 +108,48 @@
         let autoRotate = false;
         let rotationSpeed = 0.005;
 
+        function applyTexture(material, url, repeatX = 1, repeatY = 1, enableDisplacement = false, bumpScale = 0.05, displacementScale = 0.5) {
+            if (url) {
+                const loader = new THREE.TextureLoader();
+                // Set crossOrigin to anonymous to allow external images in WebGL context
+                loader.setCrossOrigin('anonymous');
+                
+                // Use a free public CORS proxy if it's an external link, bypassing strict server blocking (like Freepik)
+                const isExternal = url.startsWith('http');
+                const finalUrl = isExternal ? 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url) : url;
+
+                const setup3DMap = (tex) => {
+                    tex.wrapS = THREE.RepeatWrapping;
+                    tex.wrapT = THREE.RepeatWrapping;
+                    tex.repeat.set(repeatX, repeatY);
+                    material.map = tex;
+                    
+                    // Create an automatic 3D bump/vibe from the same texture
+                    material.bumpMap = tex;
+                    material.bumpScale = bumpScale;
+                    
+                    if (enableDisplacement) {
+                        material.displacementMap = tex;
+                        material.displacementScale = displacementScale; // True 3D depth into geometry
+                        // Depress entirely (y <= 0) so the 3D peaks don't clip into or hide houses above it
+                        material.displacementBias = -displacementScale; 
+                    }
+                    
+                    material.color.setHex(0xffffff); 
+                    material.needsUpdate = true;
+                };
+
+                loader.load(finalUrl, 
+                    setup3DMap, 
+                    undefined, 
+                    (error) => {
+                        console.error('Failed to load texture via proxy, trying direct URL as fallback...', error);
+                        loader.load(url, setup3DMap);
+                    }
+                );
+            }
+        }
+
         // Helper to apply common mesh properties and add to layers
         function finalizeMesh(mesh, layerArray, config) {
             const { x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0 } = config;
@@ -121,13 +163,14 @@
         }
 
         function createWall(config) {
-            const { w = 5, h = 3, t = 0.2, color = 0xffffff, useTexture = false } = config;
+            const { w = 5, h = 3, t = 0.2, color = 0xffffff, useTexture = false, textureUrl = '', bumpScale = 0.05 } = config;
             const geometry = new THREE.BoxGeometry(w, h, t);
             const material = new THREE.MeshStandardMaterial({
                 color: color,
                 roughness: useTexture ? 0.9 : 0.5,
                 metalness: useTexture ? 0.1 : 0
             });
+            if (useTexture && textureUrl) applyTexture(material, textureUrl, w / 2, h / 2, false, bumpScale);
             const wall = new THREE.Mesh(geometry, material);
             // Pivot adjustment: center the wall vertically relative to its provided Y
             wall.geometry.translate(0, h / 2, 0);
@@ -211,13 +254,97 @@
             return finalizeMesh(group, layers.doors, config);
         }
 
+        function createMainDoor(config) {
+            const { w = 2.4, h = 2.8, borderT = 0.2, isOpen = false } = config;
+            const group = new THREE.Group();
+            
+            const frameMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8 });
+            const doorMat = new THREE.MeshStandardMaterial({ color: 0x3e2723, roughness: 0.6 });
+            // High metalness and dark color acts as sleek mirrored glass so it doesn't reveal the solid wall behind it
+            const glassMat = new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 0.1, metalness: 0.95 });
+            const handleMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 1, roughness: 0.2 });
+
+            const createFrame = (fw, fh, px, py) => {
+                const f = new THREE.Mesh(new THREE.BoxGeometry(fw, fh, 0.3), frameMat);
+                f.position.set(px, py, 0);
+                group.add(f);
+            };
+            
+            createFrame(borderT, h + 0.8 + borderT, -w / 2 - borderT / 2, (h + 0.8) / 2);
+            createFrame(borderT, h + 0.8 + borderT, w / 2 + borderT / 2, (h + 0.8) / 2);
+            createFrame(w + borderT * 2, borderT, 0, h + borderT / 2); // Transom separator
+            createFrame(w + borderT * 2, borderT, 0, h + 0.8 + borderT / 2); // Top roof frame
+            
+            // Overhead transom window
+            const transom = new THREE.Mesh(new THREE.BoxGeometry(w, 0.8 - borderT, 0.05), glassMat);
+            transom.position.set(0, h + 0.4 + borderT / 2, 0);
+            group.add(transom);
+
+            // Left Door Leaf
+            const leftDoor = new THREE.Group();
+            const bodyL = new THREE.Mesh(new THREE.BoxGeometry(w / 2, h, 0.1), doorMat);
+            bodyL.position.set(w / 4, h / 2, 0);
+            leftDoor.add(bodyL);
+
+            const panelL = new THREE.Mesh(new THREE.BoxGeometry(w / 3, h * 0.7, 0.13), doorMat); 
+            panelL.position.set(w / 4, h / 2, 0);
+            leftDoor.add(panelL);
+
+            const glassL = new THREE.Mesh(new THREE.BoxGeometry(w / 8, h * 0.6, 0.15), glassMat);
+            glassL.position.set(w / 4, h / 2, 0);
+            leftDoor.add(glassL);
+
+            const handleL = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.8), handleMat);
+            handleL.position.set(w / 2 - 0.1, h / 2, 0.12);
+            leftDoor.add(handleL);
+
+            leftDoor.position.x = -w / 2;
+            if (isOpen) leftDoor.rotation.y = -Math.PI / 2.5;
+            group.add(leftDoor);
+
+            // Right Door Leaf
+            const rightDoor = new THREE.Group();
+            const bodyR = new THREE.Mesh(new THREE.BoxGeometry(w / 2, h, 0.1), doorMat);
+            bodyR.position.set(-w / 4, h / 2, 0);
+            rightDoor.add(bodyR);
+
+            const panelR = new THREE.Mesh(new THREE.BoxGeometry(w / 3, h * 0.7, 0.13), doorMat); 
+            panelR.position.set(-w / 4, h / 2, 0);
+            rightDoor.add(panelR);
+
+            const glassR = new THREE.Mesh(new THREE.BoxGeometry(w / 8, h * 0.6, 0.15), glassMat);
+            glassR.position.set(-w / 4, h / 2, 0);
+            rightDoor.add(glassR);
+
+            const handleR = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.8), handleMat);
+            handleR.position.set(-w / 2 + 0.1, h / 2, 0.12);
+            rightDoor.add(handleR);
+
+            rightDoor.position.x = w / 2;
+            if (isOpen) rightDoor.rotation.y = Math.PI / 2.5;
+            group.add(rightDoor);
+
+            return finalizeMesh(group, layers.doors, config);
+        }
+
         function createBeamSet(config) {
-            const { w = 0.3, h = 4, dist = 5, isCircle = false, count = 4 } = config;
+            const { w = 0.3, h = 4, dist = 5, isCircle = false, count = 4, style = 'default', useTexture = false, textureUrl = '', bumpScale = 0.05 } = config;
             const group = new THREE.Group();
             const mat = new THREE.MeshStandardMaterial({ color: 0xdddddd });
+            if (useTexture && textureUrl) applyTexture(mat, textureUrl, 1, h / 2, false, bumpScale);
 
             let positions = [];
-            if (count === 4) {
+            if (style === 'X' || style === 'x') {
+                for (let i = 0; i < count; i++) {
+                    const px = count === 1 ? 0 : -dist / 2 + (i / (count - 1)) * dist;
+                    positions.push({ px: px, pz: 0 });
+                }
+            } else if (style === 'Y' || style === 'y' || style === 'Z' || style === 'z') {
+                for (let i = 0; i < count; i++) {
+                    const pz = count === 1 ? 0 : -dist / 2 + (i / (count - 1)) * dist;
+                    positions.push({ px: 0, pz: pz });
+                }
+            } else if (count === 4) {
                 // Default square corners
                 positions = [{ px: -dist / 2, pz: -dist / 2 }, { px: dist / 2, pz: -dist / 2 }, { px: -dist / 2, pz: dist / 2 }, { px: dist / 2, pz: dist / 2 }];
             } else {
@@ -243,9 +370,13 @@
         }
 
         function createLand(config) {
-            const { w = 30, d = 30, x = 0, y = 0, z = 0, color = 0x567d46, useTexture = true } = config;
-            const geo = new THREE.PlaneGeometry(w, d);
-            const mat = new THREE.MeshStandardMaterial({ color: useTexture ? color : 0x777777, roughness: 1 });
+            const { w = 30, d = 30, x = 0, y = 0, z = 0, color = 0x567d46, useTexture = true, textureUrl = '', textureCover = false, bumpScale = 0.05, displacementScale = 0 } = config;
+            // 256x256 segments for genuine 3D terrain displacement!
+            const geo = new THREE.PlaneGeometry(w, d, 256, 256);
+            const mat = new THREE.MeshStandardMaterial({ color: useTexture && !textureUrl ? color : 0x777777, roughness: 1 });
+            if (useTexture && textureUrl) {
+                applyTexture(mat, textureUrl, textureCover ? 1 : w / 5, textureCover ? 1 : d / 5, true, bumpScale, displacementScale);
+            }
             const land = new THREE.Mesh(geo, mat);
             land.rotation.x = -Math.PI / 2;
             land.position.set(x, y, z);
@@ -302,27 +433,99 @@
         }
 
         function createRoof(config) {
-            const { w = 6, d = 8, style = 'pitched', color = 0x8b0000 } = config;
+            const { w = 6, d = 8, h = 2, faces = 2, style = 'pitched', color = 0x8b0000 } = config;
             const group = new THREE.Group();
-            const roofMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.5, metalness: 0.3 });
-            if (style === 'pitched') {
-                const createS = (rz, ox) => {
-                    const s = new THREE.Group();
-                    const b = new THREE.Mesh(new THREE.BoxGeometry(w / 2 + 0.5, 0.1, d), roofMat);
-                    s.add(b);
-                    for (let i = 0; i < 20; i++) {
-                        const r = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.06, d), roofMat);
-                        r.position.set((-w / 4) + (i * w / 38), 0.05, 0);
-                        s.add(r);
+            
+            let actualFaces = faces;
+            if (style === 'square') actualFaces = 4;
+            else if (style === 'circle' || faces === 'circle') actualFaces = 32;
+            else if (Number(faces) > 2) actualFaces = Number(faces);
+            else if (style === 'pitched') actualFaces = 2; // Default 2 parts
+
+            if (style === 'pitched' || style === 'flat') {
+                const roofMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.5, metalness: 0.3 });
+                if (style === 'pitched') {
+                    const createS = (rz, ox, w_val, d_val) => {
+                        const s = new THREE.Group();
+                        const b = new THREE.Mesh(new THREE.BoxGeometry(w_val / 2 + 0.5, 0.1, d_val), roofMat);
+                        s.add(b);
+                        for (let i = 0; i < 20; i++) {
+                            const r = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.06, d_val), roofMat);
+                            r.position.set((-w_val / 4) + (i * w_val / 38), 0.05, 0);
+                            s.add(r);
+                        }
+                        s.rotation.z = rz;
+                        s.position.x = ox;
+                        return s;
+                    };
+                    
+                    if (actualFaces >= 4) {
+                        // 4-faced pitched roof (Hip Roof)
+                        const oW = w + 1.0; 
+                        const oD = d + 1.0;
+                        
+                        const slab = new THREE.Mesh(new THREE.BoxGeometry(oW, 0.1, oD), roofMat);
+                        group.add(slab);
+
+                        const oMaxSize = Math.max(oW, oD);
+                        const coneRadius = (oMaxSize / 2) * Math.sqrt(2);
+                        const cone = new THREE.Mesh(new THREE.ConeGeometry(coneRadius, h, 4), roofMat);
+                        cone.rotation.y = Math.PI / 4;
+                        cone.position.y = h / 2 + 0.05;
+                        cone.scale.set(oW / oMaxSize, 1, oD / oMaxSize);
+                        group.add(cone);
+
+                        const addFaceSeams = (w_side, startZ, isXAxis) => {
+                            const seams = new THREE.Group();
+                            const numSeams = 12;
+                            for (let i = 0; i <= numSeams; i++) {
+                                const p = -w_side / 2 + (i / numSeams) * w_side;
+                                const start = isXAxis ? new THREE.Vector3(p, 0.05, startZ) : new THREE.Vector3(startZ, 0.05, p);
+                                const end = new THREE.Vector3(0, h + 0.05, 0);
+                                const dist = start.distanceTo(end);
+                                const seam = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, dist, 6), roofMat);
+                                seam.position.copy(start).lerp(end, 0.5);
+                                seam.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), end.clone().sub(start).normalize());
+                                seams.add(seam);
+                            }
+                            return seams;
+                        };
+
+                        group.add(addFaceSeams(oW, oD / 2, true));
+                        group.add(addFaceSeams(oW, -oD / 2, true));
+                        group.add(addFaceSeams(oD, oW / 2, false));
+                        group.add(addFaceSeams(oD, -oW / 2, false));
+                    } else {
+                        // Standard 2-faced pitched roof
+                        group.add(createS(Math.PI / 6, -w / 4, w, d));
+                        group.add(createS(-Math.PI / 6, w / 4, w, d));
                     }
-                    s.rotation.z = rz;
-                    s.position.x = ox;
-                    return s;
-                };
-                group.add(createS(Math.PI / 6, -w / 4));
-                group.add(createS(-Math.PI / 6, w / 4));
+                } else {
+                    group.add(new THREE.Mesh(new THREE.BoxGeometry(w, 0.2, d), roofMat));
+                }
             } else {
-                group.add(new THREE.Mesh(new THREE.BoxGeometry(w, 0.2, d), roofMat));
+                const isCircle = actualFaces > 10;
+                const roofMat = new THREE.MeshStandardMaterial({ 
+                    color: color, 
+                    roughness: 0.5, 
+                    metalness: 0.3,
+                    flatShading: !isCircle 
+                });
+                
+                const maxSize = Math.max(w, d);
+                const coneRadius = (maxSize / 2) * (actualFaces === 4 ? Math.sqrt(2) : 1.15);
+                const cone = new THREE.Mesh(new THREE.ConeGeometry(coneRadius, h, actualFaces), roofMat);
+                
+                if (actualFaces === 4) {
+                    cone.rotation.y = Math.PI / 4;
+                } else if (actualFaces === 3) {
+                    cone.rotation.y = Math.PI / 2;
+                }
+
+                // Scale to match w and d perfectly
+                cone.scale.set(w / maxSize, 1, d / maxSize);
+                cone.position.y = h / 2 - 0.2;
+                group.add(cone);
             }
 
             return finalizeMesh(group, layers.roof, config);
@@ -348,9 +551,10 @@
         }
 
         function createStairs(config) {
-            const { steps = 3, w = 1.5, stepH = 0.17, stepD = 0.4, color = 0xeeeeee } = config;
+            const { steps = 3, w = 1.5, stepH = 0.17, stepD = 0.4, color = 0xeeeeee, useTexture = false, textureUrl = '', bumpScale = 0.05 } = config;
             const group = new THREE.Group();
             const mat = new THREE.MeshStandardMaterial({ color: color });
+            if (useTexture && textureUrl) applyTexture(mat, textureUrl, w, steps * stepD, false, bumpScale);
             const railMat = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.9, roughness: 0.1 });
 
             for (let i = 0; i < steps; i++) {
@@ -661,7 +865,19 @@
             controls.maxDistance = 100;
             controls.target.set(0, 2, 0);
 
-            createLand({ w: 40, d: 40, useTexture: true });
+            // --- USING TEXTURES FROM PROVIDED IMAGES ---
+            // To apply image textures to walls, lands, beams, or stairs, pass `useTexture: true` and `textureUrl: 'YOUR_IMAGE_LINK'`.
+            // Example Wall: createWall({ x: 3, z: 0, w: 6, h: 4, ry: Math.PI / 2, useTexture: true, textureUrl: 'https://link.to/wall.jpg' });
+            // Example Beam: createBeamSet({ dist: 6, h: 8, w: 0.4, useTexture: true, textureUrl: 'https://link.to/wood.jpg' });
+            // Example Stair: createStairs({ x: 4.2, z: 0, y: 0, w: 1.8, steps: 3, useTexture: true, textureUrl: 'https://link.to/marble.jpg' });
+
+            // createLand({ w: 40, d: 40, useTexture: true, textureUrl: 'assets/images/grass3.png', textureCover: true });
+            // Flat ground (No gaps underneath a house)
+            // createLand({ w: 40, d: 40, useTexture: true, textureUrl: 'assets/images/grass3.png', textureCover: true });
+            // Very subtle 3D terrain ripples (0.05 height)
+            // createLand({ w: 40, d: 40, useTexture: true, textureUrl: 'assets/images/grass3.png', textureCover: true, displacementScale: 0.05 });
+            // Big grassy trenches and sinkholes (0.5 height)
+            createLand({ w: 40, d: 40, useTexture: true, textureUrl: 'assets/images/grass3.png', textureCover: true, displacementScale: 0.02 });
 
             // Floors with demo rx, ry, rz
             // createFloor({ x: -1.5, y: 0, z: 0, w: 5.5, d: 7, color: 0x888888, useTexture: true }); 
@@ -669,35 +885,62 @@
             // createFloor({ x: -1.5, y: 6, z: 0, w: 5.5, d: 7 }); 
 
             createBeamSet({ dist: 6, h: 8, w: 0.4 });
-            createBeamSet({ x: -1.5, y: 0, z: -7.2, dist: 3, h: 8, w: 0.4,count: 2, });
-            createBeamSet({ x: -1.5, y: 0, z: -12, dist: 3, h: 8, w: 0.4,count: 2, });
-            createBeamSet({ x: 0, y: 0, z: -7.2, dist: 6, h: 4, w: 0.4, count: 1, isCircle: false });
-            createBeamSet({ x: 0, y: 0, z: -12, dist: 6, h: 8, w: 0.4, count: 1, isCircle: false });
+            createBeamSet({ x: 0, y: 0, z: -10.2, dist: 6, h: 8, w: 0.4,count: 4, });
+            // createBeamSet({ x: -1.5, y: 0, z: -12, dist: 3, h: 8, w: 0.4,count: 2, });
+            // createBeamSet({ x: 0, y: 0, z: -7.2, dist: 6, h: 4, w: 0.4, count: 1, isCircle: false });
+            // createBeamSet({ x: 0, y: 0, z: -12, dist: 6, h: 8, w: 0.4, count: 1, isCircle: false });
+
             // Ground floor
-            createFloor({ x: 0,z:-4.6, y: 0, w: 15.8, d: 6.6, color: 0xfcf286, ry: Math.PI / 2 }); // 1st floor=
+            createFloor({ x: 0,z:-5.1, y: 0, w: 16.8, d: 6.6, color: 0xfcf286, ry: Math.PI / 2 }); // 1st floor=
             createWall({ x: 3, z: 0, w: 6, h: 4, ry: Math.PI / 2, color: 0xeee8aa });
+            createWall({ x: 3, z: -10.2, w: 5.8, h: 4, ry: Math.PI / 2, color: 0xeee8aa }); // RIGHT PART front WALL
             createWall({ x: 0, y: 0, z: -3, w: 6, h: 4, color: 0xeee8aa });
-            createWall({ x: -3, z: 0, w: 6, h: 4, ry: Math.PI / 2, color: 0xeee8aa });
+            createWall({ x: 0, y: 0, z: -7, w: 6, h: 4, color: 0xeee8aa }); // right part - left wall 
+            createWall({ x: 0, y: 0, z: -13.2, w: 6, h: 4, color: 0xeee8aa }); // right part - right wall
+            createWall({ x: -3, z: -5.1, w: 16.4, h: 8, ry: Math.PI / 2, color: 0xeee8aa });
             createWall({ x: 0, z: 3, w: 6, h: 4, color: 0xeee8aa });
             createDoor({ x: 3.2, y: .5, z: 0, w: 1.2, h: 2.2, ry: Math.PI / 2, isOpen: false });
-
+            createDoor({ x: 3.2, y: .5, z: -10.2, w: 1.2, h: 2.2, ry: Math.PI / 2, isOpen: false }); // right part
+            
             // Floor two
+            createWall({ x: 3,y:4, z: -10.2, w: 6, h: 4, ry: Math.PI / 2, color: 0xeee8aa }); // top front side wall
+            createWall({ x: 0, y: 4, z: -7.2, w: 6, h: 4, color: 0xeee8aa }); // right part - left wall 
+            createWall({ x: 0, y: 4, z: -13.2, w: 6, h: 4, color: 0xeee8aa }); // right part - right wall 
             createWall({ x: 3, z: 0, y: 4, w: 6, h: 4, ry: Math.PI / 2, color: 0xeee8aa });
             createWall({ x: 0, y: 4, z: -3, w: 6, h: 4, color: 0xeee8aa });
             createWall({ x: -3, z: -2, y: 4, w: 10, h: 4, ry: Math.PI / 2, color: 0xeee8aa });
             createWall({ x: 0, z: 3, y: 4, w: 6, h: 4, color: 0xeee8aa });
             createWall({ x: -1.5, z: -7.2, y: 4, w: 3, h: 4, color: 0xeee8aa });
             createWall({ x: 0, z: -5.2, y: 4, w: 4.5, h: 4,ry: Math.PI / 2 , color: 0xeee8aa });
-            createFloor({ x: 0, y: 4, z:-4.6, w: 15.8, d: 6.6, color: 0xfcf286, ry: Math.PI / 2 }); // 2nd floor
+            createFloor({ x: 0, y: 4, z:-5.1, w: 16.8, d: 6.6, color: 0xfcf286, ry: Math.PI / 2 }); // 2nd floor
+            createFloor({ x: 0, y: 8, z:-10.2, w: 6.5, d: 6.6, color: 0xfcf286, ry: Math.PI / 2 }); // 2nd floor right part
             createDoor({ x: 3.2, y: 4.3, z: 0, w: 1.2, h: 2.2, ry: Math.PI / 2, isOpen: true });
+            createDoor({ x: 3.2, y: 4.3, z: -10.2, w: 1.2, h: 2.2, ry: Math.PI / 2, isOpen: true });
             createDoor({ x: 0.2, y: 4.3, z: -5.2, w: 1.2, h: 2.2, ry: Math.PI / 2, isOpen: false });
-
+            
             // Second Floor Interior Furniture
             createBed({ x: -1.5, y: 4, z: -1.5, w: 2, d: 2.5 });
             createTable({ x: 1.5, y: 4, z: -6.5, w: 1, d: 0.8 });
             createChair({ x: 1.5, y: 4, z: -6.0, ry: Math.PI });
             createTV({ x: -1.5, y: 4.8, z: 2, ry: Math.PI }); // TV on the wall
             createLight({ x: 0, y: 7.8, z: 0 }); // Ceiling light in the middle
+
+            // Main Gate of House
+            createFloor({ x: 5.2, y: 4, z:-5.1, w: 4.6, d: 4.2, ry: Math.PI / 2 }); // 2nd floor right part  color: 0xfcf286,  useTexture: true,
+            createFloor({ x: 5.2, y: 0, z:-5.1, w: 4.6, d: 4.2, ry: Math.PI / 2 }); // 2nd floor right part  color: 0xfcf286,  useTexture: true,
+            createBeamSet({ x: 7, y: 0, z: -5.1, dist: 4, h: 8, w: 0.4, count: 2, style: 'Y' });
+            createRoof({ x: 5.2, z: -5.1, y: 8.2, w: 4.8, d: 4.8, h: 2, ry: Math.PI / 2, faces: 4,style: 'pitched' });
+            createWall({ x: 3, z: -5.2, w: 5.8, h: 4, ry: Math.PI / 2, color: 0xeee8aa }); // Gate Part front WALL
+           
+            // Stylish Premium Main Double Door!
+            createMainDoor({ x: 3.12, y: 0, z: -5.2, w: 2.6, h: 2.6, ry: Math.PI / 2, isOpen: false });
+           
+            // Wood Grills (Premium Fence Style)
+            createWoodGril({ x: 7.0, y: 4.15, z: -5.2, w: 4, h: 1.2, ry: -Math.PI / 2, startPost: false, midPost: true, endPost: false }); // Front ground left
+            createWoodGril({ x: 5.0, y: 4.15, z: -7.1, w: 4, h: 1.2, startPost: false, midPost: true, endPost: false }); // Front ground left
+            createWoodGril({ x: 5.0, y: 4.15, z: -3.1, w: 4, h: 1.2, startPost: false, midPost: true, endPost: false }); // Front ground left
+            
+
 
 
 
@@ -711,27 +954,28 @@
             // createWall({ x: 0, y: 8, z: -5.2, w: 4.5, h: 0.6, ry: Math.PI / 2, color: 0xeee8aa }); // Ext wall right
             
             createStairs({ x: 4.2, z: 0, y: 0, ry: -Math.PI / 2, w: 1.8, steps: 3 });
+            createStairs({ x: 4.2, z: -10.2, y: 0, ry: -Math.PI / 2, w: 1.8, steps: 3 }); // right part 
             // createWall({ ry: 2,x: -1.5, w: 5.5, h: 9, useTexture: true });
             createWindow({ x: 1.0, y: 6, z: 3.3, w: 2, h: 1.5 });
             createWindow({ x: 1.0, y: 2, z: 3.3, w: 2, h: 1.5 });
             createBalcony({ x:3.4, y: 4.2, z: 0, w: 3.5,ry: Math.PI/2, });
+            createBalcony({ x:3.4, y: 4.2, z: -10.2, w: 3.5,ry: Math.PI/2, });
             createRoof({ x: -0, z: 0, y: 9, w: 6.4, d: 7.2, ry: Math.PI / 2, style: 'pitched' });
-            createGable({ x: 3.3, y: 8.1, z: 0, w: 6, h: 1.7, ry: Math.PI / 2 }); // Main gable right
-            createGable({ x: -3.3, y: 8.1, z: 0, w: 6, h: 1.7, ry: Math.PI / 2 }); // Main gable left
+            createRoof({ x: -0, z: -10.2, y: 9.0, w: 6.8, d: 7.2, ry: Math.PI / 2, style: 'pitched' }); // right part
+            createGable({ x: 3.3, y: 8.1, z: 0, w: 6, h: 1.7, ry: Math.PI / 2 }); // Main gable left part - right
+            createGable({ x: 3.3, y: 8.1, z: -10.2, w: 6, h: 1.7, ry: Math.PI / 2 }); // Main gable right part - right
+            createGable({ x: -3.3, y: 8.1, z: 0, w: 6, h: 1.7, ry: Math.PI / 2 }); // Main gable left part - left
+            createGable({ x: -3.3, y: 8.1, z: -10.2, w: 6, h: 1.7, ry: Math.PI / 2 }); // Main gable right part -left
 
-            createRoof({ x: -1.5, z: -4.3, y: 8.7, w: 3.6, d: 6.2, ry: Math.PI / 1, style: 'pitched' });
+            createRoof({ x: -1.5, z: -4.3, y: 8.7, w: 3.6, d: 9, ry: Math.PI / 1, style: 'pitched' });
             createGable({ x: -1.5, y: 8.15, z: -1.5, w: 3.1, h: 0.9 }); // Ext gable front
             createGable({ x: -1.5, y: 8.15, z: -7.2, w: 3.1, h: 0.9 }); // Ext gable back
 
-            // createRoof({ x: 4, y: 9, w: 6, d: 6.5, style: 'flat', ry: Math.PI/8 });
 
             // Wall Hanging Vines (Germani Lota Style)
             createWallVine({ x: 3.5, y: 8.5, z: 2.4, h: 7, w: 1.0, ry: Math.PI / 2 }); // Right wall top
             
-            // Wood Grills (Premium Fence Style)
-            createWoodGril({ x: 3.1, y: 4.15, z: -5.4, w: 3.7, h: 1.2, ry: -Math.PI / 2, startPost: true, midPost: true, endPost: true }); // Front ground left
-            createWoodGril({ x: 1.9, y: 4.15, z: -7.35, w: 2.6, h: 1.2, startPost: true, midPost: true, endPost: false }); // Front ground left
-            
+         
             // Wood Grill Roof (Pergola) above this area
             createPergola({ x: 1.5, y: 7.5, z: -5.2, w: 2.6, d: 4, color: 0x5d4037 }); 
 
