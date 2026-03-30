@@ -270,7 +270,7 @@
         }
 
         function createFancyWindow(config) {
-            const { w = 2, h = 2.8, trimT = 0.2, frameT = 0.05 } = config;
+            const { w = 2, h = 2.8, trimT = 0.2, frameT = 0.05, hasTree = true } = config;
             const group = new THREE.Group();
             
             const trimMat = new THREE.MeshStandardMaterial({ color: 0xfff0e0, roughness: 0.9, bumpScale: 0.02 }); // Creamy ornate stucco
@@ -312,24 +312,8 @@
             const sill = new THREE.Mesh(new THREE.BoxGeometry(sillW, sillH, sillD), trimMat);
             sill.position.set(0, -h/2 - sillH/2, sillD/2 - trimDepth/2 - 0.05);
             group.add(sill);
-            
-            // Majestic Curved Flower Box
-            const boxW = w + trimT * 2;
-            const boxH = 0.45;
-            const boxD = 0.35;
-            const fBoxGeo = new THREE.BoxGeometry(boxW, boxH, boxD);
-            const fBox = new THREE.Mesh(fBoxGeo, trimMat);
-            fBox.position.set(0, -h/2 + boxH/2 - 0.05, sillD - 0.05);
-            group.add(fBox);
-            
-            // Sculpted details on flower box front
-            const bulgeGeo = new THREE.CylinderGeometry(boxH/2, boxH/2, boxW + 0.1, 16);
-            const bulge = new THREE.Mesh(bulgeGeo, trimMat);
-            bulge.rotation.z = Math.PI / 2;
-            bulge.position.set(0, -h/2 + boxH/2 - 0.05, sillD + boxD/2 - 0.05);
-            group.add(bulge);
 
-            // Grand Corbels under the sill
+            // Grand Corbels under the sill (Defined before use)
             const corbel = (cx) => {
                 const cGroup = new THREE.Group();
                 const base = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.5, 0.25), trimMat);
@@ -341,9 +325,30 @@
                 cGroup.position.set(cx, -h/2 - sillH, sillD/2 - trimDepth/2);
                 group.add(cGroup);
             };
+            
             corbel(-w/2 + 0.1);
             corbel(w/2 - 0.1);
             corbel(0); // center corbel
+            
+            if (hasTree) {
+                // Majestic Curved Flower Box
+                const boxW = w + trimT * 2;
+                const boxH = 0.45;
+                const boxD = 0.35;
+                const fBoxGeo = new THREE.BoxGeometry(boxW, boxH, boxD);
+                const fBox = new THREE.Mesh(fBoxGeo, trimMat);
+                fBox.position.set(0, -h/2 + boxH/2 - 0.05, sillD - 0.05);
+                group.add(fBox);
+                
+                // Sculpted details on flower box front
+                const bulgeGeo = new THREE.CylinderGeometry(boxH/2, boxH/2, boxW + 0.1, 16);
+                const bulge = new THREE.Mesh(bulgeGeo, trimMat);
+                bulge.rotation.z = Math.PI / 2;
+                bulge.position.set(0, -h/2 + boxH/2 - 0.05, sillD + boxD/2 - 0.05);
+                group.add(bulge);
+            }
+
+
             
             // Intricate Top Decor Corbels
             const topC = (cx) => {
@@ -411,23 +416,28 @@
             glassObj.position.z = baseDepth / 2 - 0.02;
             group.add(glassObj);
 
-            // 5. Overflowing Botanicals in Flower Box
-            for(let i = 0; i < 35; i++) {
-                const r = 0.06 + Math.random() * 0.08;
-                const leaf = new THREE.Mesh(new THREE.SphereGeometry(r, 8, 8), leafMat);
-                leaf.position.set(
-                    (Math.random() - 0.5) * (boxW - 0.1), 
-                    -h/2 + boxH/2 + Math.random() * 0.2, 
-                    sillD + (Math.random() * boxD - boxD/2)
-                );
-                group.add(leaf);
-                
-                if (Math.random() > 0.6) {
-                    const flower = new THREE.Mesh(new THREE.SphereGeometry(r*0.6, 6, 6), flowerMat);
-                    flower.position.copy(leaf.position);
-                    flower.position.y += Math.random() * 0.1;
-                    flower.position.z += Math.random() * 0.1;
-                    group.add(flower);
+            // 5. Overflowing Botanicals in Flower Box (Conditional)
+            if (hasTree) {
+                const boxW = w + trimT * 2;
+                const boxD = 0.35;
+                const boxH = 0.45;
+                for(let i = 0; i < 35; i++) {
+                    const r = 0.06 + Math.random() * 0.08;
+                    const leaf = new THREE.Mesh(new THREE.SphereGeometry(r, 8, 8), leafMat);
+                    leaf.position.set(
+                        (Math.random() - 0.5) * (boxW - 0.1), 
+                        -h/2 + boxH/2 + Math.random() * 0.2, 
+                        sillD + (Math.random() * boxD - boxD/2)
+                    );
+                    group.add(leaf);
+                    
+                    if (Math.random() > 0.6) {
+                        const flower = new THREE.Mesh(new THREE.SphereGeometry(r*0.6, 6, 6), flowerMat);
+                        flower.position.copy(leaf.position);
+                        flower.position.y += Math.random() * 0.1;
+                        flower.position.z += Math.random() * 0.1;
+                        group.add(flower);
+                    }
                 }
             }
 
@@ -1186,11 +1196,11 @@
             // createWindow({ x: 1.0, y: 6, z: -13.5, w: 2, h: 1.5 }); // right part
             // createWindow({ x: 1.0, y: 2, z: -13.5, w: 2, h: 1.5 }); // right part
             
-            // New Fancy Majestic Arched Windows with Flower Beds
-            createFancyWindow({ x: 1.0, y: 6.4, z: 3.25, w: 1.2, h: 1.8 }); // Top left
-            createFancyWindow({ x: 1.0, y: 2.4, z: 3.25, w: 1.2, h: 1.8 }); // Bottom left
-            createFancyWindow({ x: 1.0, y: 6.4, z: -13.4, w: 1.2, h: 1.8 }); // Top right
-            createFancyWindow({ x: 1.0, y: 2.4, z: -13.4, w: 1.2, h: 1.8 }); // Bottom right
+            // New Fancy Majestic Arched Windows: 2 types (Simple and with Flower Bed/Tree)
+            createFancyWindow({ x: 1.0, y: 6.4, z: 3.25, w: 1.2, h: 1.8, hasTree: false }); // Top left (with tree)
+            createFancyWindow({ x: 1.0, y: 2.4, z: 3.25, w: 1.2, h: 1.8, hasTree: false }); // Bottom left (simple)
+            createFancyWindow({ x: 1.0, y: 6.4, z: -13.4, w: 1.2, h: 1.8, hasTree: false }); // Top right (simple)
+            createFancyWindow({ x: 1.0, y: 2.4, z: -13.4, w: 1.2, h: 1.8, hasTree: false }); // Bottom right (with tree)
             createBalcony({ x:3.4, y: 4.2, z: 0, w: 3.5,ry: Math.PI/2, });
             createBalcony({ x:3.4, y: 4.2, z: -10.2, w: 3.5,ry: Math.PI/2, });
             createRoof({ x: -0, z: 0, y: 9, w: 6.4, d: 7.2, ry: Math.PI / 2, style: 'pitched' });
