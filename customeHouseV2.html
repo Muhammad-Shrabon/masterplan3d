@@ -192,20 +192,244 @@
         }
 
         function createWindow(config) {
-            const { w = 1.5, h = 1.5, borderT = 0.1 } = config;
+            const { w = 1.5, h = 1.5, trimT = 0.12, frameT = 0.04 } = config;
             const group = new THREE.Group();
-            const glass = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.05), new THREE.MeshStandardMaterial({ color: 0x88ccff, transparent: true, opacity: 0.5 }));
-            group.add(glass);
-            const borderMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
-            const createPart = (bw, bh, px, py) => {
-                const p = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, 0.15), borderMat);
-                p.position.set(px, py, 0);
+            
+            // Materials
+            const trimMat = new THREE.MeshStandardMaterial({ color: 0xe5e7eb, roughness: 0.8 }); // Light gray outer trim
+            const frameMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5 }); // White inner frame
+            const glassMat = new THREE.MeshStandardMaterial({ 
+                color: 0x050505, 
+                transparent: true, 
+                opacity: 0.8,
+                metalness: 0.8,
+                roughness: 0.1
+            }); // Reflective window glass
+
+            // 1. Outer Trim (Light Gray)
+            const createTrim = (tw, th, td, px, py, pz) => {
+                const p = new THREE.Mesh(new THREE.BoxGeometry(tw, th, td), trimMat);
+                p.position.set(px, py, pz);
                 group.add(p);
             };
-            createPart(w + borderT * 2, borderT, 0, h / 2 + borderT / 2);
-            createPart(w + borderT * 2, borderT, 0, -h / 2 - borderT / 2);
-            createPart(borderT, h, -w / 2 - borderT / 2, 0);
-            createPart(borderT, h, w / 2 + borderT / 2, 0);
+            
+            const trimDepth = 0.22; // Slightly thicker than standard wall 0.2
+            
+            // Top Trim
+            createTrim(w + trimT * 2, trimT, trimDepth, 0, h / 2 + trimT / 2, 0);
+            // Side Trims
+            createTrim(trimT, h, trimDepth, -w / 2 - trimT / 2, 0, 0);
+            createTrim(trimT, h, trimDepth, w / 2 + trimT / 2, 0, 0);
+            
+            // Bottom Sill (extends out and is slightly thicker)
+            const sillExtend = 0.08;
+            const sillDepth = trimDepth + sillExtend;
+            createTrim(w + trimT * 2 + 0.1, trimT * 1.2, sillDepth, 0, -h / 2 - (trimT * 1.2) / 2, sillExtend / 2);
+
+            // 2. Inner White Frame
+            const frameDepth = 0.15;
+            const createFrame = (fw, fh, fd, px, py) => {
+                const f = new THREE.Mesh(new THREE.BoxGeometry(fw, fh, fd), frameMat);
+                f.position.set(px, py, 0.02); // Slightly protruding from glass
+                group.add(f);
+            };
+
+            // Outer white frame
+            createFrame(w, frameT, frameDepth, 0, h / 2 - frameT / 2); // Top
+            createFrame(w, frameT, frameDepth, 0, -h / 2 + frameT / 2); // Bottom
+            createFrame(frameT, h - frameT * 2, frameDepth, -w / 2 + frameT / 2, 0); // Left
+            createFrame(frameT, h - frameT * 2, frameDepth, w / 2 - frameT / 2, 0); // Right
+
+            // Central Vertical Mullion (Thicker as it represents two casements)
+            const centerMullionT = frameT * 1.5;
+            createFrame(centerMullionT, h - frameT * 2, frameDepth, 0, 0);
+            
+            // Horizontal Muntins (3 per side = 4 panes)
+            const panesY = 4;
+            const muntinT = frameT * 0.8;
+            const paneHeight = (h - frameT * 2 - muntinT * (panesY - 1)) / panesY;
+            
+            const mw = (w - frameT * 2 - centerMullionT) / 2;
+            const px_left = -w / 2 + frameT + mw / 2;
+            const px_right = w / 2 - frameT - mw / 2;
+
+            for (let i = 1; i < panesY; i++) {
+                const py = (h / 2 - frameT) - i * paneHeight - (i - 0.5) * muntinT;
+                // Left muntin
+                createFrame(mw, muntinT, frameDepth * 0.8, px_left, py);
+                // Right muntin
+                createFrame(mw, muntinT, frameDepth * 0.8, px_right, py);
+            }
+
+            // 3. Glass Panes
+            const glass = new THREE.Mesh(new THREE.BoxGeometry(w - frameT * 2, h - frameT * 2, 0.01), glassMat);
+            glass.position.z = -0.02; // Just behind the frames
+            group.add(glass);
+
+            return finalizeMesh(group, layers.windows, config);
+        }
+
+        function createFancyWindow(config) {
+            const { w = 2, h = 2.8, trimT = 0.2, frameT = 0.05 } = config;
+            const group = new THREE.Group();
+            
+            const trimMat = new THREE.MeshStandardMaterial({ color: 0xfff0e0, roughness: 0.9, bumpScale: 0.02 }); // Creamy ornate stucco
+            const frameMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 });
+            const glassMat = new THREE.MeshStandardMaterial({ color: 0x11181c, metalness: 0.9, roughness: 0.1, transparent: true, opacity: 0.85 });
+            const leafMat = new THREE.MeshStandardMaterial({ color: 0x2d5a27, roughness: 0.9 });
+            const flowerMat = new THREE.MeshStandardMaterial({ color: 0xfff0f0, roughness: 0.5 });
+
+            const baseDepth = 0.15;
+            const trimDepth = 0.28;
+
+            // 1. Ornate Outer Arch Frame using ExtrudeGeometry
+            const shape = new THREE.Shape();
+            const archY = h/2 - w/2; 
+            shape.moveTo(-w/2 - trimT, -h/2);
+            shape.lineTo(w/2 + trimT, -h/2);
+            shape.lineTo(w/2 + trimT, archY);
+            shape.absarc(0, archY, w/2 + trimT, 0, Math.PI, false); // CCW (Right to Left)
+            shape.lineTo(-w/2 - trimT, -h/2);
+
+            const hole = new THREE.Path();
+            hole.moveTo(-w/2, -h/2);
+            hole.lineTo(-w/2, archY);
+            hole.absarc(0, archY, w/2, Math.PI, 0, true); // CW (Left to Right)
+            hole.lineTo(w/2, -h/2);
+            hole.lineTo(-w/2, -h/2);
+            shape.holes.push(hole);
+
+            const exSettings = { depth: trimDepth, bevelEnabled: true, bevelSize: 0.03, bevelThickness: 0.04, bevelSegments: 3 };
+            const outerGeo = new THREE.ExtrudeGeometry(shape, exSettings);
+            const outerFrame = new THREE.Mesh(outerGeo, trimMat);
+            outerFrame.position.z = 0;
+            group.add(outerFrame);
+
+            // 2. Thick Decorative Sill and Corbels
+            const sillW = w + trimT * 4;
+            const sillH = 0.25;
+            const sillD = trimDepth + 0.25;
+            const sill = new THREE.Mesh(new THREE.BoxGeometry(sillW, sillH, sillD), trimMat);
+            sill.position.set(0, -h/2 - sillH/2, sillD/2 - trimDepth/2 - 0.05);
+            group.add(sill);
+            
+            // Majestic Curved Flower Box
+            const boxW = w + trimT * 2;
+            const boxH = 0.45;
+            const boxD = 0.35;
+            const fBoxGeo = new THREE.BoxGeometry(boxW, boxH, boxD);
+            const fBox = new THREE.Mesh(fBoxGeo, trimMat);
+            fBox.position.set(0, -h/2 + boxH/2 - 0.05, sillD - 0.05);
+            group.add(fBox);
+            
+            // Sculpted details on flower box front
+            const bulgeGeo = new THREE.CylinderGeometry(boxH/2, boxH/2, boxW + 0.1, 16);
+            const bulge = new THREE.Mesh(bulgeGeo, trimMat);
+            bulge.rotation.z = Math.PI / 2;
+            bulge.position.set(0, -h/2 + boxH/2 - 0.05, sillD + boxD/2 - 0.05);
+            group.add(bulge);
+
+            // Grand Corbels under the sill
+            const corbel = (cx) => {
+                const cGroup = new THREE.Group();
+                const base = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.5, 0.25), trimMat);
+                base.position.set(0, -0.25, 0);
+                const curve = new THREE.Mesh(new THREE.SphereGeometry(0.12, 16, 16), trimMat);
+                curve.position.set(0, -0.4, 0.1);
+                cGroup.add(base);
+                cGroup.add(curve);
+                cGroup.position.set(cx, -h/2 - sillH, sillD/2 - trimDepth/2);
+                group.add(cGroup);
+            };
+            corbel(-w/2 + 0.1);
+            corbel(w/2 - 0.1);
+            corbel(0); // center corbel
+            
+            // Intricate Top Decor Corbels
+            const topC = (cx) => {
+                const tGroup = new THREE.Group();
+                const base = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.6, trimDepth + 0.15), trimMat);
+                base.position.set(0, 0.3, 0);
+                const scroll = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.28, 16), trimMat);
+                scroll.rotation.z = Math.PI / 2;
+                scroll.position.set(0, 0.1, trimDepth/2 + 0.08);
+                tGroup.add(base);
+                tGroup.add(scroll);
+                tGroup.position.set(cx, archY - 0.1, 0.05);
+                group.add(tGroup);
+            };
+            topC(-w/2 - trimT * 1.5);
+            topC(w/2 + trimT * 1.5);
+
+            // 3. Inner White Frame
+            const innerShape = new THREE.Shape();
+            innerShape.moveTo(-w/2, -h/2);
+            innerShape.lineTo(w/2, -h/2);
+            innerShape.lineTo(w/2, archY);
+            innerShape.absarc(0, archY, w/2, 0, Math.PI, false);
+            innerShape.lineTo(-w/2, -h/2);
+            
+            const innerHole = new THREE.Path();
+            innerHole.moveTo(-w/2 + frameT, -h/2 + frameT);
+            innerHole.lineTo(-w/2 + frameT, archY);
+            innerHole.absarc(0, archY, w/2 - frameT, Math.PI, 0, true);
+            innerHole.lineTo(w/2 - frameT, -h/2 + frameT);
+            innerHole.lineTo(-w/2 + frameT, -h/2 + frameT);
+            innerShape.holes.push(innerHole);
+
+            const innerExSettings = { depth: baseDepth, bevelEnabled: false };
+            const innerFrameMesh = new THREE.Mesh(new THREE.ExtrudeGeometry(innerShape, innerExSettings), frameMat);
+            innerFrameMesh.position.z = 0.02;
+            group.add(innerFrameMesh);
+
+            // Inner Grid (Muntins)
+            const vert = new THREE.Mesh(new THREE.BoxGeometry(frameT * 1.5, h - frameT, baseDepth * 0.8), frameMat);
+            vert.position.set(0, 0, baseDepth/2);
+            group.add(vert);
+            
+            // 2 Horizontal rows for 3 vertical panes per side
+            for (let i = 1; i <= 2; i++) {
+                const py = -h/2 + frameT + i * ((h - frameT*2) / 3);
+                const hzL = new THREE.Mesh(new THREE.BoxGeometry(w/2 - frameT, frameT, baseDepth*0.6), frameMat);
+                hzL.position.set(-w/4, py, baseDepth/2);
+                group.add(hzL);
+                
+                const hzR = new THREE.Mesh(new THREE.BoxGeometry(w/2 - frameT, frameT, baseDepth*0.6), frameMat);
+                hzR.position.set(w/4, py, baseDepth/2);
+                group.add(hzR);
+            }
+
+            // 4. Arch Glass
+            const glassShape = new THREE.Shape();
+            glassShape.moveTo(-w/2, -h/2);
+            glassShape.lineTo(w/2, -h/2);
+            glassShape.lineTo(w/2, archY);
+            glassShape.absarc(0, archY, w/2, 0, Math.PI, false);
+            glassShape.lineTo(-w/2, -h/2);
+            
+            const glassObj = new THREE.Mesh(new THREE.ExtrudeGeometry(glassShape, { depth: 0.01, bevelEnabled: false }), glassMat);
+            glassObj.position.z = baseDepth / 2 - 0.02;
+            group.add(glassObj);
+
+            // 5. Overflowing Botanicals in Flower Box
+            for(let i = 0; i < 35; i++) {
+                const r = 0.06 + Math.random() * 0.08;
+                const leaf = new THREE.Mesh(new THREE.SphereGeometry(r, 8, 8), leafMat);
+                leaf.position.set(
+                    (Math.random() - 0.5) * (boxW - 0.1), 
+                    -h/2 + boxH/2 + Math.random() * 0.2, 
+                    sillD + (Math.random() * boxD - boxD/2)
+                );
+                group.add(leaf);
+                
+                if (Math.random() > 0.6) {
+                    const flower = new THREE.Mesh(new THREE.SphereGeometry(r*0.6, 6, 6), flowerMat);
+                    flower.position.copy(leaf.position);
+                    flower.position.y += Math.random() * 0.1;
+                    flower.position.z += Math.random() * 0.1;
+                    group.add(flower);
+                }
+            }
 
             return finalizeMesh(group, layers.windows, config);
         }
@@ -956,10 +1180,17 @@
             createStairs({ x: 4.2, z: 0, y: 0, ry: -Math.PI / 2, w: 1.8, steps: 3 });
             createStairs({ x: 4.2, z: -10.2, y: 0, ry: -Math.PI / 2, w: 1.8, steps: 3 }); // right part 
             // createWall({ ry: 2,x: -1.5, w: 5.5, h: 9, useTexture: true });
-            createWindow({ x: 1.0, y: 6, z: 3.3, w: 2, h: 1.5 });
-            createWindow({ x: 1.0, y: 2, z: 3.3, w: 2, h: 1.5 });
-            createWindow({ x: 1.0, y: 6, z: -13.5, w: 2, h: 1.5 }); // right part
-            createWindow({ x: 1.0, y: 2, z: -13.5, w: 2, h: 1.5 }); // right part
+            // Original window calls commented out as requested
+            // createWindow({ x: 1.0, y: 6, z: 3.3, w: 2, h: 1.5 });
+            // createWindow({ x: 1.0, y: 2, z: 3.3, w: 2, h: 1.5 });
+            // createWindow({ x: 1.0, y: 6, z: -13.5, w: 2, h: 1.5 }); // right part
+            // createWindow({ x: 1.0, y: 2, z: -13.5, w: 2, h: 1.5 }); // right part
+            
+            // New Fancy Majestic Arched Windows with Flower Beds
+            createFancyWindow({ x: 1.0, y: 6.4, z: 3.25, w: 1.2, h: 1.8 }); // Top left
+            createFancyWindow({ x: 1.0, y: 2.4, z: 3.25, w: 1.2, h: 1.8 }); // Bottom left
+            createFancyWindow({ x: 1.0, y: 6.4, z: -13.4, w: 1.2, h: 1.8 }); // Top right
+            createFancyWindow({ x: 1.0, y: 2.4, z: -13.4, w: 1.2, h: 1.8 }); // Bottom right
             createBalcony({ x:3.4, y: 4.2, z: 0, w: 3.5,ry: Math.PI/2, });
             createBalcony({ x:3.4, y: 4.2, z: -10.2, w: 3.5,ry: Math.PI/2, });
             createRoof({ x: -0, z: 0, y: 9, w: 6.4, d: 7.2, ry: Math.PI / 2, style: 'pitched' });
