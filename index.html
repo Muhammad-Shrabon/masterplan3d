@@ -2759,7 +2759,7 @@
             const treeGroup = new THREE.Group();
             treeGroup.name = 'stdTree';
             // Internal height is 1.15. Normalize to 1.0 (1/1.15 = 0.869)
-            treeGroup.scale.set(0.87, 0.87, 0.87);
+            treeGroup.scale.set(10.87, 0.87, 0.87);
 
             // Trunk (height 0.5)
             const trunkGeometry = getSharedGeometry('stdTrunk', () => new THREE.CylinderGeometry(0.08, 0.08, 0.5, 6));
@@ -2912,7 +2912,7 @@
             growBranch(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 1, 0), 5.5, 0.9, 0);
         }
 
-        function createGTree(scale = 1.0) {
+        function createGTree(scale = 4.0) {
             const treeGroup = new THREE.Group();
             treeGroup.name = 'gtree';
             // Internal height for depth 2: Seg(10) + Child(7.5) + GChild(5.625) = 23.125
@@ -2945,9 +2945,9 @@
 
                     // _-- GTREE LEAF SET Y POSITION __
                     leaf.position.set(
-                        (Math.random() - 0.5) * radius * 12,
-                        10,
-                        (Math.random() - 0.5) * radius * 12
+                        (Math.random() - 0.1) * radius * 12,
+                        5,
+                        (Math.random() - 0.1) * radius * 12
                     );
 
                     // Store for animation
