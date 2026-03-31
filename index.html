@@ -1528,14 +1528,16 @@
                 basePlotD: 4000,
                 hasWing: false,
                 hFloorH: 140,
-                houseOX: 200,
-                houseOZ: 500,
-                poolOX: -570,
-                poolOZ: -1250,
+                poolOX: -550,
+                poolOZ: -1050,
                 carOX: -150,
                 carOZ: 100,
                 playOX: -570,
                 playOZ: 200,
+                houseDesign: 'customV2',
+                hScale:7,
+                hRotate:90,
+                houseOX: 500, houseOZ: 510,
                 carW: 200,
                 carL: 460
             });
@@ -1559,17 +1561,19 @@
                 basePlotW: 2000,
                 basePlotD: 4000,
                 hasWing: false,
-                hFloorH: 140,
-                houseOX: 200,
-                houseOZ: 500,
-                poolOX: -570,
-                poolOZ: -1250,
+                hFloorH: 20,
+                poolOX: -550,
+                poolOZ: -1050,
                 carOX: -150,
                 carOZ: 100,
                 playOX: -570,
                 playOZ: 200,
                 carW: 200,
-                carL: 460
+                carL: 460,
+                houseDesign: 'customV2',
+                hScale:7,
+                hRotate:90,
+                houseOX: 500, houseOZ: 510,
             });
             createHouseCluster(subGreenLandCL13, {
                 serialCount: 12,
@@ -1589,10 +1593,10 @@
                 basePlotW: 1200,
                 basePlotD: 1400,
                 hasWing: false,
-                hFloorH: 120,
+                hFloorH: 20,
                 houseOX: 200,
                 houseOZ: 300,
-                poolOX: -270,
+                poolOX: -250,
                 poolOZ: -150,
                 carOX: -150,
                 carOZ: 100,
@@ -1600,7 +1604,11 @@
                 playOZ: 200,
                 carW: 100,
                 carL: 260,
-                rotation: 93
+                rotation: 93,
+                houseDesign: 'customV2',
+                hScale:4,
+                hRotate:90,
+                houseOX: 400, houseOZ: 510,
             });
             createHouseCluster(subGreenLandCL14, {
                 innerGapScale: { x: 1, y: .5 },
@@ -1633,7 +1641,11 @@
                 playOZ: 200,
                 carW: 200,
                 carL: 460,
-                houseRotation: 360
+                rotation: 180,
+                houseDesign: 'customV2',
+                hScale:7,
+                hRotate:90,
+                houseOX: 500, houseOZ: 510,
             });
             createHouseCluster(subGreenLandCL15, {
                 innerGapScale: { x: 1, y: .5 },
@@ -1655,7 +1667,7 @@
                 basePlotW: 2000,
                 basePlotD: 4000,
                 hasWing: false,
-                hFloorH: 140,
+                hFloorH: 40,
                 houseOX: 200,
                 houseOZ: 500,
                 poolOX: -570,
@@ -1665,8 +1677,12 @@
                 playOX: -570,
                 playOZ: 200,
                 carW: 200,
-                carL: 460,
-                houseRotation: 360
+                carL: 460, 
+                rotation: 180,
+                houseDesign: 'customV2',
+                hScale:7,
+                hRotate:90,
+                houseOX: 500, houseOZ: 510,
             });
 
             // Shared materials for all roads
@@ -3081,6 +3097,108 @@
             return srv2_finalizeMesh(group, parent, config);
         }
 
+        function srv2_createFancyWindow(parent, config) {
+            const { w = 2, h = 2.8, trimT = 0.2, frameT = 0.05, hasTree = true } = config;
+            const group = new THREE.Group();
+            
+            const trimMat = getSharedMaterial('fancyWinTrim', () => new THREE.MeshStandardMaterial({ color: 0xfff0e0, roughness: 0.9 })); 
+            const frameMat = getSharedMaterial('fancyWinFrame', () => new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 }));
+            const glassMat = getSharedMaterial('fancyWinGlass', () => new THREE.MeshStandardMaterial({ color: 0x11181c, metalness: 0.9, roughness: 0.1, transparent: true, opacity: 0.85 }));
+            const leafMat = getSharedMaterial('fancyWinLeaf', () => new THREE.MeshStandardMaterial({ color: 0x2d5a27, roughness: 0.9 }));
+            const flowerMat = getSharedMaterial('fancyWinFlower', () => new THREE.MeshStandardMaterial({ color: 0xfff0f0, roughness: 0.5 }));
+
+            const baseDepth = 0.15;
+            const trimDepth = 0.28;
+
+            const archY = h/2 - w/2; 
+            const shape = new THREE.Shape();
+            shape.moveTo(-w/2 - trimT, -h/2);
+            shape.lineTo(w/2 + trimT, -h/2);
+            shape.lineTo(w/2 + trimT, archY);
+            shape.absarc(0, archY, w/2 + trimT, 0, Math.PI, false);
+            shape.lineTo(-w/2 - trimT, -h/2);
+
+            const hole = new THREE.Path();
+            hole.moveTo(-w/2, -h/2);
+            hole.lineTo(-w/2, archY);
+            hole.absarc(0, archY, w/2, Math.PI, 0, true);
+            hole.lineTo(w/2, -h/2);
+            hole.lineTo(-w/2, -h/2);
+            shape.holes.push(hole);
+
+            const outerGeo = new THREE.ExtrudeGeometry(shape, { depth: trimDepth, bevelEnabled: true, bevelSize: 0.03, bevelThickness: 0.04, bevelSegments: 3 });
+            const outerFrame = new THREE.Mesh(outerGeo, trimMat);
+            group.add(outerFrame);
+
+            const sillW = w + trimT * 4;
+            const sillH = 0.25;
+            const sillD = trimDepth + 0.25;
+            const sillGeo = getSharedGeometry(`fancyWinSill_${sillW}_${sillH}_${sillD}`, () => new THREE.BoxGeometry(sillW, sillH, sillD));
+            const sill = new THREE.Mesh(sillGeo, trimMat);
+            sill.position.set(0, -h/2 - sillH/2, sillD/2 - trimDepth/2 - 0.05);
+            group.add(sill);
+
+            const corbel = (cx) => {
+                const cGroup = new THREE.Group();
+                const base = new THREE.Mesh(getSharedGeometry('corbelBase', () => new THREE.BoxGeometry(0.2, 0.5, 0.25)), trimMat);
+                base.position.set(0, -0.25, 0);
+                const curve = new THREE.Mesh(getSharedGeometry('corbelCurve', () => new THREE.SphereGeometry(0.12, 16, 16)), trimMat);
+                curve.position.set(0, -0.4, 0.1);
+                cGroup.add(base, curve);
+                cGroup.position.set(cx, -h/2 - sillH, sillD/2 - trimDepth/2);
+                group.add(cGroup);
+            };
+            corbel(-w/2 + 0.1);
+            corbel(w/2 - 0.1);
+            corbel(0);
+            
+            if (hasTree) {
+                const boxW = w + trimT * 2;
+                const boxH = 0.45;
+                const boxD = 0.35;
+                const fBox = new THREE.Mesh(getSharedGeometry(`flowerBox_${boxW}`, () => new THREE.BoxGeometry(boxW, boxH, boxD)), trimMat);
+                fBox.position.set(0, -h/2 + boxH/2 - 0.05, sillD - 0.05);
+                group.add(fBox);
+                
+                for(let i = 0; i < 20; i++) {
+                    const r = 0.06 + Math.random() * 0.08;
+                    const leaf = new THREE.Mesh(new THREE.SphereGeometry(r, 8, 8), leafMat);
+                    leaf.position.set((Math.random() - 0.5) * (boxW - 0.1), -h/2 + boxH/2 + Math.random() * 0.2, sillD + (Math.random() * boxD - boxD/2));
+                    group.add(leaf);
+                }
+            }
+
+            const innerShape = new THREE.Shape();
+            innerShape.moveTo(-w/2, -h/2);
+            innerShape.lineTo(w/2, -h/2);
+            innerShape.lineTo(w/2, archY);
+            innerShape.absarc(0, archY, w/2, 0, Math.PI, false);
+            innerShape.lineTo(-w/2, -h/2);
+            const innerHole = new THREE.Path();
+            innerHole.moveTo(-w/2+frameT, -h/2+frameT);
+            innerHole.lineTo(-w/2+frameT, archY);
+            innerHole.absarc(0, archY, w/2-frameT, Math.PI, 0, true);
+            innerHole.lineTo(w/2-frameT, -h/2+frameT);
+            innerHole.lineTo(-w/2+frameT, -h/2+frameT);
+            innerShape.holes.push(innerHole);
+
+            const innerFrameMesh = new THREE.Mesh(new THREE.ExtrudeGeometry(innerShape, { depth: baseDepth, bevelEnabled: false }), frameMat);
+            innerFrameMesh.position.z = 0.02;
+            group.add(innerFrameMesh);
+
+            const glassShape = new THREE.Shape();
+            glassShape.moveTo(-w/2, -h/2);
+            glassShape.lineTo(w/2, -h/2);
+            glassShape.lineTo(w/2, archY);
+            glassShape.absarc(0, archY, w/2, 0, Math.PI, false);
+            glassShape.lineTo(-w/2, -h/2);
+            const glassObj = new THREE.Mesh(new THREE.ExtrudeGeometry(glassShape, { depth: 0.01, bevelEnabled: false }), glassMat);
+            glassObj.position.z = baseDepth / 2 - 0.02;
+            group.add(glassObj);
+
+            return srv2_finalizeMesh(group, parent, config);
+        }
+
         function srv2_createDoor(parent, config) {
             const { w = 1.2, h = 2.2, borderT = 0.15, isOpen = false } = config;
             const group = new THREE.Group();
@@ -3124,8 +3242,80 @@
             return srv2_finalizeMesh(group, parent, config);
         }
 
+        function srv2_createMainDoor(parent, config) {
+            const { w = 2.4, h = 2.8, borderT = 0.2, isOpen = false } = config;
+            const group = new THREE.Group();
+            
+            const frameMat = getSharedMaterial('mainDoorFrame', () => new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8 }));
+            const doorMat = getSharedMaterial('mainDoorWood', () => new THREE.MeshStandardMaterial({ color: 0x3e2723, roughness: 0.6 }));
+            const glassMat = getSharedMaterial('mainDoorGlass', () => new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 0.1, metalness: 0.95 }));
+            const handleMat = getSharedMaterial('mainDoorHandle', () => new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 1, roughness: 0.2 }));
+
+            const createFrame = (fw, fh, px, py) => {
+                const f = new THREE.Mesh(getSharedGeometry(`mainDoorFrame_${fw}_${fh}`, () => new THREE.BoxGeometry(fw, fh, 0.3)), frameMat);
+                f.position.set(px, py, 0);
+                group.add(f);
+            };
+            
+            createFrame(borderT, h + 0.8 + borderT, -w / 2 - borderT / 2, (h + 0.8) / 2);
+            createFrame(borderT, h + 0.8 + borderT, w / 2 + borderT / 2, (h + 0.8) / 2);
+            createFrame(w + borderT * 2, borderT, 0, h + borderT / 2); // Transom separator
+            createFrame(w + borderT * 2, borderT, 0, h + 0.8 + borderT / 2); // Top roof frame
+            
+            // Overhead transom window
+            const transom = new THREE.Mesh(getSharedGeometry(`transom_${w}`, () => new THREE.BoxGeometry(w, 0.8 - borderT, 0.05)), glassMat);
+            transom.position.set(0, h + 0.4 + borderT / 2, 0);
+            group.add(transom);
+
+            // Left Door Leaf
+            const leftDoor = new THREE.Group();
+            const bodyL = new THREE.Mesh(getSharedGeometry(`doorBodyL_${w}_${h}`, () => new THREE.BoxGeometry(w / 2, h, 0.1)), doorMat);
+            bodyL.position.set(w / 4, h / 2, 0);
+            leftDoor.add(bodyL);
+
+            const panelL = new THREE.Mesh(getSharedGeometry(`doorPanelL_${w}_${h}`, () => new THREE.BoxGeometry(w / 3, h * 0.7, 0.13)), doorMat); 
+            panelL.position.set(w / 4, h / 2, 0);
+            leftDoor.add(panelL);
+
+            const glassL = new THREE.Mesh(getSharedGeometry(`doorGlassL_${w}_${h}`, () => new THREE.BoxGeometry(w / 8, h * 0.6, 0.15)), glassMat);
+            glassL.position.set(w / 4, h / 2, 0);
+            leftDoor.add(glassL);
+
+            const handleL = new THREE.Mesh(getSharedGeometry('doorHandleStick', () => new THREE.CylinderGeometry(0.02, 0.02, 0.8)), handleMat);
+            handleL.position.set(w / 2 - 0.1, h / 2, 0.12);
+            leftDoor.add(handleL);
+
+            leftDoor.position.x = -w / 2;
+            if (isOpen) leftDoor.rotation.y = -Math.PI / 2.5;
+            group.add(leftDoor);
+
+            // Right Door Leaf
+            const rightDoor = new THREE.Group();
+            const bodyR = new THREE.Mesh(getSharedGeometry(`doorBodyR_${w}_${h}`, () => new THREE.BoxGeometry(w / 2, h, 0.1)), doorMat);
+            bodyR.position.set(-w / 4, h / 2, 0);
+            rightDoor.add(bodyR);
+
+            const panelR = new THREE.Mesh(getSharedGeometry(`doorPanelR_${w}_${h}`, () => new THREE.BoxGeometry(w / 3, h * 0.7, 0.13)), doorMat); 
+            panelR.position.set(-w / 4, h / 2, 0);
+            rightDoor.add(panelR);
+
+            const glassR = new THREE.Mesh(getSharedGeometry(`doorGlassR_${w}_${h}`, () => new THREE.BoxGeometry(w / 8, h * 0.6, 0.15)), glassMat);
+            glassR.position.set(-w / 4, h / 2, 0);
+            rightDoor.add(glassR);
+
+            const handleR = new THREE.Mesh(getSharedGeometry('doorHandleStick', () => new THREE.CylinderGeometry(0.02, 0.02, 0.8)), handleMat);
+            handleR.position.set(-w / 2 + 0.1, h / 2, 0.12);
+            rightDoor.add(handleR);
+
+            rightDoor.position.x = w / 2;
+            if (isOpen) rightDoor.rotation.y = Math.PI / 2.5;
+            group.add(rightDoor);
+
+            return srv2_finalizeMesh(group, parent, config);
+        }
+
         function srv2_createBeamSet(parent, config) {
-            const { w = 0.3, h = 4, dist = 5, isCircle = false, count = 4 } = config;
+            const { w = 0.3, h = 4, dist = 5, isCircle = false, count = 4, style = 'default' } = config;
             const group = new THREE.Group();
             const beamMat = getSharedMaterial('beamMatLight', () => new THREE.MeshStandardMaterial({ color: 0xdddddd }));
             const beamGeo = getSharedGeometry(`beamGeo_${w}_${h}_${isCircle}`, () => {
@@ -3133,7 +3323,17 @@
             });
 
             let positions = [];
-            if (count === 4) {
+            if (style === 'X' || style === 'x') {
+                for (let i = 0; i < count; i++) {
+                    const px = count === 1 ? 0 : -dist / 2 + (i / (count - 1)) * dist;
+                    positions.push({ px: px, pz: 0 });
+                }
+            } else if (style === 'Y' || style === 'y' || style === 'Z' || style === 'z') {
+                for (let i = 0; i < count; i++) {
+                    const pz = count === 1 ? 0 : -dist / 2 + (i / (count - 1)) * dist;
+                    positions.push({ px: 0, pz: pz });
+                }
+            } else if (count === 4) {
                 positions = [{ px: -dist / 2, pz: -dist / 2 }, { px: dist / 2, pz: -dist / 2 }, { px: -dist / 2, pz: dist / 2 }, { px: dist / 2, pz: dist / 2 }];
             } else {
                 for (let i = 0; i < count; i++) {
@@ -3144,6 +3344,7 @@
             positions.forEach(pos => {
                 const beam = new THREE.Mesh(beamGeo, beamMat);
                 beam.position.set(pos.px, h / 2, pos.pz);
+                // or default square corners/radial distribution
                 beam.castShadow = true;
                 group.add(beam);
             });
@@ -3199,28 +3400,77 @@
         }
 
         function srv2_createRoof(parent, config) {
-            const { w = 6, d = 8, style = 'pitched', color = 0x8b0000 } = config;
+            const { w = 6, d = 8, h = 2, faces = 2, style = 'pitched', color = 0xfa6557 } = config;
             const group = new THREE.Group();
-            const s2RoofMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.5, metalness: 0.3 });
+            
+            const roofMat = getSharedMaterial(`srv2RoofMat_${color}`, () => new THREE.MeshStandardMaterial({ color: color, roughness: 0.5, metalness: 0.3 }));
+
+            let actualFaces = faces;
+            if (style === 'square') actualFaces = 4;
+            else if (style === 'circle' || faces === 'circle') actualFaces = 32;
+            else if (Number(faces) > 2) actualFaces = Number(faces);
+            else if (style === 'pitched') actualFaces = 2;
+
             if (style === 'pitched') {
-                const createS = (rz, ox) => {
-                    const s = new THREE.Group();
-                    const b = new THREE.Mesh(new THREE.BoxGeometry(w / 2 + 0.5, 0.1, d), s2RoofMat);
-                    s.add(b);
-                    for (let i = 0; i < 20; i++) {
-                        const r = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.06, d), s2RoofMat);
-                        r.position.set((-w / 4) + (i * w / 38), 0.05, 0);
-                        s.add(r);
-                    }
-                    s.rotation.z = rz;
-                    s.position.x = ox;
-                    return s;
-                };
-                group.add(createS(Math.PI / 6, -w / 4));
-                group.add(createS(-Math.PI / 6, w / 4));
-            } else {
-                group.add(new THREE.Mesh(new THREE.BoxGeometry(w, 0.2, d), s2RoofMat));
+                if (actualFaces >= 4) {
+                    // Hip Roof (4-faced pitched)
+                    const oW = w + 1.0; 
+                    const oD = d + 1.0;
+                    
+                    const slab = new THREE.Mesh(getSharedGeometry(`hipRoofSlab_${oW}_${oD}`, () => new THREE.BoxGeometry(oW, 0.1, oD)), roofMat);
+                    group.add(slab);
+
+                    const oMaxSize = Math.max(oW, oD);
+                    const coneRadius = (oMaxSize / 2) * Math.sqrt(2);
+                    const coneGeo = getSharedGeometry(`hipRoofCone_${coneRadius}_${h}`, () => new THREE.ConeGeometry(coneRadius, h, 4));
+                    const cone = new THREE.Mesh(coneGeo, roofMat);
+                    cone.rotation.y = Math.PI / 4;
+                    cone.position.y = h / 2 + 0.05;
+                    cone.scale.set(oW / oMaxSize, 1, oD / oMaxSize);
+                    group.add(cone);
+
+                    const addFaceSeams = (w_side, startZ, isXAxis) => {
+                        const seams = new THREE.Group();
+                        const numSeams = 12;
+                        for (let i = 0; i <= numSeams; i++) {
+                            const p = -w_side / 2 + (i / numSeams) * w_side;
+                            const start = isXAxis ? new THREE.Vector3(p, 0.05, startZ) : new THREE.Vector3(startZ, 0.05, p);
+                            const end = new THREE.Vector3(0, h + 0.05, 0);
+                            const dist = start.distanceTo(end);
+                            const seam = new THREE.Mesh(getSharedGeometry('srv2RoofSeam', () => new THREE.CylinderGeometry(0.02, 0.02, 1, 6)), roofMat);
+                            seam.scale.y = dist;
+                            seam.position.copy(start).lerp(end, 0.5);
+                            seam.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), end.clone().sub(start).normalize());
+                            seams.add(seam);
+                        }
+                        return seams;
+                    };
+                    group.add(addFaceSeams(oW, oD / 2, true));
+                    group.add(addFaceSeams(oW, -oD / 2, true));
+                    group.add(addFaceSeams(oD, oW / 2, false));
+                    group.add(addFaceSeams(oD, -oW / 2, false));
+                } else {
+                    // Standard 2-faced
+                    const createS = (rz, ox) => {
+                        const s = new THREE.Group();
+                        const b = new THREE.Mesh(getSharedGeometry(`pitchRoofPart_${w}_${d}`, () => new THREE.BoxGeometry(w / 2 + 0.5, 0.1, d)), roofMat);
+                        s.add(b);
+                        for (let i = 0; i < 20; i++) {
+                            const r = new THREE.Mesh(getSharedGeometry(`roofRidges_${w}_${d}`, () => new THREE.BoxGeometry(0.04, 0.06, d)), roofMat);
+                            r.position.set((-w / 4) + (i * w / 38), 0.05, 0);
+                            s.add(r);
+                        }
+                        s.rotation.z = rz;
+                        s.position.x = ox;
+                        return s;
+                    };
+                    group.add(createS(Math.PI / 6, -w / 4));
+                    group.add(createS(-Math.PI / 6, w / 4));
+                }
+            } else if (style === 'flat') {
+                group.add(new THREE.Mesh(getSharedGeometry(`flatRoof_${w}_${d}`, () => new THREE.BoxGeometry(w, 0.2, d)), roofMat));
             }
+
             return srv2_finalizeMesh(group, parent, config);
         }
 
@@ -3527,13 +3777,28 @@
             const collect = (mesh) => {
                 if (!mesh.isMesh) return;
                 const mat = mesh.material;
-                // Unique key for material to group geometries
                 const mKey = mat.uuid;
                 if (!mergeRegistry.has(mKey)) mergeRegistry.set(mKey, { mat: mat, geos: [] });
                 
-                const g = mesh.geometry.clone();
-                // CRITICAL: Use matrixWorld to get correct transform for nested group parts
+                let g = mesh.geometry.clone();
                 g.applyMatrix4(mesh.matrixWorld);
+                
+                // Ensure compatibility for mergeBufferGeometries
+                if (g.index) g = g.toNonIndexed();
+                
+                // Ensure UV and Normal attributes exist
+                if (!g.attributes.uv) {
+                    const uvs = new Float32Array(g.attributes.position.count * 2);
+                    g.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+                }
+                if (!g.attributes.normal) g.computeVertexNormals();
+
+                // Remove incompatible attributes that often cause merge failures
+                const skip = ['position', 'normal', 'uv'];
+                Object.keys(g.attributes).forEach(name => {
+                    if (!skip.includes(name)) g.deleteAttribute(name);
+                });
+                
                 mergeRegistry.get(mKey).geos.push(g);
             };
 
@@ -3606,6 +3871,151 @@
             // Cache the result
             houseMeshCache.set(cacheKey, bGrp.clone());
 
+            return bGrp;
+        }
+
+        function createFancyBuildingV2(parent, hScale = 1) {
+            // Check cache for identical hScale
+            const cacheKey = `fancyV2_${hScale}`;
+            if (houseMeshCache.has(cacheKey)) {
+                const cachedBGrp = houseMeshCache.get(cacheKey).clone();
+                parent.add(cachedBGrp);
+                return cachedBGrp;
+            }
+
+            const bGrp = new THREE.Group();
+            const finalScale = 13 * hScale;
+            bGrp.scale.set(finalScale, finalScale, finalScale);
+            bGrp.position.y = 0.1;
+            parent.add(bGrp);
+
+            const mergeRegistry = new Map();
+            const collect = (mesh) => {
+                if (!mesh.isMesh) return;
+                const mat = mesh.material;
+                const mKey = mat.uuid;
+                if (!mergeRegistry.has(mKey)) mergeRegistry.set(mKey, { mat: mat, geos: [] });
+                
+                let g = mesh.geometry.clone();
+                g.applyMatrix4(mesh.matrixWorld);
+                
+                // Ensure compatibility for mergeBufferGeometries
+                if (g.index) g = g.toNonIndexed();
+                
+                // Ensure UV and Normal attributes exist
+                if (!g.attributes.uv) {
+                    const uvs = new Float32Array(g.attributes.position.count * 2);
+                    g.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+                }
+                if (!g.attributes.normal) g.computeVertexNormals();
+
+                // Remove incompatible attributes that often cause merge failures
+                const skip = ['position', 'normal', 'uv'];
+                Object.keys(g.attributes).forEach(name => {
+                    if (!skip.includes(name)) g.deleteAttribute(name);
+                });
+                
+                mergeRegistry.get(mKey).geos.push(g);
+            };
+
+            const tempParent = new THREE.Group();
+            
+            // Ground floor
+            srv2_createBeamSet(tempParent, { dist: 6, h: 8, w: 0.4 });
+            srv2_createBeamSet(tempParent, { x: 0, y: 0, z: -10.2, dist: 6, h: 8, w: 0.4, count: 4 });
+            srv2_createFloor(tempParent, { x: 0, z: -5.1, y: 0, w: 16.8, d: 6.6, color: 0xfcf286, ry: Math.PI / 2 });
+            srv2_createWall(tempParent, { x: 3, z: 0, w: 6, h: 4, ry: Math.PI / 2, color: 0xeee8aa });
+            srv2_createWall(tempParent, { x: 3, z: -10.2, w: 5.8, h: 4, ry: Math.PI / 2, color: 0xeee8aa });
+            srv2_createWall(tempParent, { x: 0, y: 0, z: -3, w: 6, h: 4, color: 0xeee8aa });
+            srv2_createWall(tempParent, { x: 0, y: 0, z: -7, w: 6, h: 4, color: 0xeee8aa });
+            srv2_createWall(tempParent, { x: 0, y: 0, z: -13.2, w: 6, h: 4, color: 0xeee8aa });
+            srv2_createWall(tempParent, { x: -3, z: -5.1, w: 16.4, h: 8, ry: Math.PI / 2, color: 0xeee8aa });
+            srv2_createWall(tempParent, { x: 0, z: 3, w: 6, h: 4, color: 0xeee8aa });
+            srv2_createDoor(tempParent, { x: 3.2, y: .5, z: 0, w: 1.2, h: 2.2, ry: Math.PI / 2, isOpen: false });
+            srv2_createDoor(tempParent, { x: 3.2, y: .5, z: -10.2, w: 1.2, h: 2.2, ry: Math.PI / 2, isOpen: false });
+            
+            // Floor two
+            srv2_createWall(tempParent, { x: 3, y: 4, z: -10.2, w: 6, h: 4, ry: Math.PI / 2, color: 0xeee8aa });
+            srv2_createWall(tempParent, { x: 0, y: 4, z: -7.2, w: 6, h: 4, color: 0xeee8aa });
+            srv2_createWall(tempParent, { x: 0, y: 4, z: -13.2, w: 6, h: 4, color: 0xeee8aa });
+            srv2_createWall(tempParent, { x: 3, z: 0, y: 4, w: 6, h: 4, ry: Math.PI / 2, color: 0xeee8aa });
+            srv2_createWall(tempParent, { x: 0, y: 4, z: -3, w: 6, h: 4, color: 0xeee8aa });
+            srv2_createWall(tempParent, { x: -3, z: -2, y: 4, w: 10, h: 4, ry: Math.PI / 2, color: 0xeee8aa });
+            srv2_createWall(tempParent, { x: 0, z: 3, y: 4, w: 6, h: 4, color: 0xeee8aa });
+            srv2_createWall(tempParent, { x: -1.5, z: -7.2, y: 4, w: 3, h: 4, color: 0xeee8aa });
+            srv2_createWall(tempParent, { x: 0, z: -5.2, y: 4, w: 4.5, h: 4, ry: Math.PI / 2, color: 0xeee8aa });
+            srv2_createFloor(tempParent, { x: 0, y: 4, z: -5.1, w: 16.8, d: 6.6, color: 0xfcf286, ry: Math.PI / 2 });
+            srv2_createFloor(tempParent, { x: 0, y: 8, z: -10.2, w: 6.5, d: 6.6, color: 0xfcf286, ry: Math.PI / 2 });
+            srv2_createDoor(tempParent, { x: 3.2, y: 4.3, z: 0, w: 1.2, h: 2.2, ry: Math.PI / 2, isOpen: true });
+            srv2_createDoor(tempParent, { x: 3.2, y: 4.3, z: -10.2, w: 1.2, h: 2.2, ry: Math.PI / 2, isOpen: true });
+            srv2_createDoor(tempParent, { x: 0.2, y: 4.3, z: -5.2, w: 1.2, h: 2.2, ry: Math.PI / 2, isOpen: false });
+            
+            // Furniture
+            srv2_createBed(tempParent, { x: -1.5, y: 4, z: -1.5, w: 2, d: 2.5 });
+            srv2_createTable(tempParent, { x: 1.5, y: 4, z: -6.5, w: 1, d: 0.8 });
+            srv2_createChair(tempParent, { x: 1.5, y: 4, z: -6.0, ry: Math.PI });
+            srv2_createTV(tempParent, { x: -1.5, y: 4.8, z: 2, ry: Math.PI });
+            srv2_createLight(tempParent, { x: 0, y: 7.8, z: 0 });
+
+            // Main Gate Area
+            srv2_createFloor(tempParent, { x: 5.2, y: 4, z: -5.1, w: 4.6, d: 4.2, ry: Math.PI / 2 });
+            srv2_createFloor(tempParent, { x: 5.2, y: 0, z: -5.1, w: 4.6, d: 4.2, ry: Math.PI / 2 });
+            srv2_createBeamSet(tempParent, { x: 7, y: 0, z: -5.1, dist: 4, h: 8.2, w: 0.4, count: 2, style: 'Y' });
+            srv2_createRoof(tempParent, { x: 5.2, z: -5.1, y: 8.2, w: 4.8, d: 4.8, h: 2, ry: Math.PI / 2, faces: 4, style: 'pitched' });
+            srv2_createWall(tempParent, { x: 3, z: -5.2, w: 5.8, h: 4, ry: Math.PI / 2, color: 0xeee8aa });
+            srv2_createMainDoor(tempParent, { x: 3.2, y: 0, z: -5.2, w: 2.6, h: 2.6, ry: Math.PI / 2, isOpen: false });
+            
+            // Fences
+            srv2_createWoodGril(tempParent, { x: 7.0, y: 4.15, z: -5.2, w: 4, h: 1.2, ry: -Math.PI / 2, startPost: false, midPost: true, endPost: false });
+            srv2_createWoodGril(tempParent, { x: 5.0, y: 4.15, z: -7.1, w: 4, h: 1.2, startPost: false, midPost: true, endPost: false });
+            srv2_createWoodGril(tempParent, { x: 5.0, y: 4.15, z: -3.1, w: 4, h: 1.2, startPost: false, midPost: true, endPost: false });
+            
+            // Third Floor
+            srv2_createFloor(tempParent, { x: 0, y: 8, z: 0, w: 6, d: 6.5, color: 0xfcf286, ry: Math.PI / 2 });
+            srv2_createFloor(tempParent, { x: -1.5, y: 8, z: -5.2, w: 4.5, d: 3.5, color: 0xfcf286, ry: Math.PI / 2 });
+            
+            srv2_createStairs(tempParent, { x: 4.2, z: 0, y: 0, ry: -Math.PI / 2, w: 1.8, steps: 3 });
+            srv2_createStairs(tempParent, { x: 4.2, z: -10.2, y: 0, ry: -Math.PI / 2, w: 1.8, steps: 3 });
+            
+            // Fancy Windows
+            srv2_createFancyWindow(tempParent, { x: 1.0, y: 6.4, z: 3.25, w: 1.2, h: 1.8, hasTree: false });
+            srv2_createFancyWindow(tempParent, { x: 1.0, y: 2.4, z: 3.25, w: 1.2, h: 1.8, hasTree: false });
+            srv2_createFancyWindow(tempParent, { x: 1.0, y: 6.4, z: -13.4, w: 1.2, h: 1.8, hasTree: false });
+            srv2_createFancyWindow(tempParent, { x: 1.0, y: 2.4, z: -13.4, w: 1.2, h: 1.8, hasTree: false });
+            
+            srv2_createBalcony(tempParent, { x: 3.4, y: 4.2, z: 0, w: 3.5, ry: Math.PI / 2 });
+            srv2_createBalcony(tempParent, { x: 3.4, y: 4.2, z: -10.2, w: 3.5, ry: Math.PI / 2 });
+            
+            // Roofs
+            srv2_createRoof(tempParent, { x: -0, z: 0, y: 9, w: 6.4, d: 7.2, ry: Math.PI / 2, style: 'pitched' });
+            srv2_createRoof(tempParent, { x: -0, z: -10.2, y: 9.0, w: 6.8, d: 7.2, ry: Math.PI / 2, style: 'pitched' });
+            srv2_createGable(tempParent, { x: 3.3, y: 8.1, z: 0, w: 6, h: 1.7, ry: Math.PI / 2 });
+            srv2_createGable(tempParent, { x: 3.3, y: 8.1, z: -10.2, w: 6, h: 1.7, ry: Math.PI / 2 });
+            srv2_createGable(tempParent, { x: -3.3, y: 8.1, z: 0, w: 6, h: 1.7, ry: Math.PI / 2 });
+            srv2_createGable(tempParent, { x: -3.3, y: 8.1, z: -10.2, w: 6, h: 1.7, ry: Math.PI / 2 });
+
+            srv2_createRoof(tempParent, { x: -1.5, z: -4.3, y: 8.7, w: 3.6, d: 9, ry: Math.PI / 1, style: 'pitched' });
+            srv2_createGable(tempParent, { x: -1.5, y: 8.15, z: -1.5, w: 3.1, h: 0.9 });
+            srv2_createGable(tempParent, { x: -1.5, y: 8.15, z: -7.2, w: 3.1, h: 0.9 });
+
+            srv2_createWallVine(tempParent, { x: 3.5, y: 8.5, z: 2.4, h: 7, w: 1.0, ry: Math.PI / 2 });
+            srv2_createPergola(tempParent, { x: 1.5, y: 7.5, z: -5.2, w: 2.6, d: 4, color: 0x5d4037 });
+
+            tempParent.updateMatrixWorld(true);
+            tempParent.traverse(collect);
+
+            mergeRegistry.forEach(group => {
+                if (group.geos.length > 0) {
+                    const mergedGeo = THREE.BufferGeometryUtils.mergeBufferGeometries(group.geos);
+                    const mesh = new THREE.Mesh(mergedGeo, group.mat);
+                    mesh.castShadow = true;
+                    mesh.receiveShadow = true;
+                    mesh.matrixAutoUpdate = false;
+                    bGrp.add(mesh);
+                }
+            });
+
+            houseMeshCache.set(cacheKey, bGrp.clone());
             return bGrp;
         }
 
@@ -3713,6 +4123,25 @@
                 // Also add pool if requested as modular components might not have it
                 if (hasPool) {
                     // Pool logic remains exactly same as standard
+                    const poolGroup = new THREE.Group();
+                    const poolW_c = Math.max(200, plotW * 0.3), poolD_c = Math.max(350, plotD * 0.3), poolH_c = 10;
+                    const poolKey_c = `poolWater_${poolW_c}_${poolD_c}`;
+                    const poolGeo_c = getSharedGeometry(poolKey_c, () => new THREE.BoxGeometry(poolW_c, poolH_c, poolD_c, 12, 1, 12));
+                    poolWaterGeometries.add(poolGeo_c);
+                    const poolMat_c = getSharedMaterial('poolWaterMat', () => new THREE.MeshStandardMaterial({ color: 0x00aaff, roughness: 0.1, metalness: 0.5, transparent: true, opacity: 0.8 }));
+                    const poolWater_c = new THREE.Mesh(poolGeo_c, poolMat_c);
+                    poolWater_c.position.set(poolOX, 0.5, poolOZ);
+                    poolGroup.add(poolWater_c);
+                    const borderGeo_c = getSharedGeometry(`poolBorder_${poolW_c}_${poolD_c}`, () => new THREE.BoxGeometry(poolW_c + 20, 5, poolD_c + 20));
+                    const border_c = new THREE.Mesh(borderGeo_c, getSharedMaterial('poolBorderMat', () => new THREE.MeshStandardMaterial({ color: 0xdddddd })));
+                    border_c.position.set(poolOX, 0.1, poolOZ);
+                    poolGroup.add(border_c);
+                    house.add(poolGroup);
+                }
+            } else if (houseDesign === 'customV2') {
+                createFancyBuildingV2(building, hScale);
+                // Also add pool if requested
+                if (hasPool) {
                     const poolGroup = new THREE.Group();
                     const poolW_c = Math.max(200, plotW * 0.3), poolD_c = Math.max(350, plotD * 0.3), poolH_c = 10;
                     const poolKey_c = `poolWater_${poolW_c}_${poolD_c}`;
@@ -4287,7 +4716,7 @@
             } = options;
 
             // Decouple building scale from area scale for custom designs
-            const areaHScale = (options.houseDesign === 'custom') ? 1 : hScale;
+            const areaHScale = (options.houseDesign === 'custom' || options.houseDesign === 'customV2') ? 1 : hScale;
 
             // Calculate the actual Wall Boundary (Plot Width/Depth)
             // Use Math.max to prevent negative plot sizes if building is larger than base plot
@@ -4443,7 +4872,7 @@
             } = options;
 
             // Decouple building scale from area scale for custom designs
-            const areaHScale = (options.houseDesign === 'custom') ? 1 : hScale;
+            const areaHScale = (options.houseDesign === 'custom' || options.houseDesign === 'customV2') ? 1 : hScale;
 
             // Calculate Wall Boundary (Plot Width/Depth)
             // Use Math.max to prevent negative plot sizes if building is larger than base plot
@@ -4461,7 +4890,7 @@
 
             const clusterGroup = new THREE.Group();
             clusterGroup.position.set(startX, 0, startZ);
-            if (rotation) clusterGroup.rotation.y = rotation * (Math.PI / 180);
+            // Rotations are now applied to individual units for 'in-place' rotation
             parent.add(clusterGroup);
 
             // Calculate Bunch Land Size including padding based on scaled house plot depth
@@ -4545,12 +4974,14 @@
                 unitGroup.add(house);
 
                 if (singleRow) {
+                    if (rotation) unitGroup.rotation.y = rotation * (Math.PI / 180);
                     evenRow.add(unitGroup);
                 } else {
                     if (serialNum % 2 !== 0) {
-                        unitGroup.rotation.y = Math.PI; // Face the opposite direction
+                        unitGroup.rotation.y = Math.PI + (rotation * (Math.PI / 180)); // Face the opposite direction + custom rotation
                         oddRow.add(unitGroup);
                     } else {
+                        if (rotation) unitGroup.rotation.y = rotation * (Math.PI / 180);
                         evenRow.add(unitGroup);
                     }
                 }
