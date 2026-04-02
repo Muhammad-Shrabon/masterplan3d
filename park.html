@@ -98,13 +98,15 @@
             <div class="toggle-btn active" onclick="toggleLayer('vegetation')">Vegetation 🌿</div>
             <div class="toggle-btn active" onclick="toggleLayer('grills')">Grills 🪵</div>
             <div class="toggle-btn active" onclick="toggleLayer('furniture')">Furniture 🛋️</div>
+            <div class="toggle-btn active" onclick="toggleLayer('park')">Park 🎡</div>
+            <div class="toggle-btn active" onclick="toggleLayer('roads')">Roads 🛣️</div>
         </div>
     </div>
 
     <script>
         let scene, camera, renderer, sunLight, controls;
         let buildingGroup;
-        let layers = { walls: [], floors: [], windows: [], doors: [], beams: [], roof: [], balcony: [], land: [], stairs: [], vegetation: [], grills: [], furniture: [] };
+        let layers = { walls: [], floors: [], windows: [], doors: [], beams: [], roof: [], balcony: [], land: [], stairs: [], vegetation: [], grills: [], furniture: [], park: [], roads: [] };
         let autoRotate = false;
         let rotationSpeed = 0.005;
 
@@ -1070,6 +1072,473 @@
             return finalizeMesh(group, layers.roof, config);
         }
 
+        // --- PARK EQUIPMENT SYSTEM ---
+
+        function createParkBench(config) {
+            const { w = 2, h = 0.5, d = 0.6, color = 0x5d4037 } = config;
+            const group = new THREE.Group();
+            const mat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.8 });
+            const ironMat = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.8 });
+            
+            // Seat (slats)
+            for (let i = 0; i < 4; i++) {
+                const slat = new THREE.Mesh(new THREE.BoxGeometry(w, 0.04, 0.12), mat);
+                slat.position.set(0, h, -d/2 + 0.1 + i * 0.14);
+                group.add(slat);
+            }
+            
+            // Backrest (slats)
+            for (let i = 0; i < 3; i++) {
+                const slat = new THREE.Mesh(new THREE.BoxGeometry(w, 0.12, 0.04), mat);
+                slat.position.set(0, h + 0.2 + i * 0.14, -d/2);
+                slat.rotation.x = -0.2;
+                group.add(slat);
+            }
+            
+            // Legs (Iron frames)
+            const createLegFrame = (lx) => {
+                const frame = new THREE.Mesh(new THREE.BoxGeometry(0.1, h, d), ironMat);
+                frame.position.set(lx, h/2, 0.05);
+                group.add(frame);
+                
+                const backSupport = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.6, 0.08), ironMat);
+                backSupport.position.set(lx, h + 0.25, -d/2 + 0.05);
+                group.add(backSupport);
+            };
+            createLegFrame(-w/2 + 0.2);
+            createLegFrame(w/2 - 0.2);
+            
+            return finalizeMesh(group, layers.park, config);
+        }
+
+        function createParkSwing(config) {
+            const { w = 3, h = 3.5, color = 0x334155, seatColor = 0xef4444 } = config;
+            const group = new THREE.Group();
+            const frameMat = new THREE.MeshStandardMaterial({ color: color, metalness: 0.7, roughness: 0.2 });
+            const ropeMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.9 });
+            const seatMat = new THREE.MeshStandardMaterial({ color: seatColor });
+
+            // A-Frame Posts
+            const postGeo = new THREE.CylinderGeometry(0.08, 0.12, h + 0.5, 12);
+            const createAFrame = (px) => {
+                const left = new THREE.Mesh(postGeo, frameMat);
+                left.position.set(px, h/2, 0.6);
+                left.rotation.x = 0.2;
+                group.add(left);
+                
+                const right = new THREE.Mesh(postGeo, frameMat);
+                right.position.set(px, h/2, -0.6);
+                right.rotation.x = -0.2;
+                group.add(right);
+            };
+            createAFrame(-w/2);
+            createAFrame(w/2);
+            
+            // Top Bar
+            const topBar = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, w + 0.4, 12), frameMat);
+            topBar.rotation.z = Math.PI / 2;
+            topBar.position.y = h;
+            group.add(topBar);
+
+            // Seat and Chains
+            const seatGroup = new THREE.Group();
+            const seat = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.05, 0.4), seatMat);
+            seatGroup.add(seat);
+            
+            const chainGeo = new THREE.CylinderGeometry(0.015, 0.015, h - 0.6, 8);
+            const c1 = new THREE.Mesh(chainGeo, ropeMat);
+            c1.position.set(-0.3, h/2 - 0.3, 0);
+            seatGroup.add(c1);
+            const c2 = new THREE.Mesh(chainGeo, ropeMat);
+            c2.position.set(0.3, h/2 - 0.3, 0);
+            seatGroup.add(c2);
+            
+            seatGroup.position.set(0, 0.6, 0);
+            group.add(seatGroup);
+            
+            return finalizeMesh(group, layers.park, config);
+        }
+
+        function createParkSlide(config) {
+            const { h = 2.2, color = 0x3b82f6, frameColor = 0xe2e8f0 } = config;
+            const group = new THREE.Group();
+            const slideMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.2, metalness: 0.4 });
+            const frameMat = new THREE.MeshStandardMaterial({ color: frameColor, metalness: 0.8 });
+
+            // Platform
+            const platform = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.1, 1.2), frameMat);
+            platform.position.y = h;
+            group.add(platform);
+            
+            // Ladder
+            const steps = 8;
+            for (let i = 0; i < steps; i++) {
+                const step = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.06, 0.15), frameMat);
+                step.position.set(0, (i/steps) * h, -0.7);
+                group.add(step);
+            }
+            const postGeo = new THREE.CylinderGeometry(0.06, 0.06, h + 1, 8);
+            const p1 = new THREE.Mesh(postGeo, frameMat); p1.position.set(-0.5, h/2, -0.8); group.add(p1);
+            const p2 = new THREE.Mesh(postGeo, frameMat); p2.position.set(0.5, h/2, -0.8); group.add(p2);
+            
+            // Slide Surface (Curved Path)
+            const curve = new THREE.QuadraticBezierCurve3(
+                new THREE.Vector3(0, h, 0.6),
+                new THREE.Vector3(0, h * 0.8, 2.5),
+                new THREE.Vector3(0, 0.1, 4.5)
+            );
+            const slideGeo = new THREE.TubeGeometry(curve, 32, 0.5, 12, false);
+            // Slice the tube to half-pipe
+            const slideMesh = new THREE.Mesh(slideGeo, slideMat);
+            slideMesh.scale.set(1.5, 0.4, 1); // Flatten to make it look like a slide
+            group.add(slideMesh);
+            
+            // Side rails for slide
+            const p3 = new THREE.Mesh(postGeo, frameMat); p3.position.set(-0.5, h/2, 0.5); group.add(p3);
+            const p4 = new THREE.Mesh(postGeo, frameMat); p4.position.set(0.5, h/2, 0.5); group.add(p4);
+
+            return finalizeMesh(group, layers.park, config);
+        }
+
+        function createParkSeesaw(config) {
+            const { w = 5, color = 0xf59e0b } = config;
+            const group = new THREE.Group();
+            const boardMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.5 });
+            const pivotMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.9 });
+            
+            // Central Pivot
+            const pivotBase = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.15, 0.8, 12), pivotMat);
+            pivotBase.position.y = 0.4;
+            group.add(pivotBase);
+            
+            const pivotBar = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.6, 12), pivotMat);
+            pivotBar.rotation.z = Math.PI / 2;
+            pivotBar.position.y = 0.8;
+            group.add(pivotBar);
+            
+            // Seesaw Board
+            const board = new THREE.Mesh(new THREE.BoxGeometry(w, 0.08, 0.4), boardMat);
+            board.position.y = 0.85;
+            board.rotation.z = Math.PI / 10;
+            group.add(board);
+            
+            // Handles & Seats
+            const createEnd = (endX, rot) => {
+                const seat = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.05, 0.5), boardMat);
+                seat.position.set(endX, 0.85 + (endX * Math.tan(rot)), 0);
+                seat.rotation.z = rot;
+                // group.add(seat); 
+                
+                const handle = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.02, 8, 16, Math.PI), pivotMat);
+                handle.position.set(endX - (endX > 0 ? 0.4 : -0.4), 1.05 + (endX * Math.tan(rot)), 0);
+                handle.rotation.z = Math.PI / 2;
+                group.add(handle);
+            };
+            createEnd(-w/2 + 0.3, Math.PI / 10);
+            createEnd(w/2 - 0.3, Math.PI / 10);
+            
+            return finalizeMesh(group, layers.park, config);
+        }
+
+        function createParkLamp(config) {
+            const { h = 4.5, color = 0x1e293b, emissive = 0xfff0c0 } = config;
+            const group = new THREE.Group();
+            const postMat = new THREE.MeshStandardMaterial({ color: color, metalness: 0.9, roughness: 0.1 });
+            const glassMat = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.4, emissive: emissive, emissiveIntensity: 1 });
+            
+            // Post
+            const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.12, h, 12), postMat);
+            pole.position.y = h/2;
+            group.add(pole);
+            
+            // Base
+            const base = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.35, 0.4, 8), postMat);
+            base.position.y = 0.2;
+            group.add(base);
+            
+            // Lamp Head
+            const head = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.7, 0.5), glassMat);
+            head.position.y = h + 0.35;
+            group.add(head);
+            
+            const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.4, 0.2, 4), postMat);
+            cap.position.y = h + 0.7;
+            cap.rotation.y = Math.PI / 4;
+            group.add(cap);
+            
+            // Dynamic Light
+            const pLight = new THREE.PointLight(emissive, 2, 12);
+            pLight.position.y = h + 0.35;
+            pLight.castShadow = true;
+            group.add(pLight);
+            
+            return finalizeMesh(group, layers.park, config);
+        }
+
+        function createParkRoundabout(config) {
+            const { r = 1.8, color = 0x10b981 } = config;
+            const group = new THREE.Group();
+            const mat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.4 });
+            const railMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.8 });
+            
+            // Base Platform
+            const base = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.1, 32), mat);
+            base.position.y = 0.15;
+            group.add(base);
+            
+            // Inner Rails
+            for (let i = 0; i < 4; i++) {
+                const angle = (i / 4) * Math.PI * 2;
+                const rail = new THREE.Mesh(new THREE.TorusGeometry(0.6, 0.04, 8, 16, Math.PI), railMat);
+                rail.position.set(Math.cos(angle) * (r * 0.6), 0.75, Math.sin(angle) * (r * 0.6));
+                rail.rotation.y = angle;
+                rail.rotation.z = Math.PI / 2;
+                group.add(rail);
+            }
+            
+            // Central Pole
+            const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1.2, 12), railMat);
+            pole.position.y = 0.6;
+            group.add(pole);
+
+            return finalizeMesh(group, layers.park, config);
+        }
+
+        // Generic Dispatcher for Park Equipment
+        function createParkEquipment(config) {
+            const { type = 'bench' } = config;
+            switch(type.toLowerCase()) {
+                case 'bench': return createParkBench(config);
+                case 'swing': return createParkSwing(config);
+                case 'slide': return createParkSlide(config);
+                case 'seesaw': return createParkSeesaw(config);
+                case 'lamp': return createParkLamp(config);
+                case 'roundabout': return createParkRoundabout(config);
+                case 'fountain': return createParkFountain(config);
+                case 'trashbin': return createParkTrashBin(config);
+                case 'road': return parkRoad(config);
+                case 'boxtree': return createBoxTree(config);
+                case 'hedge': return createHedge(config);
+                default: return createParkBench(config);
+            }
+        }
+
+        // Helper to create a curve from config parameters (single value or array of offsets)
+        function getModularPath(length, curveValue, points = null) {
+            if (points && Array.isArray(points)) {
+                return new THREE.CatmullRomCurve3(points);
+            }
+            if (Array.isArray(curveValue)) {
+                const pts = [new THREE.Vector3(0, 0, 0)];
+                curveValue.forEach((val, i) => {
+                    const z = ((i + 1) / curveValue.length) * length;
+                    pts.push(new THREE.Vector3(val, 0, z));
+                });
+                return new THREE.CatmullRomCurve3(pts);
+            } else {
+                return new THREE.QuadraticBezierCurve3(
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(curveValue, 0, length / 2),
+                    new THREE.Vector3(0, 0, length)
+                );
+            }
+        }
+
+        function parkRoad(config) {
+            const { points = null, length = 10, curveValue = 0, width = 3, height = 0.1, color = 0x334155, useTexture = true } = config;
+            const group = new THREE.Group();
+            const curve = getModularPath(length, curveValue, points);
+            const actualLength = points ? curve.getLength() : length;
+            
+            const segments = Math.max(50, Math.floor(actualLength * 3));
+            const pathPoints = curve.getPoints(segments);
+            const geometry = new THREE.BufferGeometry();
+            const vertices = [];
+            const indices = [];
+            const uvs = [];
+
+            for (let i = 0; i < pathPoints.length; i++) {
+                const t = i / (pathPoints.length - 1);
+                const p = pathPoints[i];
+                
+                // FORCE horizontal side vector using math cross product
+                const tangent = curve.getTangent(t).normalize();
+                const side = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize(); // Rotated 90 deg in XZ plane
+                
+                const left = p.clone().add(side.clone().multiplyScalar(-width / 2));
+                const right = p.clone().add(side.clone().multiplyScalar(width / 2));
+                
+                vertices.push(left.x, 0.1, left.z); 
+                vertices.push(right.x, 0.1, right.z);
+                
+                uvs.push(0, t * (actualLength / 4));
+                uvs.push(1, t * (actualLength / 4));
+
+                if (i < pathPoints.length - 1) {
+                    const b = i * 2;
+                    indices.push(b, b + 1, b + 2);
+                    indices.push(b + 1, b + 3, b + 2);
+                }
+            }
+            
+            geometry.setIndex(indices);
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+            geometry.computeVertexNormals();
+
+            const mat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.8, side: THREE.DoubleSide });
+            if (useTexture) {
+                applyTexture(mat, 'assets/images/roadtexture.png', actualLength/50, width/10);
+                mat.color.setHex(0x444444);
+            }
+            
+            const mesh = new THREE.Mesh(geometry, mat);
+            mesh.receiveShadow = true;
+            group.add(mesh);
+            
+            return finalizeMesh(group, layers.roads, config);
+        }
+
+        function createBoxTree(config) {
+            const { trunkH = 1.6, boxSize = 1.6, color = 0x88cc22 } = config; 
+            const group = new THREE.Group();
+            
+            // 1. THIN TRUNK (Matched to the image)
+            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x4d3220 });
+            const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.12, trunkH, 8), trunkMat);
+            trunk.position.y = trunkH / 2;
+            group.add(trunk);
+            
+            // 2. PURE SPHERICAL TOPARY (Clean and Perfect Architectural Look)
+            const foliageR = boxSize * 0.7; 
+            const leafMat = new THREE.MeshStandardMaterial({ 
+                color: color, 
+                roughness: 0.7 
+            });
+            // Texture applied for a subtle botanical grain without the geometry clutter
+            applyTexture(leafMat, 'assets/images/grass3.png', 1.5, 1.5);
+            
+            const core = new THREE.Mesh(new THREE.SphereGeometry(foliageR, 32, 32), leafMat);
+            core.position.y = trunkH + foliageR * 0.8;
+            group.add(core);
+            
+            // Minimal Pot Base
+            const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.2, 0.3, 8), new THREE.MeshStandardMaterial({color: 0x222222}));
+            pot.position.y = 0.15;
+            group.add(pot);
+
+            return finalizeMesh(group, layers.vegetation, config);
+        }
+
+        function createHedge(config) {
+            const { points = null, length = 10, curveValue = 0, width = 4.0, height = 1.2, color = 0x061106 } = config;
+            const group = new THREE.Group();
+            const curve = getModularPath(length, curveValue, points);
+            const actualLength = points ? curve.getLength() : length;
+            // Visibility fix: Use DoubleSide to ensure all parts are visible
+            const leafMat = new THREE.MeshStandardMaterial({ 
+                color: color, 
+                roughness: 0.8,
+                side: THREE.DoubleSide 
+            });
+            applyTexture(leafMat, 'assets/images/grass3.png', actualLength / 4, 1);
+
+            const segments = Math.max(80, Math.floor(actualLength * 6));
+            const pathPoints = curve.getPoints(segments);
+            const geometry = new THREE.BufferGeometry();
+            const vertices = [];
+            const indices = [];
+            const uvs = [];
+
+            for (let i = 0; i < pathPoints.length; i++) {
+                const t = i / (pathPoints.length - 1);
+                const p = pathPoints[i];
+                const tan = curve.getTangent(t).normalize();
+                const sid = new THREE.Vector3(-tan.z, 0, tan.x).normalize();
+                
+                const bL = p.clone().add(sid.clone().multiplyScalar(-width / 2));
+                const bR = p.clone().add(sid.clone().multiplyScalar(width / 2));
+                const tR = bR.clone().add(new THREE.Vector3(0, height, 0));
+                const tL = bL.clone().add(new THREE.Vector3(0, height, 0));
+                
+                vertices.push(bL.x, bL.y, bL.z, bR.x, bR.y, bR.z, tR.x, tR.y, tR.z, tL.x, tL.y, tL.z);
+                uvs.push(0, t * actualLength / 2, 1, t * actualLength / 2, 1, t * actualLength / 2, 0, t * actualLength / 2);
+
+                if (i < pathPoints.length - 1) {
+                    const b = i * 4;
+                    // Properly sealed sides
+                    indices.push(b, b + 4, b + 7, b, b + 7, b + 3); // Left Side
+                    indices.push(b + 1, b + 2, b + 6, b + 1, b + 6, b + 5); // Right Side
+                    indices.push(b + 3, b + 7, b + 6, b + 3, b + 6, b + 2); // Top Face
+                }
+            }
+
+            // ADD CAPS (Start and End of the hedge)
+            const last = (segments) * 4;
+            indices.push(0, 3, 2, 0, 2, 1); // Front End Cap
+            indices.push(last, last+1, last+2, last, last+2, last+3); // Back End Cap
+
+            geometry.setIndex(indices);
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+            geometry.computeVertexNormals();
+
+            const hedgeMesh = new THREE.Mesh(geometry, leafMat);
+            hedgeMesh.receiveShadow = true;
+            hedgeMesh.castShadow = true;
+            group.add(hedgeMesh);
+
+            return finalizeMesh(group, layers.vegetation, config);
+        }
+
+        function createParkFountain(config) {
+            const { r = 2.5, levels = 3, color = 0xe2e8f0 } = config;
+            const group = new THREE.Group();
+            const stoneMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.9 });
+            const waterMat = new THREE.MeshStandardMaterial({ color: 0x0ea5e9, transparent: true, opacity: 0.7, metalness: 0.5 });
+            
+            for (let i = 0; i < levels; i++) {
+                const levelR = r * (1 - i * 0.3);
+                const levelH = 0.4;
+                const bowl = new THREE.Mesh(new THREE.CylinderGeometry(levelR, levelR * 0.8, levelH, 16), stoneMat);
+                bowl.position.y = i * 0.8 + levelH/2;
+                group.add(bowl);
+                
+                const water = new THREE.Mesh(new THREE.CylinderGeometry(levelR - 0.1, levelR - 0.1, 0.05, 16), waterMat);
+                water.position.y = i * 0.8 + levelH - 0.02;
+                group.add(water);
+                
+                if (i < levels - 1) {
+                    const column = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.25, 0.8, 8), stoneMat);
+                    column.position.y = i * 0.8 + 0.4 + 0.4;
+                    group.add(column);
+                }
+            }
+            
+            // Top Spout
+            const spout = new THREE.Mesh(new THREE.SphereGeometry(0.15, 8, 8), waterMat);
+            spout.position.y = levels * 0.8;
+            group.add(spout);
+            
+            return finalizeMesh(group, layers.park, config);
+        }
+
+        function createParkTrashBin(config) {
+            const { color = 0x475569 } = config;
+            const group = new THREE.Group();
+            const mat = new THREE.MeshStandardMaterial({ color: color });
+            
+            const body = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.25, 0.8, 12), mat);
+            body.position.y = 0.4;
+            group.add(body);
+            
+            const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.1, 12), new THREE.MeshStandardMaterial({ color: 0x1e293b }));
+            lid.position.y = 0.85;
+            group.add(lid);
+            
+            return finalizeMesh(group, layers.park, config);
+        }
+
         function init() {
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x87ceeb);
@@ -1099,122 +1568,166 @@
             controls.maxDistance = 100;
             controls.target.set(0, 2, 0);
 
-            // --- USING TEXTURES FROM PROVIDED IMAGES ---
-            // To apply image textures to walls, lands, beams, or stairs, pass `useTexture: true` and `textureUrl: 'YOUR_IMAGE_LINK'`.
-            // Example Wall: createWall({ x: 3, z: 0, w: 6, h: 4, ry: Math.PI / 2, useTexture: true, textureUrl: 'https://link.to/wall.jpg' });
-            // Example Beam: createBeamSet({ dist: 6, h: 8, w: 0.4, useTexture: true, textureUrl: 'https://link.to/wood.jpg' });
-            // Example Stair: createStairs({ x: 4.2, z: 0, y: 0, w: 1.8, steps: 3, useTexture: true, textureUrl: 'https://link.to/marble.jpg' });
+          
+            createLand({ w: 150, d: 150, useTexture: true, textureUrl: 'assets/images/grass6.png', textureCover: true, displacementScale: 0.1 });
 
-            // createLand({ w: 40, d: 40, useTexture: true, textureUrl: 'assets/images/grass3.png', textureCover: true });
-            // Flat ground (No gaps underneath a house)
-            // createLand({ w: 40, d: 40, useTexture: true, textureUrl: 'assets/images/grass3.png', textureCover: true });
-            // Very subtle 3D terrain ripples (0.05 height)
-            // createLand({ w: 40, d: 40, useTexture: true, textureUrl: 'assets/images/grass3.png', textureCover: true, displacementScale: 0.05 });
-            // Big grassy trenches and sinkholes (0.5 height)
-            createLand({ w: 40, d: 40, useTexture: true, textureUrl: 'assets/images/grass3.png', textureCover: true, displacementScale: 0.02 });
+      
 
-            // Floors with demo rx, ry, rz
-            // createFloor({ x: -1.5, y: 0, z: 0, w: 5.5, d: 7, color: 0x888888, useTexture: true }); 
-            // createFloor({ x: -1.5, y: 3, z: 0, w: 5.5, d: 7, rz: 0.05 }); // Tilted floor demo
-            // createFloor({ x: -1.5, y: 6, z: 0, w: 5.5, d: 7 }); 
-
-            createBeamSet({ dist: 6, h: 8, w: 0.4 });
-            createBeamSet({ x: 0, y: 0, z: -10.2, dist: 6, h: 8, w: 0.4,count: 4, });
-            // createBeamSet({ x: -1.5, y: 0, z: -12, dist: 3, h: 8, w: 0.4,count: 2, });
-            // createBeamSet({ x: 0, y: 0, z: -7.2, dist: 6, h: 4, w: 0.4, count: 1, isCircle: false });
-            // createBeamSet({ x: 0, y: 0, z: -12, dist: 6, h: 8, w: 0.4, count: 1, isCircle: false });
-
-            // Ground floor
-            createFloor({ x: 0,z:-5.1, y: 0, w: 16.8, d: 6.6, color: 0xfcf286, ry: Math.PI / 2 }); // 1st floor=
-            createWall({ x: 3, z: 0, w: 6, h: 4, ry: Math.PI / 2, color: 0xeee8aa });
-            createWall({ x: 3, z: -10.2, w: 5.8, h: 4, ry: Math.PI / 2, color: 0xeee8aa }); // RIGHT PART front WALL
-            createWall({ x: 0, y: 0, z: -3, w: 6, h: 4, color: 0xeee8aa });
-            createWall({ x: 0, y: 0, z: -7, w: 6, h: 4, color: 0xeee8aa }); // right part - left wall 
-            createWall({ x: 0, y: 0, z: -13.2, w: 6, h: 4, color: 0xeee8aa }); // right part - right wall
-            createWall({ x: -3, z: -5.1, w: 16.4, h: 8, ry: Math.PI / 2, color: 0xeee8aa });
-            createWall({ x: 0, z: 3, w: 6, h: 4, color: 0xeee8aa });
-            createDoor({ x: 3.2, y: .5, z: 0, w: 1.2, h: 2.2, ry: Math.PI / 2, isOpen: false });
-            createDoor({ x: 3.2, y: .5, z: -10.2, w: 1.2, h: 2.2, ry: Math.PI / 2, isOpen: false }); // right part
+            // --- PARK EQUIPMENT PLACEMENT ---
+            // Large open area around the house
+            createParkBench({ x: 18, y: 0.1, z: 2, ry: -Math.PI /2 });
+            createParkBench({ x: -18, y: 0.1, z: -12, ry: Math.PI / 2 });
+            createParkLamp({ x: 18, y: 0, z: -20, emissive: 0xfff0c0 });
+            createParkLamp({ x: -18, y: 0, z: -20, emissive: 0xfff0c0 });
+            createParkLamp({ x: 18, y: 0, z: 20, emissive: 0xfff0c0 });
+            createParkLamp({ x: -18, y: 0, z: 20, emissive: 0xfff0c0 });
             
-            // Floor two
-            createWall({ x: 3,y:4, z: -10.2, w: 6, h: 4, ry: Math.PI / 2, color: 0xeee8aa }); // top front side wall
-            createWall({ x: 0, y: 4, z: -7.2, w: 6, h: 4, color: 0xeee8aa }); // right part - left wall 
-            createWall({ x: 0, y: 4, z: -13.2, w: 6, h: 4, color: 0xeee8aa }); // right part - right wall 
-            createWall({ x: 3, z: 0, y: 4, w: 6, h: 4, ry: Math.PI / 2, color: 0xeee8aa });
-            createWall({ x: 0, y: 4, z: -3, w: 6, h: 4, color: 0xeee8aa });
-            createWall({ x: -3, z: -2, y: 4, w: 10, h: 4, ry: Math.PI / 2, color: 0xeee8aa });
-            createWall({ x: 0, z: 3, y: 4, w: 6, h: 4, color: 0xeee8aa });
-            createWall({ x: -1.5, z: -7.2, y: 4, w: 3, h: 4, color: 0xeee8aa });
-            createWall({ x: 0, z: -5.2, y: 4, w: 4.5, h: 4,ry: Math.PI / 2 , color: 0xeee8aa });
-            createFloor({ x: 0, y: 4, z:-5.1, w: 16.8, d: 6.6, color: 0xfcf286, ry: Math.PI / 2 }); // 2nd floor
-            createFloor({ x: 0, y: 8, z:-10.2, w: 6.5, d: 6.6, color: 0xfcf286, ry: Math.PI / 2 }); // 2nd floor right part
-            createDoor({ x: 3.2, y: 4.3, z: 0, w: 1.2, h: 2.2, ry: Math.PI / 2, isOpen: true });
-            createDoor({ x: 3.2, y: 4.3, z: -10.2, w: 1.2, h: 2.2, ry: Math.PI / 2, isOpen: true });
-            createDoor({ x: 0.2, y: 4.3, z: -5.2, w: 1.2, h: 2.2, ry: Math.PI / 2, isOpen: false });
+            // Kids Play Area
+            createParkSwing({ x: -12, y: 0, z: 5, w: 4 });
+            createParkSlide({ x: 10, y: 0, z: -5, ry: Math.PI / 2 });
+            createParkSeesaw({ x: -5, y: 0, z: -12, ry: -Math.PI / 6 });
+            createParkRoundabout({ x: 5, y: 0, z: 2 });
+
+            // Using the Generic Dispatcher (Function calling system)
+            createParkEquipment({ type: 'bench', x: -8, y: 0.1, z: 8, ry: Math.PI });
+            createParkEquipment({ type: 'fountain', x: 0, y: 0, z: 10 });
+            createParkEquipment({ type: 'trashbin', x: 16, y: 0, z: 14 });
+            createParkEquipment({ type: 'trashbin', x: -14, y: 0, z: 12 });
+
+            // --- PROCEDURAL LANDSCAPING ---
+            const roadPoints = [
+                new THREE.Vector3(-42, 0, -48),
+                new THREE.Vector3(-12, 0, -48),
+                new THREE.Vector3(-2, 0, -48),
+                new THREE.Vector3(0, 0, -48),
+                new THREE.Vector3(0, 0, 0),
+                new THREE.Vector3(0, 0, 46),
+                new THREE.Vector3(10, 0, 47),
+                new THREE.Vector3(50, 0, 47),
+                new THREE.Vector3(50, 0, 46),
+                new THREE.Vector3(52, 0, 46),
+                new THREE.Vector3(52, 0, -10),
+                new THREE.Vector3(52, 0, -10),
+                new THREE.Vector3(0, 0, -12),
+            ];
+
+            parkRoad({ 
+                x: -26, y: 0, z: -20, ry: 0, // Added position and rotate control
+                points: roadPoints,
+                width: 8,
+                useTexture: true
+            });
             
-            // Second Floor Interior Furniture
-            createBed({ x: -1.5, y: 4, z: -1.5, w: 2, d: 2.5 });
-            createTable({ x: 1.5, y: 4, z: -6.5, w: 1, d: 0.8 });
-            createChair({ x: 1.5, y: 4, z: -6.0, ry: Math.PI });
-            createTV({ x: -1.5, y: 4.8, z: 2, ry: Math.PI }); // TV on the wall
-            createLight({ x: 0, y: 7.8, z: 0 }); // Ceiling light in the middle
+            // Function to offset points along the curve for hedges
+            function getOffsetPoints(points, offset) {
+                const curve = new THREE.CatmullRomCurve3(points);
+                const offsetPts = [];
+                const divisions = 50; 
+                for (let i = 0; i <= divisions; i++) {
+                    const t = i / divisions;
+                    const p = curve.getPoint(t);
+                    const tan = curve.getTangent(t).normalize();
+                    const sid = new THREE.Vector3(-tan.z, 0, tan.x).normalize();
+                    offsetPts.push(p.clone().add(sid.multiplyScalar(offset)));
+                }
+                return offsetPts;
+            }
 
-            // Main Gate of House
-            createFloor({ x: 5.2, y: 4, z:-5.1, w: 4.6, d: 4.2, ry: Math.PI / 2 }); // 2nd floor right part  color: 0xfcf286,  useTexture: true,
-            createFloor({ x: 5.2, y: 0, z:-5.1, w: 4.6, d: 4.2, ry: Math.PI / 2 }); // 2nd floor right part  color: 0xfcf286,  useTexture: true,
-            createBeamSet({ x: 7, y: 0, z: -5.1, dist: 4, h: 8.2, w: 0.4, count: 2, style: 'Y' });
-            createRoof({ x: 5.2, z: -5.1, y: 8.2, w: 4.8, d: 4.8, h: 2, ry: Math.PI / 2, faces: 40,style: 'flat' });
-            createWall({ x: 3, z: -5.2, w: 5.8, h: 4, ry: Math.PI / 2, color: 0xeee8aa }); // Gate Part front WALL
-           
-            // Stylish Premium Main Double Door!
-            createMainDoor({ x: 3.12, y: 0, z: -5.2, w: 2.6, h: 2.6, ry: Math.PI / 2, isOpen: false });
-           
-            // Wood Grills (Premium Fence Style)
-            createWoodGril({ x: 7.0, y: 4.15, z: -5.2, w: 4, h: 1.2, ry: -Math.PI / 2, startPost: false, midPost: true, endPost: false }); // Front ground left
-            createWoodGril({ x: 5.0, y: 4.15, z: -7.1, w: 4, h: 1.2, startPost: false, midPost: true, endPost: false }); // Front ground left
-            createWoodGril({ x: 5.0, y: 4.15, z: -3.1, w: 4, h: 1.2, startPost: false, midPost: true, endPost: false }); // Front ground left
+            // Left side hedge
+            createHedge({ 
+                x: -26, y: 0, z: -20, ry: 0, 
+                points: getOffsetPoints([
+                new THREE.Vector3(0, 0, 0),
+                new THREE.Vector3(0, 0, 46),
+                new THREE.Vector3(10, 0, 47),
+                new THREE.Vector3(35, 0, 47),
+            ], 3.8),
+                width: 1.4, height: 1.6,
+                color: 0x061106
+            });
             
+            // Right side hedge
+            createHedge({ 
+               x: -26, y: 0, z: -20, ry: 0, 
+                points: getOffsetPoints([
+                new THREE.Vector3(0, 0, 0),
+                new THREE.Vector3(0, 0, 46),
+                new THREE.Vector3(10, 0, 47),
+                new THREE.Vector3(35, 0, 47),
+            ], -3.8),
+                width: 1.4, height: 1.6,
+                color: 0x061106
+            });
+            createHedge({ 
+               x: -26, y: 0, z: -20, ry: Math.PI/1, 
+                points: getOffsetPoints([
+                new THREE.Vector3(0, 0, 0),
+                new THREE.Vector3(0, 0, 46),
+                new THREE.Vector3(10, 0, 47),
+                new THREE.Vector3(35, 0, 47),
+            ], -3.8),
+                width: 1.4, height: 1.6,
+                color: 0x061106
+            });
+            createHedge({ 
+               x: -26, y: 0, z: -36, ry: Math.PI/1, 
+                points: getOffsetPoints([
+                new THREE.Vector3(0, 0, 0),
+                new THREE.Vector3(0, 0, 32),
+                new THREE.Vector3(10, 0, 33),
+                new THREE.Vector3(55, 0, 33),
+            ], 3.8),
+                width: 1.4, height: 1.6,
+                color: 0x061106
+            });
+            createHedge({ 
+               x: 27, y: 0, z: 0, ry: Math.PI/1, 
+                points: getOffsetPoints([
+                new THREE.Vector3(10, 0, -27.5),
+                new THREE.Vector3(1, 0, -26),
+                new THREE.Vector3(0, 0, -25),
+                new THREE.Vector3(0, 0, 0),
+                new THREE.Vector3(0, 0, 20),
+                new THREE.Vector3(0, 0, 30),
+                new THREE.Vector3(1, 0, 30),
+                new THREE.Vector3(50, 0, 32),
+            ], 3.8),
+                width: 1.4, height: 1.6,
+                color: 0x061106
+            });
+            createHedge({ 
+               x: 27, y: 0, z: 0, ry: Math.PI/1, 
+                points: getOffsetPoints([
+                new THREE.Vector3(48, 0, 32),
+                new THREE.Vector3(1, 0, 28),
+                new THREE.Vector3(0, 0, 20),
+                new THREE.Vector3(0, 0, 0),
+                new THREE.Vector3(0, 0, -24),
+                new THREE.Vector3(10, 0, -27),
+            ], 3.8),
+                width: 1.4, height: 1.6,
+                color: 0x061106
+            });
+ 
 
+            // Box Trees - Boundary Grid
+            // Z-Serial (Vertical side lines)
+            for (let i = 0; i < 8; i++) {
+                const zPos = -20 + i * 5.5;
+                createBoxTree({ x: 20, z: zPos, boxSize: 1.2 + Math.random() * 0.4 });
+                createBoxTree({ x: -20, z: zPos, boxSize: 1.2 + Math.random() * 0.4 });
+            }
 
+            // X-Serial (Horizontal front/back lines)
+            for (let j = 0; j < 8; j++) {
+                const xPos = -19.5 + j * 5;
+                createBoxTree({ x: xPos, z: 20, boxSize: 1.1 + Math.random() * 0.3 });
+                createBoxTree({ x: xPos, z: -25, boxSize: 1.1 + Math.random() * 0.3 });
+            }
 
-
-             
-            createFloor({ x: 0, y: 8, z:0, w: 6, d: 6.5, color: 0xfcf286, ry: Math.PI / 2 }); // 3rd floor
-            // createWall({ x: 0, y: 8, z: 3, w: 6, h: 1, color: 0xeee8aa }); // Main 3rd floor front gap
-            // createWall({ x: 0, y: 8, z: -3, w: 6, h: 1, color: 0xeee8aa }); // Main 3rd floor back gap
-
-            createFloor({ x: -1.5, y: 8, z:-5.2, w: 4.5, d: 3.5, color: 0xfcf286, ry: Math.PI / 2 }); // 3rd floor right extend
-            // createWall({ x: -3, y: 8, z: -5.2, w: 4.5, h: 0.6, ry: Math.PI / 2, color: 0xeee8aa }); // Ext wall left
-            // createWall({ x: 0, y: 8, z: -5.2, w: 4.5, h: 0.6, ry: Math.PI / 2, color: 0xeee8aa }); // Ext wall right
-            
-            createStairs({ x: 4.2, z: 0, y: 0, ry: -Math.PI / 2, w: 1.8, steps: 3 });
-            createStairs({ x: 4.2, z: -10.2, y: 0, ry: -Math.PI / 2, w: 1.8, steps: 3 }); // right part 
-            // createWall({ ry: 2,x: -1.5, w: 5.5, h: 9, useTexture: true });
-            // Original window calls commented out as requested
-            // createWindow({ x: 1.0, y: 6, z: 3.3, w: 2, h: 1.5 });
-            // createWindow({ x: 1.0, y: 2, z: 3.3, w: 2, h: 1.5 });
-            // createWindow({ x: 1.0, y: 6, z: -13.5, w: 2, h: 1.5 }); // right part
-            // createWindow({ x: 1.0, y: 2, z: -13.5, w: 2, h: 1.5 }); // right part
-            
-            // New Fancy Majestic Arched Windows: 2 types (Simple and with Flower Bed/Tree)
-            createFancyWindow({ x: 1.0, y: 6.4, z: 3.25, w: 1.2, h: 1.8, hasTree: false }); // Top left (with tree)
-            createFancyWindow({ x: 1.0, y: 2.4, z: 3.25, w: 1.2, h: 1.8, hasTree: false }); // Bottom left (simple)
-            createFancyWindow({ x: 1.0, y: 6.4, z: -13.4, w: 1.2, h: 1.8, hasTree: false }); // Top right (simple)
-            createFancyWindow({ x: 1.0, y: 2.4, z: -13.4, w: 1.2, h: 1.8, hasTree: false }); // Bottom right (with tree)
-            createBalcony({ x:3.4, y: 4.2, z: 0, w: 3.5,ry: Math.PI/2, });
-            createBalcony({ x:3.4, y: 4.2, z: -10.2, w: 3.5,ry: Math.PI/2, });
-           
-            // 3rd floor roof
-            createRoof({ x: -0, z: -10.2, y: 8.2, w: 6.8, d: 7.2, ry: Math.PI / 2, style: 'flat' }); // right part
-            createRoof({ x: -0, z: 0, y: 8.2, w: 6.4, d: 7.2, ry: Math.PI / 2, style: 'flat' });
-
-            createRoof({ x: -0, z: -4.3, y: 8.2, w: 7.2, d: 9, ry: Math.PI / 1, style: 'flat' });
-
-            // Wall Hanging Vines (Germani Lota Style)
-            createWallVine({ x: 3.5, y: 8.5, z: 2.4, h: 7, w: 1.0, ry: Math.PI / 2 }); // Right wall top
          
-            // Wood Grill Roof (Pergola) above this area
-            createPergola({ x: 1.5, y: 7.5, z: -5.2, w: 2.6, d: 4, color: 0x5d4037 }); 
+
+ 
 
             window.addEventListener('resize', onWindowResize);
             document.getElementById('rotSpeed').addEventListener('input', (e) => rotationSpeed = parseFloat(e.target.value));

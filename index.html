@@ -1536,8 +1536,8 @@
                 playOZ: 200,
                 houseDesign: 'customV2',
                 hScale:7,
-                hRotate:90,
-                houseOX: 500, houseOZ: 510,
+                hRotate:0,
+                houseOX: -450, houseOZ: 900,
                 carW: 200,
                 carL: 460
             });
@@ -1572,8 +1572,8 @@
                 carL: 460,
                 houseDesign: 'customV2',
                 hScale:7,
-                hRotate:90,
-                houseOX: 500, houseOZ: 510,
+                hRotate:0,
+                houseOX: -450, houseOZ: 900,
             });
             createHouseCluster(subGreenLandCL13, {
                 serialCount: 12,
@@ -1604,11 +1604,11 @@
                 playOZ: 200,
                 carW: 100,
                 carL: 260,
-                rotation: 93,
-                houseDesign: 'customV2',
+                hRotate:0,
+                houseDesign: 'custom',
                 hScale:4,
-                hRotate:90,
-                houseOX: 400, houseOZ: 510,
+                AreaRotation:93,
+                houseOX: 80, houseOZ: 500,
             });
             createHouseCluster(subGreenLandCL14, {
                 innerGapScale: { x: 1, y: .5 },
@@ -1644,8 +1644,8 @@
                 rotation: 180,
                 houseDesign: 'customV2',
                 hScale:7,
-                hRotate:90,
-                houseOX: 500, houseOZ: 510,
+                hRotate:0,
+              houseOX: -450, houseOZ: 900,
             });
             createHouseCluster(subGreenLandCL15, {
                 innerGapScale: { x: 1, y: .5 },
@@ -1681,8 +1681,8 @@
                 rotation: 180,
                 houseDesign: 'customV2',
                 hScale:7,
-                hRotate:90,
-                houseOX: 500, houseOZ: 510,
+                hRotate:0,
+               houseOX: -450, houseOZ: 900,
             });
 
             // Shared materials for all roads
@@ -4890,7 +4890,10 @@
 
             const clusterGroup = new THREE.Group();
             clusterGroup.position.set(startX, 0, startZ);
-            // Rotations are now applied to individual units for 'in-place' rotation
+            // Apply AreaRotation to rotate the entire cluster block
+            if (options.AreaRotation) {
+                clusterGroup.rotation.y = options.AreaRotation * (Math.PI / 180);
+            }
             parent.add(clusterGroup);
 
             // Calculate Bunch Land Size including padding based on scaled house plot depth
