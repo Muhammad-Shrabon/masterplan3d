@@ -21,9 +21,14 @@
     <script>
         let scene, camera, renderer, controls, flagObj, lakeObj, river;
         let sr_riverMesh, sr_bankMesh, sr_waterTexture, sr_treeGroup;
-        let nightSkyGroup, stars, moon, isNight = false;
+        let isNight = false;
         let isWalkingMode = false;
         let agent, agentAnims = { legL: null, legR: null, armL: null, armR: null, upperBody: null, bodyGroup: null };
+
+        // --- Performance & Animation Uniforms ---
+        const globalUniforms = {
+            uTime: { value: 0 }
+        };
 
         // --- Walking Behavior Controller ---
         let walkingConfig = {
@@ -106,7 +111,7 @@
             return tex;
         }
 
-        const CITY_BOUNDS = { minX: -750, maxX: 650, minZ: -1900, maxZ: 1300 };
+        const CITY_BOUNDS = { minX: -700, maxX: 700, minZ: -1600, maxZ: 1600 };
         const customTreePositions = [
             // Add your tree positions here. x/z = world position, y = height offset, scale = tree height in world units
             { x: -450,  y: 0.1, z: -550,   scale: 15 },
@@ -1320,6 +1325,27 @@
                         iMesh.setMatrixAt(i, data.matrices[i]);
                     }
                     
+                    if (data.mat.userData.isLeaf) {
+                        // Inject GPU Wind for leaves
+                        data.mat.onBeforeCompile = (shader) => {
+                            shader.uniforms.uTime = globalUniforms.uTime;
+                            shader.vertexShader = `
+                                uniform float uTime;
+                                ${shader.vertexShader}
+                            `.replace(
+                                '#include <begin_vertex>',
+                                `
+                                #include <begin_vertex>
+                                // Procedural wind based on world position
+                                vec4 worldPos = modelMatrix * instanceMatrix * vec4(position, 1.0);
+                                float wind = sin(worldPos.x * 0.1 + worldPos.z * 0.1 + uTime * 2.0) * 0.15;
+                                transformed.x += wind * (position.y * 0.5); // Move tips more
+                                transformed.y += wind * 0.2;
+                                `
+                            );
+                        };
+                    }
+
                     iMesh.instanceMatrix.needsUpdate = true;
                     iMesh.matrixAutoUpdate = false;
                     iMesh.updateMatrix();
@@ -1371,19 +1397,13 @@
             scene.add(directionalLight);
 
 
-            renderer = new THREE.WebGLRenderer({
-                antialias: true,
-                logarithmicDepthBuffer: true, // Prevents flickering at far distances/large scales
-                powerPreference: "high-performance", // Request high-performance GPU
-                precision: "highp" // High precision for quality
-            });
+            renderer = new THREE.WebGLRenderer({ antialias: true, logarithmicDepthBuffer: true, powerPreference: "high-performance" });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1)); // Limit to 1x for performance
-            renderer.shadowMap.enabled = true; // Enable shadows
-            renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Smoother shadows
-            renderer.shadowMap.autoUpdate = true;
-            // Removed ACESFilmicToneMapping and sRGBEncoding to restore original color vibrancy
-            document.body.appendChild(renderer.domElement)
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.VSMShadowMap;
+            renderer.shadowMap.autoUpdate = false; // Manually update shadows for major changes
+            document.body.appendChild(renderer.domElement);
 
             // Grid Helper
             // const grid = new THREE.GridHelper(1510, 80, 0x697565, 0x697565);
@@ -1396,9 +1416,9 @@
             controls.rotateSpeed = 1.2;   
             controls.zoomSpeed = 1.2;     
             controls.panSpeed = 1.2;      
-            controls.minDistance = 0.001; // Ultra close zoom allowed
-            controls.maxDistance = 22000;
-            controls.maxPolarAngle = Math.PI / 2.05; // Prevent going under ground (restrict to just above horizon)
+            controls.minDistance = 50; // Distance constraints to keep land in view
+            controls.maxDistance = 2500; // Prevent zooming out too far into the sky
+            controls.maxPolarAngle = Math.PI / 2.15; // Lower angle to keep ground filling the horizon
             controls.minPolarAngle = 0;
             controls.screenSpacePanning = false; // Disable screen space panning to keep target on ground
             controls.target.set(10, 15, -100); // Initial target
@@ -1744,6 +1764,10 @@
             const subGreenLandCL15 = new THREE.Group();
             subGreenLandCL15.position.set(-335, 0, -380);// Elevated to be above the lake surface
             cityBlocks.add(subGreenLandCL15);
+            // Lake Near 
+            const subGreenLandCL16 = new THREE.Group();
+            subGreenLandCL16.position.set(-10, 0, -380);// Elevated to be above the lake surface
+            cityBlocks.add(subGreenLandCL16);
 
             // BLOCK B -1
             const subGreenLandBB1 = new THREE.Group();
@@ -1798,7 +1822,7 @@
             createHouseCluster(subGreenLandCL7, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-7", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale:4, hRotate:90 });
             createHouseCluster(subGreenLandCL8, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 15.4, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-8", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale:4, hRotate:90 });
             createHouseCluster(subGreenLandCL9, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 15.5, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-9", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale:4, hRotate:90 });
-            createHouseCluster(subGreenLandCL10, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 22, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-10", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale:4, hRotate:90 });
+            createHouseCluster(subGreenLandCL10, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 34, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-10", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale:4, hRotate:90 });
             // BLOCK B -1
             createHouseCluster(subGreenLandBB1, {
                 serialCount: 36, startX: 3, startZ: 210, unitSpacing:17.5, houseGap: 210, rowSpacing: 32, startId: 2,
@@ -2068,6 +2092,44 @@
                 hScale:7,
                 hRotate:0,
                houseOX: -450, houseOZ: 900,
+            });
+            createHouseCluster(subGreenLandCL16, {
+                innerGapScale: { x: 1, y: .5 },
+                outerGapScale: 1.5,
+                serialCount: 7,
+                startX: 200,
+                startZ: 255,
+                unitSpacing: 32,
+                houseGap: 340,
+                rowSpacing: 70,
+                startId: 2,
+                clusterName: "",
+                hasPool: true,
+                carCount: 1,
+                hasPlayground: true,
+                singleRow: true,
+                hDepth: 1550,
+                hWidth: 520,
+                basePlotW: 2000,
+                basePlotD: 4000,
+                hasWing: false,
+                hFloorH: 40,
+                houseOX: 200,
+                houseOZ: 500,
+                poolOX: -570,
+                poolOZ: -750,
+                carOX: -150,
+                carOZ: 100,
+                playOX: -570,
+                playOZ: 200,
+                carW: 200,
+                carL: 460, 
+                rotation: 180,
+                houseDesign: 'customV2',
+                hScale:5,
+                hRotate:0,
+                houseOX: -450, houseOZ: 900,
+                houseAreaRotation:54,
             });
 
             // Shared materials for all roads
@@ -2396,30 +2458,56 @@
             const ctx = canvas.getContext('2d');
 
             if (style === 'lake') {
-                // Water Base - Deep Ocean Blue
-                const grad = ctx.createLinearGradient(0, 0, 0, 512);
-                grad.addColorStop(0, '#002b4d');
-                grad.addColorStop(0.5, '#005b96');
-                grad.addColorStop(1, '#002b4d');
-                ctx.fillStyle = grad;
-                ctx.fillRect(0, 0, 128, 512);
+                // Optimized water material with GPU-side animation
+                const mat = new THREE.MeshStandardMaterial({
+                    map: texture,
+                    side: THREE.DoubleSide,
+                    transparent: true,
+                    opacity: 0.8,
+                    roughness: 0.2,
+                    metalness: 0.3
+                });
+                
+                mat.onBeforeCompile = (shader) => {
+                    shader.uniforms.uTime = globalUniforms.uTime;
+                    shader.vertexShader = `
+                        uniform float uTime;
+                        ${shader.vertexShader}
+                    `.replace(
+                        '#include <begin_vertex>',
+                        `
+                        #include <begin_vertex>
+                        // Only move top vertices
+                        if (position.y > 0.0) {
+                            float wave = sin(position.x * 0.04 + uTime * 2.0) * 1.5 + 
+                                         cos(position.z * 0.04 + uTime * 1.5) * 1.5 + 
+                                         sin((position.x + position.z) * 0.02 + uTime * 0.8) * 2.0;
+                            transformed.y += wave;
+                        }
+                        `
+                    );
+                    
+                    // Ripple animation for lake
+                    shader.fragmentShader = shader.fragmentShader.replace(
+                        '#include <map_fragment>',
+                        `
+                        vec2 uvOffset = vec2(sin(uTime * 0.5) * 0.02, -uTime * 0.08);
+                        vec4 texelColor = texture2D(map, vUv + uvOffset);
+                        diffuseColor *= texelColor;
+                        `
+                    );
+                };
+                
+                const roadMesh = new THREE.Mesh(geometry, mat);
+                if (position) roadMesh.position.set(position.x || 0, position.y || 0, position.z || 0);
+                if (rotation) roadMesh.rotation.set(rotation.x || 0, rotation.y || 0, rotation.z || 0);
+                scene.add(roadMesh);
+                return roadMesh;
+            }
 
-                // Animated ripples/foam look (texture side)
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-                ctx.lineWidth = 1.5;
-                for (let i = 0; i < 60; i++) {
-                    ctx.beginPath();
-                    const x = Math.random() * 128;
-                    const y = Math.random() * 512;
-                    const w = 5 + Math.random() * 20;
-                    ctx.moveTo(x - w, y);
-                    ctx.bezierCurveTo(x - w / 2, y + 5, x + w / 2, y - 5, x + w, y);
-                    ctx.stroke();
-                }
-            } else {
-                // Asphalt Base
-                ctx.fillStyle = color || '#222222';
-                ctx.fillRect(0, 0, 128, 512);
+            // Asphalt Base
+            ctx.fillStyle = color || '#222222';
+            ctx.fillRect(0, 0, 128, 512);
 
                 // Sidebar color for side walls (using a small strip of the texture)
                 ctx.fillStyle = '#444444';
@@ -2433,7 +2521,6 @@
                     ctx.fillStyle = `rgb(${gray},${gray},${gray})`;
                     ctx.fillRect(x, y, 1, 1);
                 }
-            }
 
             if (style !== 'lake') {
                 ctx.strokeStyle = '#ffffff';
@@ -2740,12 +2827,7 @@
         function sceneRender(time) {
             requestAnimationFrame(sceneRender);
             const t = time * 0.001;
-
-            // Animate leaves
-            animatedLeaves.forEach(leaf => {
-                const wave = Math.sin(t * leaf.userData.speed + leaf.userData.phase) * 0.12;
-                leaf.rotation.x = leaf.userData.originalRotation.x + wave;
-            });
+            globalUniforms.uTime.value = t;
 
             // Only update controls if damping is enabled (performance)
             if (controls.enableDamping && !isWalkingMode) {
@@ -2800,53 +2882,7 @@
 
             // Update River animation
 
-            // --- Lake Water Animation ---
-            if (lakeObj) {
-                // 1. Flowing Texture (optimized - only update offset)
-                if (lakeObj.material.map) {
-                    lakeObj.material.map.offset.y = -t * 0.08;
-                    lakeObj.material.map.offset.x = Math.sin(t * 0.5) * 0.02;
-                }
-
-                // 2. Vertex Wave Effect (expensive - consider reducing frequency)
-                const pos = lakeObj.geometry.attributes.position;
-                for (let i = 0; i < pos.count; i++) {
-                    const mod6 = i % 6;
-                    // Indices 0, 1, 2, 4 are top vertices
-                    if (mod6 !== 3 && mod6 !== 5) {
-                        const px = pos.getX(i);
-                        const pz = pos.getZ(i);
-                        // Multi-octave wave simulation
-                        const wave = Math.sin(px * 0.04 + t * 2.0) * 1.5 +
-                            Math.cos(pz * 0.04 + t * 1.5) * 1.5 +
-                            Math.sin((px + pz) * 0.02 + t * 0.8) * 2.0;
-                        pos.setY(i, 0.8 + wave); // 0.8 is baseline thickness
-                    }
-                }
-                pos.needsUpdate = true;
-                // Optional: compute normals for better lighting on waves
-                // lakeObj.geometry.computeVertexNormals(); 
-            }
-
-            // Update River animation
             if (river) river.update(time);
-
-            // --- Pool Water Animation ---
-            poolWaterGeometries.forEach(geo => {
-                if (geo.attributes.position && geo.attributes.normal) {
-                    const pos = geo.attributes.position;
-                    const norm = geo.attributes.normal;
-                    for (let v = 0; v < pos.count; v++) {
-                        if (norm.getY(v) > 0.5) {
-                            const px = pos.getX(v);
-                            const pz = pos.getZ(v);
-                            const wave = Math.sin(px * 0.05 + t * 2.5) * 0.4 + Math.cos(pz * 0.05 + t * 2.0) * 0.4;
-                            pos.setY(v, 4 + wave);
-                        }
-                    }
-                    pos.needsUpdate = true;
-                }
-            });
 
             // Animate Sky
             if (isNight && stars) {
@@ -3274,11 +3310,15 @@
             const leafGeo = getSharedGeometry('animatedTreeLeafGeo', () => new THREE.ShapeGeometry(leafShape));
 
             const leafColors = [0x2d4c1e, 0x3a5a2a, 0x4b6e32, 0x1e3a12];
-            const leafMats = leafColors.map((c, i) => getSharedMaterial(`animatedTreeLeafMat${i}`, () => new THREE.MeshStandardMaterial({
-                color: c,
-                side: THREE.DoubleSide,
-                roughness: 0.8
-            })));
+            const leafMats = leafColors.map((c, i) => getSharedMaterial(`animatedTreeLeafMat${i}`, () => {
+                const mat = new THREE.MeshStandardMaterial({
+                    color: c,
+                    side: THREE.DoubleSide,
+                    roughness: 0.8
+                });
+                mat.userData.isLeaf = true; // Mark for optimizeScene wind inject
+                return mat;
+            }));
 
             // Recursive growth scoped to this tree instance
             function growBranch(startPos, direction, length, thickness, depth) {
@@ -3319,13 +3359,7 @@
                         leaf.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
                         leaf.castShadow = true;
 
-                        // Wind metadata
-                        leaf.userData.phase = Math.random() * Math.PI * 2;
-                        leaf.userData.speed = 0.8 + Math.random() * 1.2;
-                        leaf.userData.originalRotation = leaf.rotation.clone();
-
                         treeGroup.add(leaf);
-                        animatedLeaves.push(leaf);
                     }
                 }
 
@@ -4550,7 +4584,27 @@
                     const poolKey_c = `poolWater_${poolW_c}_${poolD_c}`;
                     const poolGeo_c = getSharedGeometry(poolKey_c, () => new THREE.BoxGeometry(poolW_c, poolH_c, poolD_c, 12, 1, 12));
                     poolWaterGeometries.add(poolGeo_c);
-                    const poolMat_c = getSharedMaterial('poolWaterMat', () => new THREE.MeshStandardMaterial({ color: 0x00aaff, roughness: 0.1, metalness: 0.5, transparent: true, opacity: 0.8 }));
+                    const poolMat_c = getSharedMaterial('poolWaterMat', () => {
+                        const mat = new THREE.MeshStandardMaterial({ color: 0x00aaff, roughness: 0.1, metalness: 0.5, transparent: true, opacity: 0.8 });
+                        mat.onBeforeCompile = (shader) => {
+                            shader.uniforms.uTime = globalUniforms.uTime;
+                            shader.vertexShader = `
+                                uniform float uTime;
+                                ${shader.vertexShader}
+                            `.replace(
+                                '#include <begin_vertex>',
+                                `
+                                #include <begin_vertex>
+                                // Only move top vertices (facing up)
+                                if (normal.y > 0.5) {
+                                    float wave = sin(position.x * 0.05 + uTime * 2.5) * 0.4 + cos(position.z * 0.05 + uTime * 2.0) * 0.4;
+                                    transformed.y += wave;
+                                }
+                                `
+                            );
+                        };
+                        return mat;
+                    });
                     const poolWater_c = new THREE.Mesh(poolGeo_c, poolMat_c);
                     poolWater_c.position.set(poolOX, 0.5, poolOZ);
                     poolGroup.add(poolWater_c);
@@ -4676,7 +4730,26 @@
                 const poolGeo = getSharedGeometry(poolKey, () => new THREE.BoxGeometry(poolW, poolH, poolD, 12, 1, 12));
                 poolWaterGeometries.add(poolGeo);
 
-                const poolMat = getSharedMaterial('poolWaterMat', () => new THREE.MeshStandardMaterial({ color: 0x00aaff, roughness: 0.1, metalness: 0.5, transparent: true, opacity: 0.8 }));
+                const poolMat = getSharedMaterial('poolWaterMat', () => {
+                    const mat = new THREE.MeshStandardMaterial({ color: 0x00aaff, roughness: 0.1, metalness: 0.5, transparent: true, opacity: 0.8 });
+                    mat.onBeforeCompile = (shader) => {
+                        shader.uniforms.uTime = globalUniforms.uTime;
+                        shader.vertexShader = `
+                            uniform float uTime;
+                            ${shader.vertexShader}
+                        `.replace(
+                            '#include <begin_vertex>',
+                            `
+                            #include <begin_vertex>
+                            if (normal.y > 0.5) {
+                                float wave = sin(position.x * 0.05 + uTime * 2.5) * 0.4 + cos(position.z * 0.05 + uTime * 2.0) * 0.4;
+                                transformed.y += wave;
+                            }
+                            `
+                        );
+                    };
+                    return mat;
+                });
                 const poolWater = new THREE.Mesh(poolGeo, poolMat);
                 poolWater.position.set(poolOX, 0.5, poolOZ);
                 poolGroup.add(poolWater);
