@@ -108,27 +108,412 @@
 
         const CITY_BOUNDS = { minX: -750, maxX: 650, minZ: -1900, maxZ: 1300 };
         const customTreePositions = [
-            { x: -625, y: 0, z: 54 },
-            { x: -605, y: 0, z: 54 },
-            { x: -585, y: 0, z: 54 },
-            { x: -565, y: 0, z: 54 },
-            { x: -545, y: 0, z: 54 },
-            { x: -525, y: 0, z: 54 },
-            { x: -525, y: 0, z: 40 },
-            { x: -525, y: 0, z: 20 },
-            { x: -525, y: 0, z: 0 },
-            { x: -525, y: 0, z: -20 },
-            { x: -525, y: 0, z: -40 },
-            { x: -525, y: 0, z: -60 },
-            { x: -525, y: 0, z: -80 },
-            { x: -525, y: 0, z: -100 },
-            { x: -525, y: 0, z: -120 },
-            { x: -520, y: 0, z: -140 },
-            { x: -510, y: 0, z: -160 },
-            { x: -490, y: 0, z: -180 },
-            { x: -470, y: 0, z: -190 },
-            { x: -450, y: 0, z: -200 },
-            { x: -400, y: 0, z: -200 },
+            // Add your tree positions here. x/z = world position, y = height offset, scale = tree height in world units
+            { x: -450,  y: 0.1, z: -550,   scale: 15 },
+            { x: -450,  y: 0.1, z: -480,   scale: 16 },
+            { x: -450,  y: 0.1, z: -410,   scale: 14 },
+            { x: -450, y: 0.1, z: -350,   scale: 15 },
+            { x: -450, y: 0.1, z: -290,  scale: 17 },
+            { x: -450, y: 0.1, z: -230,  scale: 15 },
+            { x: -450,   y: 0.1, z: -190,  scale: 16 },
+            { x: -450,  y: 0.1, z: -140,   scale: 15 },
+            { x: -450,  y: 0.1, z: -170,   scale: 16 },
+            { x: -450,  y: 0.1, z: -210,   scale: 14 },
+            // serial
+            { x: -500,  y: 0.1, z: -550,   scale: 15 },
+            { x: -500,  y: 0.1, z: -480,   scale: 16 },
+            { x: -500,  y: 0.1, z: -410,   scale: 14 },
+            { x: -500, y: 0.1, z: -350,   scale: 15 },
+            { x: -500, y: 0.1, z: -290,  scale: 17 },
+            { x: -500, y: 0.1, z: -230,  scale: 15 },
+            { x: -500,   y: 0.1, z: -190,  scale: 16 },
+            { x: -500,  y: 0.1, z: -140,   scale: 15 },
+            { x: -500,  y: 0.1, z: -100,   scale: 16 },
+            { x: -500,  y: 0.1, z: -10,   scale: 14 },
+            // Serial 2
+            { x: -550,  y: 0.1, z: -550,   scale: 15 },
+            { x: -550,  y: 0.1, z: -480,   scale: 16 },
+            { x: -550,  y: 0.1, z: -410,   scale: 14 },
+            { x: -550, y: 0.1, z: -350,   scale: 15 },
+            { x: -550, y: 0.1, z: -290,  scale: 17 },
+            { x: -550, y: 0.1, z: -230,  scale: 15 },
+            { x: -550,   y: 0.1, z: -190,  scale: 16 },
+            { x: -550,  y: 0.1, z: -140,   scale: 15 },
+            { x: -550,  y: 0.1, z: -100,   scale: 16 },
+            { x: -550,  y: 0.1, z: -10,   scale: 14 },
+            // Serial
+            { x: -600,  y: 0.1, z: -550,   scale: 15 },
+            { x: -600,  y: 0.1, z: -480,   scale: 16 },
+            { x: -600,  y: 0.1, z: -410,   scale: 14 },
+            { x: -600, y: 0.1, z: -350,   scale: 15 },
+            { x: -600, y: 0.1, z: -290,  scale: 17 },
+            { x: -600, y: 0.1, z: -230,  scale: 15 },
+            { x: -600,   y: 0.1, z: -190,  scale: 16 },
+            { x: -600,  y: 0.1, z: -140,   scale: 15 },
+            { x: -600,  y: 0.1, z: -100,   scale: 16 },
+            { x: -600,  y: 0.1, z: -10,   scale: 14 },
+            // Serial 3
+            { x: -650,  y: 0.1, z: -550,   scale: 15 },
+            { x: -650,  y: 0.1, z: -480,   scale: 16 },
+            { x: -650,  y: 0.1, z: -410,   scale: 14 },
+            { x: -650, y: 0.1, z: -350,   scale: 15 },
+            { x: -650, y: 0.1, z: -290,  scale: 17 },
+            { x: -650, y: 0.1, z: -230,  scale: 15 },
+            { x: -650,   y: 0.1, z: -190,  scale: 16 },
+            { x: -650,  y: 0.1, z: -140,   scale: 15 },
+            { x: -650,  y: 0.1, z: -100,   scale: 16 },
+            { x: -650,  y: 0.1, z: -10,   scale: 14 },
+            // Serial 3
+            { x: -700,  y: 0.1, z: -550,   scale: 15 },
+            { x: -700,  y: 0.1, z: -480,   scale: 16 },
+            { x: -700,  y: 0.1, z: -410,   scale: 14 },
+            { x: -700, y: 0.1, z: -350,   scale: 15 },
+            { x: -700, y: 0.1, z: -290,  scale: 17 },
+            { x: -700, y: 0.1, z: -230,  scale: 15 },
+            { x: -700,   y: 0.1, z: -190,  scale: 16 },
+            { x: -700,  y: 0.1, z: -140,   scale: 15 },
+            { x: -700,  y: 0.1, z: -100,   scale: 16 },
+            { x: -700,  y: 0.1, z: -10,   scale: 14 },
+            // Top Free Space Serial
+            { x: -650,  y: 0.1, z: -1250,   scale: 15 },
+            { x: -650,  y: 0.1, z: -1280,   scale: 16 },
+            { x: -650,  y: 0.1, z: -1210,   scale: 14 },
+            { x: -650, y: 0.1, z: -1150,   scale: 15 },
+            { x: -650, y: 0.1, z: -1190,  scale: 17 },
+            { x: -650, y: 0.1, z: -1130,  scale: 15 },
+            { x: -650,   y: 0.1, z: -1090,  scale: 16 },
+            { x: -650,  y: 0.1, z: -1040,   scale: 15 },
+            { x: -650,  y: 0.1, z: -990,   scale: 16 },
+            { x: -650,  y: 0.1, z: -940,   scale: 14 },
+            { x: -650,  y: 0.1, z: -890,   scale: 14 },
+            { x: -650,  y: 0.1, z: -840,   scale: 14 },
+            // Top Serial 
+            { x: -580,  y: 0.1, z: -1250,   scale: 15 },
+            { x: -580,  y: 0.1, z: -1280,   scale: 16 },
+            { x: -580,  y: 0.1, z: -1210,   scale: 14 },
+            { x: -580, y: 0.1, z: -1150,   scale: 15 },
+            { x: -580, y: 0.1, z: -1190,  scale: 17 },
+            { x: -580, y: 0.1, z: -1130,  scale: 15 },
+            { x: -580,   y: 0.1, z: -1090,  scale: 16 },
+            { x: -580,  y: 0.1, z: -1040,   scale: 15 },
+            { x: -580,  y: 0.1, z: -990,   scale: 16 },
+            { x: -580,  y: 0.1, z: -940,   scale: 14 },
+            { x: -580,  y: 0.1, z: -890,   scale: 14 },
+            { x: -580,  y: 0.1, z: -840,   scale: 14 },
+            // Top Serial 
+            { x: -510,  y: 0.1, z: -1250,   scale: 15 },
+            { x: -510,  y: 0.1, z: -1280,   scale: 16 },
+            { x: -510,  y: 0.1, z: -1210,   scale: 14 },
+            { x: -510, y: 0.1, z: -1150,   scale: 15 },
+            { x: -510, y: 0.1, z: -1190,  scale: 17 },
+            { x: -510, y: 0.1, z: -1130,  scale: 15 },
+            { x: -510,   y: 0.1, z: -1090,  scale: 16 },
+            { x: -510,  y: 0.1, z: -1040,   scale: 15 },
+            { x: -510,  y: 0.1, z: -990,   scale: 16 },
+            { x: -510,  y: 0.1, z: -940,   scale: 14 },
+            { x: -510,  y: 0.1, z: -890,   scale: 14 },
+            { x: -510,  y: 0.1, z: -840,   scale: 14 },
+            // Top Serial 
+            { x: -440,  y: 0.1, z: -1250,   scale: 15 },
+            { x: -440,  y: 0.1, z: -1280,   scale: 16 },
+            { x: -440,  y: 0.1, z: -1210,   scale: 14 },
+            { x: -440, y: 0.1, z: -1150,   scale: 15 },
+            { x: -440, y: 0.1, z: -1190,  scale: 17 },
+            { x: -440, y: 0.1, z: -1130,  scale: 15 },
+            { x: -440,   y: 0.1, z: -1090,  scale: 16 },
+            { x: -440,  y: 0.1, z: -1040,   scale: 15 },
+            { x: -440,  y: 0.1, z: -990,   scale: 16 },
+            { x: -440,  y: 0.1, z: -940,   scale: 14 },
+            { x: -440,  y: 0.1, z: -890,   scale: 14 },
+            { x: -440,  y: 0.1, z: -840,   scale: 14 },
+            // Top Serial 
+            { x: -370,  y: 0.1, z: -1250,   scale: 15 },
+            { x: -370,  y: 0.1, z: -1280,   scale: 16 },
+            { x: -370,  y: 0.1, z: -1210,   scale: 14 },
+            { x: -370, y: 0.1, z: -1150,   scale: 15 },
+            { x: -370, y: 0.1, z: -1190,  scale: 17 },
+            { x: -370, y: 0.1, z: -1130,  scale: 15 },
+            { x: -370,   y: 0.1, z: -1090,  scale: 16 },
+            { x: -370,  y: 0.1, z: -1040,   scale: 15 },
+            { x: -370,  y: 0.1, z: -990,   scale: 16 },
+            { x: -370,  y: 0.1, z: -940,   scale: 14 },
+            { x: -370,  y: 0.1, z: -890,   scale: 14 },
+            { x: -370,  y: 0.1, z: -840,   scale: 14 },
+            // Top Serial 
+            { x: -310,  y: 0.1, z: -1250,   scale: 15 },
+            { x: -310,  y: 0.1, z: -1280,   scale: 16 },
+            { x: -310,  y: 0.1, z: -1210,   scale: 14 },
+            { x: -310, y: 0.1, z: -1150,   scale: 15 },
+            { x: -310, y: 0.1, z: -1190,  scale: 17 },
+            { x: -310, y: 0.1, z: -1130,  scale: 15 },
+            { x: -310,   y: 0.1, z: -1090,  scale: 16 },
+            { x: -310,  y: 0.1, z: -1040,   scale: 15 },
+            { x: -310,  y: 0.1, z: -990,   scale: 16 },
+            { x: -310,  y: 0.1, z: -940,   scale: 14 },
+            { x: -310,  y: 0.1, z: -890,   scale: 14 },
+            { x: -310,  y: 0.1, z: -840,   scale: 14 },
+            // Top Serial 
+            { x: -240,  y: 0.1, z: -1250,   scale: 15 },
+            { x: -240,  y: 0.1, z: -1280,   scale: 16 },
+            { x: -240,  y: 0.1, z: -1210,   scale: 14 },
+            { x: -240, y: 0.1, z: -1150,   scale: 15 },
+            { x: -240, y: 0.1, z: -1190,  scale: 17 },
+            { x: -240, y: 0.1, z: -1130,  scale: 15 },
+            { x: -240,   y: 0.1, z: -1090,  scale: 16 },
+            { x: -240,  y: 0.1, z: -1040,   scale: 15 },
+            { x: -240,  y: 0.1, z: -990,   scale: 16 },
+            { x: -240,  y: 0.1, z: -940,   scale: 14 },
+            { x: -240,  y: 0.1, z: -890,   scale: 14 },
+            { x: -240,  y: 0.1, z: -840,   scale: 14 },
+            // Top Serial 
+            { x: -170,  y: 0.1, z: -1250,   scale: 15 },
+            { x: -170,  y: 0.1, z: -1280,   scale: 16 },
+            { x: -170,  y: 0.1, z: -1210,   scale: 14 },
+            { x: -170, y: 0.1, z: -1150,   scale: 15 },
+            { x: -170, y: 0.1, z: -1190,  scale: 17 },
+            { x: -170, y: 0.1, z: -1130,  scale: 15 },
+            { x: -170,   y: 0.1, z: -1090,  scale: 16 },
+            { x: -170,  y: 0.1, z: -1040,   scale: 15 },
+            { x: -170,  y: 0.1, z: -990,   scale: 16 },
+            { x: -170,  y: 0.1, z: -940,   scale: 14 },
+            { x: -170,  y: 0.1, z: -890,   scale: 14 },
+            { x: -170,  y: 0.1, z: -840,   scale: 14 },
+            // Top Serial 
+            { x: -120,  y: 0.1, z: -1250,   scale: 15 },
+            { x: -120,  y: 0.1, z: -1280,   scale: 16 },
+            { x: -120,  y: 0.1, z: -1210,   scale: 14 },
+            { x: -120, y: 0.1, z: -1150,   scale: 15 },
+            { x: -120, y: 0.1, z: -1190,  scale: 17 },
+            { x: -120, y: 0.1, z: -1130,  scale: 15 },
+            { x: -120,   y: 0.1, z: -1090,  scale: 16 },
+            { x: -120,  y: 0.1, z: -1040,   scale: 15 },
+            { x: -120,  y: 0.1, z: -990,   scale: 16 },
+            { x: -120,  y: 0.1, z: -940,   scale: 14 },
+            { x: -120,  y: 0.1, z: -890,   scale: 14 },
+            { x: -120,  y: 0.1, z: -840,   scale: 14 },
+            // Top Serial 
+            { x: -60,  y: 0.1, z: -1250,   scale: 15 },
+            { x: -60,  y: 0.1, z: -1280,   scale: 16 },
+            { x: -60,  y: 0.1, z: -1210,   scale: 14 },
+            { x: -60, y: 0.1, z: -1150,   scale: 15 },
+            { x: -60, y: 0.1, z: -1190,  scale: 17 },
+            { x: -60, y: 0.1, z: -1130,  scale: 15 },
+            { x: -60,   y: 0.1, z: -1090,  scale: 16 },
+            { x: -60,  y: 0.1, z: -1040,   scale: 15 },
+            { x: -60,  y: 0.1, z: -990,   scale: 16 },
+            { x: -60,  y: 0.1, z: -940,   scale: 14 },
+            { x: -60,  y: 0.1, z: -890,   scale: 14 },
+            { x: -60,  y: 0.1, z: -840,   scale: 14 },
+            { x: -60,  y: 0.1, z: -800,   scale: 14 },
+            { x: -60,  y: 0.1, z: -770,   scale: 14 },
+            { x: -60,  y: 0.1, z: -730,   scale: 14 },
+            { x: -60,  y: 0.1, z: -700,   scale: 14 },
+
+            // Top Serial 
+            { x: 40,  y: 0.1, z: -1250,   scale: 15 },
+            { x: 40,  y: 0.1, z: -1280,   scale: 16 },
+            { x: 40,  y: 0.1, z: -1210,   scale: 14 },
+            { x: 40, y: 0.1, z: -1150,   scale: 15 },
+            { x: 40, y: 0.1, z: -1190,  scale: 17 },
+            { x: 40, y: 0.1, z: -1130,  scale: 15 },
+            { x: 40,   y: 0.1, z: -1090,  scale: 16 },
+            { x: 40,  y: 0.1, z: -1040,   scale: 15 },
+            { x: 40,  y: 0.1, z: -990,   scale: 16 },
+            { x: 40,  y: 0.1, z: -940,   scale: 14 },
+            { x: 40,  y: 0.1, z: -890,   scale: 14 },
+            { x: 40,  y: 0.1, z: -840,   scale: 14 },
+            { x: 40,  y: 0.1, z: -800,   scale: 14 },
+            { x: 40,  y: 0.1, z: -770,   scale: 14 },
+            { x: 40,  y: 0.1, z: -730,   scale: 14 },
+            { x: 40,  y: 0.1, z: -700,   scale: 14 },
+            // Top Serial 
+            { x: 110,  y: 0.1, z: -1250,   scale: 15 },
+            { x: 110,  y: 0.1, z: -1280,   scale: 16 },
+            { x: 110,  y: 0.1, z: -1210,   scale: 14 },
+            { x: 110, y: 0.1, z: -1150,   scale: 15 },
+            { x: 110, y: 0.1, z: -1190,  scale: 17 },
+            { x: 110, y: 0.1, z: -1130,  scale: 15 },
+            { x: 110,   y: 0.1, z: -1090,  scale: 16 },
+            { x: 110,  y: 0.1, z: -1040,   scale: 15 },
+            { x: 110,  y: 0.1, z: -990,   scale: 16 },
+            { x: 110,  y: 0.1, z: -940,   scale: 14 },
+            { x: 110,  y: 0.1, z: -890,   scale: 14 },
+            { x: 110,  y: 0.1, z: -840,   scale: 14 },
+            { x: 110,  y: 0.1, z: -800,   scale: 14 },
+            { x: 110,  y: 0.1, z: -770,   scale: 14 },
+            { x: 110,  y: 0.1, z: -730,   scale: 14 },
+            { x: 110,  y: 0.1, z: -700,   scale: 14 },
+            // Top Serial 
+            { x: 150,  y: 0.1, z: -1250,   scale: 15 },
+            { x: 150,  y: 0.1, z: -1280,   scale: 16 },
+            { x: 150,  y: 0.1, z: -1210,   scale: 14 },
+            { x: 150, y: 0.1, z: -1150,   scale: 15 },
+            { x: 150, y: 0.1, z: -1190,  scale: 17 },
+            { x: 150, y: 0.1, z: -1130,  scale: 15 },
+            { x: 150,   y: 0.1, z: -1090,  scale: 16 },
+            { x: 150,  y: 0.1, z: -1040,   scale: 15 },
+            { x: 150,  y: 0.1, z: -990,   scale: 16 },
+            { x: 150,  y: 0.1, z: -940,   scale: 14 },
+            { x: 150,  y: 0.1, z: -890,   scale: 14 },
+            { x: 150,  y: 0.1, z: -840,   scale: 14 },
+            { x: 150,  y: 0.1, z: -800,   scale: 14 },
+            { x: 150,  y: 0.1, z: -770,   scale: 14 },
+            { x: 150,  y: 0.1, z: -730,   scale: 14 },
+            { x: 150,  y: 0.1, z: -700,   scale: 14 },
+            // Top Serial 
+            { x: 190,  y: 0.1, z: -1250,   scale: 15 },
+            { x: 190,  y: 0.1, z: -1280,   scale: 16 },
+            { x: 190,  y: 0.1, z: -1210,   scale: 14 },
+            { x: 190, y: 0.1, z: -1150,   scale: 15 },
+            { x: 190, y: 0.1, z: -1190,  scale: 17 },
+            { x: 190, y: 0.1, z: -1130,  scale: 15 },
+            { x: 190,   y: 0.1, z: -1090,  scale: 16 },
+            { x: 190,  y: 0.1, z: -1040,   scale: 15 },
+            { x: 190,  y: 0.1, z: -990,   scale: 16 },
+            { x: 190,  y: 0.1, z: -940,   scale: 14 },
+            { x: 190,  y: 0.1, z: -890,   scale: 14 },
+            { x: 190,  y: 0.1, z: -840,   scale: 14 },
+            { x: 190,  y: 0.1, z: -800,   scale: 14 },
+            { x: 190,  y: 0.1, z: -770,   scale: 14 },
+            { x: 190,  y: 0.1, z: -730,   scale: 14 },
+            { x: 190,  y: 0.1, z: -700,   scale: 14 },
+            // Top Serial 
+            { x: 230,  y: 0.1, z: -1250,   scale: 15 },
+            { x: 230,  y: 0.1, z: -1280,   scale: 16 },
+            { x: 230,  y: 0.1, z: -1210,   scale: 14 },
+            { x: 230, y: 0.1, z: -1150,   scale: 15 },
+            { x: 230, y: 0.1, z: -1190,  scale: 17 },
+            { x: 230, y: 0.1, z: -1130,  scale: 15 },
+            { x: 230,   y: 0.1, z: -1090,  scale: 16 },
+            { x: 230,  y: 0.1, z: -1040,   scale: 15 },
+            { x: 230,  y: 0.1, z: -990,   scale: 16 },
+            { x: 230,  y: 0.1, z: -940,   scale: 14 },
+            { x: 230,  y: 0.1, z: -890,   scale: 14 },
+            { x: 230,  y: 0.1, z: -840,   scale: 14 },
+            { x: 230,  y: 0.1, z: -800,   scale: 14 },
+            { x: 230,  y: 0.1, z: -770,   scale: 14 },
+            { x: 230,  y: 0.1, z: -730,   scale: 14 },
+            { x: 230,  y: 0.1, z: -700,   scale: 14 },
+            // Top Serial 
+            { x: 270,  y: 0.1, z: -1250,   scale: 15 },
+            { x: 270,  y: 0.1, z: -1280,   scale: 16 },
+            { x: 270,  y: 0.1, z: -1210,   scale: 14 },
+            { x: 270, y: 0.1, z: -1150,   scale: 15 },
+            { x: 270, y: 0.1, z: -1190,  scale: 17 },
+            { x: 270, y: 0.1, z: -1130,  scale: 15 },
+            { x: 270,   y: 0.1, z: -1090,  scale: 16 },
+            { x: 270,  y: 0.1, z: -1040,   scale: 15 },
+            { x: 270,  y: 0.1, z: -990,   scale: 16 },
+            { x: 270,  y: 0.1, z: -940,   scale: 14 },
+            { x: 270,  y: 0.1, z: -890,   scale: 14 },
+            { x: 270,  y: 0.1, z: -840,   scale: 14 },
+            { x: 270,  y: 0.1, z: -800,   scale: 14 },
+            { x: 270,  y: 0.1, z: -770,   scale: 14 },
+            { x: 270,  y: 0.1, z: -730,   scale: 14 },
+            { x: 270,  y: 0.1, z: -700,   scale: 14 },
+            // Top Serial 
+            { x: 310,  y: 0.1, z: -1250,   scale: 15 },
+            { x: 310,  y: 0.1, z: -1280,   scale: 16 },
+            { x: 310,  y: 0.1, z: -1210,   scale: 14 },
+            { x: 310, y: 0.1, z: -1150,   scale: 15 },
+            { x: 310, y: 0.1, z: -1190,  scale: 17 },
+            { x: 310, y: 0.1, z: -1130,  scale: 15 },
+            { x: 310,   y: 0.1, z: -1090,  scale: 16 },
+            { x: 310,  y: 0.1, z: -1040,   scale: 15 },
+            { x: 310,  y: 0.1, z: -990,   scale: 16 },
+            { x: 310,  y: 0.1, z: -940,   scale: 14 },
+            { x: 310,  y: 0.1, z: -890,   scale: 14 },
+            { x: 310,  y: 0.1, z: -840,   scale: 14 },
+            { x: 310,  y: 0.1, z: -800,   scale: 14 },
+            { x: 310,  y: 0.1, z: -770,   scale: 14 },
+            { x: 310,  y: 0.1, z: -730,   scale: 14 },
+            { x: 310,  y: 0.1, z: -700,   scale: 14 },
+            // Top Serial 
+            { x: 340,  y: 0.1, z: -1250,   scale: 15 },
+            { x: 340,  y: 0.1, z: -1280,   scale: 16 },
+            { x: 340,  y: 0.1, z: -1210,   scale: 14 },
+            { x: 340, y: 0.1, z: -1150,   scale: 15 },
+            { x: 340, y: 0.1, z: -1190,  scale: 17 },
+            { x: 340, y: 0.1, z: -1130,  scale: 15 },
+            { x: 340,   y: 0.1, z: -1090,  scale: 16 },
+            { x: 340,  y: 0.1, z: -1040,   scale: 15 },
+            { x: 340,  y: 0.1, z: -990,   scale: 16 },
+            { x: 340,  y: 0.1, z: -940,   scale: 14 },
+            { x: 340,  y: 0.1, z: -890,   scale: 14 },
+            { x: 340,  y: 0.1, z: -840,   scale: 14 },
+            { x: 340,  y: 0.1, z: -800,   scale: 14 },
+            { x: 340,  y: 0.1, z: -770,   scale: 14 },
+            { x: 340,  y: 0.1, z: -730,   scale: 14 },
+            { x: 340,  y: 0.1, z: -700,   scale: 14 },
+            // Top Serial 
+            { x: 390,  y: 0.1, z: -1250,   scale: 15 },
+            { x: 390,  y: 0.1, z: -1280,   scale: 16 },
+            { x: 390,  y: 0.1, z: -1210,   scale: 14 },
+            { x: 390, y: 0.1, z: -1150,   scale: 15 },
+            { x: 390, y: 0.1, z: -1190,  scale: 17 },
+            { x: 390, y: 0.1, z: -1130,  scale: 15 },
+            { x: 390,   y: 0.1, z: -1090,  scale: 16 },
+            { x: 390,  y: 0.1, z: -1040,   scale: 15 },
+            { x: 390,  y: 0.1, z: -990,   scale: 16 },
+            { x: 390,  y: 0.1, z: -940,   scale: 14 },
+            { x: 390,  y: 0.1, z: -890,   scale: 14 },
+            { x: 390,  y: 0.1, z: -840,   scale: 14 },
+            { x: 390,  y: 0.1, z: -800,   scale: 14 },
+            { x: 390,  y: 0.1, z: -770,   scale: 14 },
+            { x: 390,  y: 0.1, z: -730,   scale: 14 },
+            { x: 390,  y: 0.1, z: -700,   scale: 14 },
+            // Top Serial 
+            { x: 410,  y: 0.1, z: -1250,   scale: 15 },
+            { x: 410,  y: 0.1, z: -1280,   scale: 16 },
+            { x: 410,  y: 0.1, z: -1210,   scale: 14 },
+            { x: 410, y: 0.1, z: -1150,   scale: 15 },
+            { x: 410, y: 0.1, z: -1190,  scale: 17 },
+            { x: 410, y: 0.1, z: -1130,  scale: 15 },
+            { x: 410,   y: 0.1, z: -1090,  scale: 16 },
+            { x: 410,  y: 0.1, z: -1040,   scale: 15 },
+            { x: 410,  y: 0.1, z: -990,   scale: 16 },
+            { x: 410,  y: 0.1, z: -940,   scale: 14 },
+            { x: 410,  y: 0.1, z: -890,   scale: 14 },
+            { x: 410,  y: 0.1, z: -840,   scale: 14 },
+            { x: 410,  y: 0.1, z: -800,   scale: 14 },
+            { x: 410,  y: 0.1, z: -770,   scale: 14 },
+            { x: 410,  y: 0.1, z: -730,   scale: 14 },
+            { x: 410,  y: 0.1, z: -700,   scale: 14 },
+            // Top Serial 
+            { x: 450,  y: 0.1, z: -1250,   scale: 15 },
+            { x: 450,  y: 0.1, z: -1280,   scale: 16 },
+            { x: 450,  y: 0.1, z: -1210,   scale: 14 },
+            { x: 450, y: 0.1, z: -1150,   scale: 15 },
+            { x: 450, y: 0.1, z: -1190,  scale: 17 },
+            { x: 450, y: 0.1, z: -1130,  scale: 15 },
+            { x: 450,   y: 0.1, z: -1090,  scale: 16 },
+            { x: 450,  y: 0.1, z: -1040,   scale: 15 },
+            { x: 450,  y: 0.1, z: -990,   scale: 16 },
+            { x: 450,  y: 0.1, z: -940,   scale: 14 },
+            { x: 450,  y: 0.1, z: -890,   scale: 14 },
+            { x: 450,  y: 0.1, z: -840,   scale: 14 },
+            { x: 450,  y: 0.1, z: -800,   scale: 14 },
+            { x: 450,  y: 0.1, z: -770,   scale: 14 },
+            { x: 450,  y: 0.1, z: -730,   scale: 14 },
+            { x: 450,  y: 0.1, z: -700,   scale: 14 },
+            // Top Serial 
+            { x: 500,  y: 0.1, z: -1250,   scale: 15 },
+            { x: 500,  y: 0.1, z: -1280,   scale: 16 },
+            { x: 500,  y: 0.1, z: -1210,   scale: 14 },
+            { x: 500, y: 0.1, z: -1150,   scale: 15 },
+            { x: 500, y: 0.1, z: -1190,  scale: 17 },
+            { x: 500, y: 0.1, z: -1130,  scale: 15 },
+            { x: 500,   y: 0.1, z: -1090,  scale: 16 },
+            { x: 500,  y: 0.1, z: -1040,   scale: 15 },
+            { x: 500,  y: 0.1, z: -990,   scale: 16 },
+            { x: 500,  y: 0.1, z: -940,   scale: 14 },
+            { x: 500,  y: 0.1, z: -890,   scale: 14 },
+            { x: 500,  y: 0.1, z: -840,   scale: 14 },
+            { x: 500,  y: 0.1, z: -800,   scale: 14 },
+            { x: 500,  y: 0.1, z: -770,   scale: 14 },
+            { x: 500,  y: 0.1, z: -730,   scale: 14 },
+            { x: 500,  y: 0.1, z: -700,   scale: 14 },
+            
         ];
 
 
@@ -1797,7 +2182,8 @@
                 houseOX: 200,
                 houseOZ: 300,
                 poolOX: -270,
-                carOX: -150
+                carOX: -150,
+                rotation: 90
             });
             // Zone - A
             createCurveHouseBunch(scene, ROAD_CONFIGS[1], {
@@ -1809,7 +2195,15 @@
                 startId: 500,
                 houseCount: 18,
                 separateRows: true,
-                isTerrace: true
+                isTerrace: true,
+                houseDesign: 'custom',
+                hScale:2,
+                hRotate:90,
+                houseRotation: 0,
+                houseOX : 100,
+                houseOZ : 180,
+                poolOX : -270,
+                carOX : -150,
             });
             // Zone - B
             createCurveHouseBunch(scene, ROAD_CONFIGS[2], {
@@ -1821,7 +2215,15 @@
                 startId: 500,
                 houseCount: 55,
                 separateRows: true,
-                isTerrace: true
+                isTerrace: true, 
+                houseDesign: 'custom',
+                hScale:2,
+                hRotate:90,
+                houseRotation: 0,
+                houseOX : 100,
+                houseOZ : 180,
+                poolOX : -270,
+                carOX : -150,
             });
             // Zone - C
             createCurveHouseBunch(scene, ROAD_CONFIGS[3], {
@@ -1833,7 +2235,15 @@
                 startId: 500,
                 houseCount: 29,
                 separateRows: true,
-                isTerrace: true
+                isTerrace: true,
+                houseDesign: 'custom',
+                hScale:2,
+                hRotate:90,
+                houseRotation: 0,
+                houseOX : 100,
+                houseOZ : 180,
+                poolOX : -270,
+                carOX : -150,
             });
             // Zone - D
             createCurveHouseBunch(scene, ROAD_CONFIGS[4], {
@@ -1845,7 +2255,15 @@
                 startId: 500,
                 houseCount: 29,
                 separateRows: true,
-                isTerrace: true
+                isTerrace: true,
+                houseDesign: 'custom',
+                hScale:2,
+                hRotate:90,
+                houseRotation: 0,
+                houseOX : 100,
+                houseOZ : 180,
+                poolOX : -270,
+                carOX : -150,
             });
 
             // --- Zone-A House Block Initialization ---
@@ -1871,14 +2289,15 @@
             // });
 
             // --- Create Custom Animated Trees (Removed as requested) ---
-            /*
+            
             customTreePositions.forEach(pos => {
                 createAnimatedTree(
                     new THREE.Vector3(pos.x, pos.y, pos.z),
-                    new THREE.Euler(0, Math.random() * Math.PI * 2, 0)
+                    new THREE.Euler(0, Math.random() * Math.PI * 2, 0),
+                    pos.scale || 5.0  // optional per-tree scale, default 5 world units tall
                 );
             });
-            */
+            
             console.log("Masterplan Initialization Complete. Rendering started.");
 
             // --- Final Scene Optimization ---
@@ -2832,13 +3251,13 @@
         /**
          * Creates a procedurally generated animated tree from tree2.html
          */
-        function createAnimatedTree(position, rotation) {
+         function createAnimatedTree(position, rotation, scale = 3.0) {
             const treeGroup = new THREE.Group();
             treeGroup.position.copy(position);
             treeGroup.rotation.copy(rotation);
-            // Normalized: height ~27.5. Scale to reach 0.3 world units (0.3 / 27.5 = 0.011)
-            // (0.3 world units = 20 plot units when house scale is 0.015)
-            treeGroup.scale.set(0.011, 0.011, 0.011);
+            // Scale controls visible world size of tree (default 3.0 = tree ~3 world units tall)
+            const s = scale / 27.5; // 27.5 is the internal normalized height
+            treeGroup.scale.set(s, s, s);
             scene.add(treeGroup);
 
             // Reusing shared geometry and material cache for performance
@@ -2863,7 +3282,7 @@
 
             // Recursive growth scoped to this tree instance
             function growBranch(startPos, direction, length, thickness, depth) {
-                if (depth > 5) return; // Reduced depth from 7 to 5 for better performance
+                if (depth > 6) return; // Increased depth from 5 to 6 for more branching
 
                 const endPos = new THREE.Vector3().addVectors(startPos, direction.clone().multiplyScalar(length));
                 const midpoint = new THREE.Vector3().addVectors(startPos, endPos).multiplyScalar(0.5);
@@ -2878,21 +3297,24 @@
                 branch.receiveShadow = true;
                 treeGroup.add(branch);
 
-                // Add leaves much earlier in the tree and in huge quantities
-                if (depth > 2) {
-                    const leafCount = Math.floor(Math.random() * 4) + 3; // Spawn 3 to 6 leaves per branch
+                // Leaves start from depth 1 onwards — full canopy coverage
+                if (depth >= 1) {
+                    // More leaves on deeper (outer) branches
+                    const baseCount = depth >= 4 ? 18 : (depth >= 3 ? 14 : (depth >= 2 ? 10 : 6));
+                    const leafCount = Math.floor(Math.random() * 6) + baseCount;
                     for (let i = 0; i < leafCount; i++) {
                         const leafMat = leafMats[Math.floor(Math.random() * leafMats.length)];
                         const leaf = new THREE.Mesh(leafGeo, leafMat);
 
-                        // Spread them out more so they look like a full canopy
-                        const spreadX = (Math.random() - 0.5) * (length * 1.5);
-                        const spreadY = (Math.random() - 0.5) * (length * 1.5);
-                        const spreadZ = (Math.random() - 0.5) * (length * 1.5);
+                        // Wide spread for a full, lush canopy
+                        const spread = length * 3.0;
+                        const spreadX = (Math.random() - 0.5) * spread;
+                        const spreadY = Math.random() * spread * 0.5; // bias upward
+                        const spreadZ = (Math.random() - 0.5) * spread;
 
                         leaf.position.copy(endPos).add(new THREE.Vector3(spreadX, spreadY, spreadZ));
 
-                        const s = 0.5 + Math.random() * 0.5; // Larger leaves for more fullness
+                        const s = 1.0 + Math.random() * 1.5; // Larger leaves: 1.0 to 2.5
                         leaf.scale.set(s, s, s);
                         leaf.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
                         leaf.castShadow = true;
@@ -4115,7 +4537,7 @@
             const building = new THREE.Group();
             building.position.set(houseOX, 0, houseOZ);
             // Apply internal house rotation (only the building rotates, not the plot/walls)
-            if (hRotate) building.rotation.y = hRotate * (Math.PI / 180);
+            building.rotation.y = (hRotate || 0) * (Math.PI / 180);
             house.add(building);
 
             if (houseDesign === 'custom') {
@@ -4780,6 +5202,10 @@
 
             const housesGroup = new THREE.Group();
             housesGroup.position.set(options.x || 0, options.y || 0, options.z || 0);
+            // houseAreaRotation: rotates entire block of houses together (land excluded)
+            if (options.houseAreaRotation !== undefined) {
+                housesGroup.rotation.y = options.houseAreaRotation * (Math.PI / 180);
+            }
 
             housesGroup.add(oddRow);
             housesGroup.add(evenRow);
@@ -4815,16 +5241,18 @@
                 const localIdx = Math.floor(i / 2);
                 unitGroup.position.x = localIdx * unitSpacing;
 
-                // Create Single House
-                // Create Single House with internal rotation
-                const hRotateVal = options.hRotate || options.houseRotation || 0;
+                // hRotate: rotates only the building mesh (passed into createHouse)
+                const hRotateVal = options.hRotate !== undefined ? options.hRotate : 0;
+                // houseRotation: rotates each individual plot/unit (walls + building)
+                const unitRotation = options.houseRotation !== undefined ? options.houseRotation * (Math.PI / 180) : 0;
                 const house = createHouse(formattedId, plotWidth, plotDepth, null, false, options.carCount || 1, false, hDepthNominal * areaHScale, hWidthNominal * areaHScale, true, (options.hFloorH || 100) * hScale, (options.houseOX || 0), (options.houseOZ || 0), (options.poolOX || 0), (options.poolOZ || 0), (options.carOX || 0), (options.carOZ || 0), (options.playOX || 0), (options.playOZ || 0), (options.carW !== undefined ? options.carW : 80) * hScale, (options.carL !== undefined ? options.carL : 160) * hScale, igScaleRaw, false, options.hasCarParking !== undefined ? options.hasCarParking : true, options.houseDesign || 'standard', hScale, hRotateVal);
                 unitGroup.add(house);
 
                 if (serialNum % 2 !== 0) {
-                    unitGroup.rotation.y = Math.PI; // Face the opposite direction
+                    unitGroup.rotation.y = Math.PI + unitRotation; // Face opposite + per-unit rotation
                     oddRow.add(unitGroup);
                 } else {
+                    unitGroup.rotation.y = unitRotation;
                     evenRow.add(unitGroup);
                 }
 
@@ -4932,6 +5360,10 @@
 
             const housesGroup = new THREE.Group();
             housesGroup.position.set(options.x || 0, options.y || 0, options.z || 0);
+            // houseAreaRotation: rotates entire houses block together (land excluded)
+            if (options.houseAreaRotation !== undefined) {
+                housesGroup.rotation.y = options.houseAreaRotation * (Math.PI / 180);
+            }
 
             if (!singleRow) housesGroup.add(oddRow);
             housesGroup.add(evenRow);
@@ -4968,23 +5400,25 @@
                 const localIdx = singleRow ? i : Math.floor(i / 2);
                 unitGroup.position.x = localIdx * unitSpacing;
 
-                // Create Single House
-                // Create Single House
-                // Create Single House with internal rotation
-                const hRotateVal = options.hRotate || options.houseRotation || 0;
+                // hRotate: rotates only the building mesh (passed into createHouse)
+                const hRotateVal = options.hRotate !== undefined ? options.hRotate : 0;
+                // houseRotation: rotates each individual plot/unit (walls + building)
+                // 'rotation' is legacy alias for houseRotation in createHouseCluster
+                const unitRot = options.houseRotation !== undefined ? options.houseRotation : (rotation || 0);
+                const unitRotRad = unitRot * (Math.PI / 180);
                 const house = createHouse(formattedId, plotWidth, plotDepth, null, hasPool, carCount, hasPlayground, hDepthNominal * areaHScale, hWidthNominal * areaHScale, options.hasWing !== undefined ? options.hasWing : true, hFloorH, (options.houseOX || 0), (options.houseOZ || 0), (options.poolOX || 0), (options.poolOZ || 0), (options.carOX || 0), (options.carOZ || 0), (options.playOX || 0), (options.playOZ || 0), (options.carW !== undefined ? options.carW : 80) * hScale, (options.carL !== undefined ? options.carL : 160) * hScale, options.innerGapScale || options.paddingScale || 1, false, hasCarParking, options.houseDesign || 'standard', hScale, hRotateVal);
 
                 unitGroup.add(house);
 
                 if (singleRow) {
-                    if (rotation) unitGroup.rotation.y = rotation * (Math.PI / 180);
+                    unitGroup.rotation.y = unitRotRad;
                     evenRow.add(unitGroup);
                 } else {
                     if (serialNum % 2 !== 0) {
-                        unitGroup.rotation.y = Math.PI + (rotation * (Math.PI / 180)); // Face the opposite direction + custom rotation
+                        unitGroup.rotation.y = Math.PI + unitRotRad; // Face opposite + per-unit rotation
                         oddRow.add(unitGroup);
                     } else {
-                        if (rotation) unitGroup.rotation.y = rotation * (Math.PI / 180);
+                        unitGroup.rotation.y = unitRotRad;
                         evenRow.add(unitGroup);
                     }
                 }
@@ -5373,7 +5807,7 @@
                 basePlotD = 1500,
                 hWidth = 220,
                 hDepth = 280,
-                houseRotation = options.hRotate || options.houseRotation || 0,
+                houseRotation = 0,
                 flipped = false,
                 hasPool = true,
                 carCount = 2,
@@ -5389,6 +5823,15 @@
                 houseDesign = 'standard',
                 hScale = 1
             } = options;
+
+            // Priority: hRotate > rotation (from options) > houseRotation > 0
+            // NOTE: must be computed AFTER destructuring, not inside it,
+            // because JS destructuring defaults are skipped when the key exists (even if value is 0).
+            const finalHouseRotation = options.hRotate !== undefined
+                ? options.hRotate
+                : (options.rotation !== undefined
+                    ? options.rotation
+                    : houseRotation);
 
             const igx = (typeof innerGapScale === 'object') ? (innerGapScale.x !== undefined ? innerGapScale.x : 1) : innerGapScale;
             const igy = (typeof innerGapScale === 'object') ? (innerGapScale.y !== undefined ? innerGapScale.y : 1) : innerGapScale;
@@ -5428,6 +5871,10 @@
 
             const housesGroup = new THREE.Group();
             housesGroup.position.set(options.x || 0, options.y || 0, options.z || 0);
+            // houseAreaRotation: rotates entire houses block together (land excluded)
+            if (options.houseAreaRotation !== undefined) {
+                housesGroup.rotation.y = options.houseAreaRotation * (Math.PI / 180);
+            }
             group.add(housesGroup);
 
             // Create curved land strip
@@ -5501,6 +5948,7 @@
                 const binormal = new THREE.Vector3().crossVectors(tangent, normal).normalize();
                 const angle = Math.atan2(tangent.x, tangent.z);
 
+                // hRotRad = per-unit plot rotation (houseRotation), NOT the building-only hRotate
                 const hRotRad = houseRotation * (Math.PI / 180);
 
                 if (separateRows) {
@@ -5510,11 +5958,11 @@
                     if (housesPlaced < targetTotal) {
                         const sideDirA = flipped ? -1 : 1;
                         const housePosA = p.clone().add(binormal.clone().multiplyScalar(offsetDistance * sideDirA));
-                        const houseA = createHouse("CH-" + (startId + housesPlaced), plotWidth, plotDepth, null, hasPool, carCount, hasPlayground, hDepth * areaHScale, hWidth * areaHScale, !isTerrace, hFloorH, houseOX, houseOZ, poolOX, poolOZ, carOX, carOZ, playOX, playOZ, carW, carL, innerGapScale, isTerrace, hasCarParking, houseDesign, hScale, houseRotation);
+                        const houseA = createHouse("CH-" + (startId + housesPlaced), plotWidth, plotDepth, null, hasPool, carCount, hasPlayground, hDepth * areaHScale, hWidth * areaHScale, !isTerrace, hFloorH, houseOX, houseOZ, poolOX, poolOZ, carOX, carOZ, playOX, playOZ, carW, carL, innerGapScale, isTerrace, hasCarParking, houseDesign, hScale, finalHouseRotation);
 
                         houseA.position.copy(housePosA);
                         houseA.position.y = 0.2;
-                        houseA.rotation.y = angle + (flipped ? -Math.PI / 2 : Math.PI / 2);
+                        houseA.rotation.y = angle + (flipped ? -Math.PI / 2 : Math.PI / 2) + hRotRad;
 
                         housesGroup.add(houseA);
                         housesPlaced++;
@@ -5524,11 +5972,11 @@
                     if (housesPlaced < targetTotal) {
                         const sideDirB = flipped ? 1 : -1;
                         const housePosB = p.clone().add(binormal.clone().multiplyScalar(offsetDistance * sideDirB));
-                        const houseB = createHouse("CH-" + (startId + housesPlaced), plotWidth, plotDepth, null, hasPool, carCount, hasPlayground, hDepth * areaHScale, hWidth * areaHScale, !isTerrace, hFloorH, houseOX, houseOZ, poolOX, poolOZ, carOX, carOZ, playOX, playOZ, carW, carL, innerGapScale, isTerrace, hasCarParking, houseDesign, hScale, houseRotation);
+                        const houseB = createHouse("CH-" + (startId + housesPlaced), plotWidth, plotDepth, null, hasPool, carCount, hasPlayground, hDepth * areaHScale, hWidth * areaHScale, !isTerrace, hFloorH, houseOX, houseOZ, poolOX, poolOZ, carOX, carOZ, playOX, playOZ, carW, carL, innerGapScale, isTerrace, hasCarParking, houseDesign, hScale, finalHouseRotation);
 
                         houseB.position.copy(housePosB);
                         houseB.position.y = 0.2;
-                        houseB.rotation.y = angle + (flipped ? Math.PI / 2 : -Math.PI / 2);
+                        houseB.rotation.y = angle + (flipped ? Math.PI / 2 : -Math.PI / 2) + hRotRad;
 
                         housesGroup.add(houseB);
                         housesPlaced++;
@@ -5538,11 +5986,11 @@
                     if (housesPlaced < targetTotal) {
                         const sideDir = flipped ? -1 : 1;
                         const housePos = p.clone().add(binormal.clone().multiplyScalar(offsetDistance * sideDir));
-                        const house = createHouse("CH-" + (startId + housesPlaced), plotWidth, plotDepth, null, hasPool, carCount, hasPlayground, hDepth * areaHScale, hWidth * areaHScale, !isTerrace, hFloorH, houseOX, houseOZ, poolOX, poolOZ, carOX, carOZ, playOX, playOZ, carW, carL, innerGapScale, isTerrace, hasCarParking, houseDesign, hScale, houseRotation);
+                        const house = createHouse("CH-" + (startId + housesPlaced), plotWidth, plotDepth, null, hasPool, carCount, hasPlayground, hDepth * areaHScale, hWidth * areaHScale, !isTerrace, hFloorH, houseOX, houseOZ, poolOX, poolOZ, carOX, carOZ, playOX, playOZ, carW, carL, innerGapScale, isTerrace, hasCarParking, houseDesign, hScale, finalHouseRotation);
 
                         house.position.copy(housePos);
                         house.position.y = 0.2;
-                        house.rotation.y = angle + (flipped ? -Math.PI / 2 : Math.PI / 2);
+                        house.rotation.y = angle + (flipped ? -Math.PI / 2 : Math.PI / 2) + hRotRad;
 
                         housesGroup.add(house);
                         housesPlaced++;
