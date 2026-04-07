@@ -111,6 +111,24 @@
             return tex;
         }
 
+        function createLeafTexture() {
+            const canvas = document.createElement('canvas'); canvas.width = 128; canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            // Use white/light-gray base so it doesn't darken the material color (0x3EA65A)
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 128, 128); 
+            for (let i = 0; i < 800; i++) {
+                const gray = 255 - Math.random() * 40;
+                ctx.fillStyle = `rgb(${gray}, ${gray}, ${gray})`;
+                ctx.fillRect(Math.random() * 128, Math.random() * 128, 2, 6);
+                const shadow = 210 + Math.random() * 45;
+                ctx.fillStyle = `rgb(${shadow}, ${shadow}, ${shadow})`;
+                ctx.fillRect(Math.random() * 128, Math.random() * 128, 4, 3);
+            }
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+            return tex;
+        }
+
         const CITY_BOUNDS = { minX: -700, maxX: 700, minZ: -1600, maxZ: 1600 };
         const customTreePositions = [
             // Add your tree positions here. x/z = world position, y = height offset, scale = tree height in world units
@@ -1277,35 +1295,43 @@
             const startTime = performance.now();
             console.log("Starting Scene Optimization...");
             
-            // Map to group meshes by (Geometry UID + Material UID)
             const meshGroups = new Map();
             const toRemove = [];
             
-            // 1. Traverse and Collect
             scene.updateMatrixWorld(true);
-            scene.traverse(node => {
-                // Check if node or any ancestor is marked for skipping optimization
-                let skip = false;
-                node.traverseAncestors(a => { if (a.userData.noOptimize || a.name === 'agent') skip = true; });
-                if (skip || node.userData.noOptimize || node.name === 'agent' || node.name === 'flag' || node.name === 'river' || node.name.includes("no-inst") || node.isRiverMesh) return;
+            window.masterplanZones = {}; // Global registry for interactive zone map
 
-                if (node.isMesh) {
-                    const key = `${node.geometry.uuid}_${node.material.uuid}`;
+            function collect(node, insideNoOptimize = false, currentZone = null) {
+                const skip = insideNoOptimize || node.userData.noOptimize || node.name === 'agent' || node.name === 'flag' || node.name === 'river' || node.isRiverMesh;
+                
+                // Inherit zone from parent if current node doesn't define one
+                const nodeZone = node.userData.zone || currentZone;
+
+                if (node.isMesh && !skip) {
+                    const key = `${node.geometry.uuid}_${node.material.uuid}_${nodeZone || 'global'}`;
                     if (!meshGroups.has(key)) {
                         meshGroups.set(key, {
                             geo: node.geometry,
                             mat: node.material,
                             matrices: [],
                             castShadow: node.castShadow,
-                            receiveShadow: node.receiveShadow
+                            receiveShadow: node.receiveShadow,
+                            zone: nodeZone
                         });
                     }
                     meshGroups.get(key).matrices.push(node.matrixWorld.clone());
                     toRemove.push(node);
                 }
-            });
 
-            // 2. Remove originals
+                if (node.children) {
+                    for (let i = 0; i < node.children.length; i++) {
+                        collect(node.children[i], skip, nodeZone);
+                    }
+                }
+            }
+            
+            collect(scene);
+
             toRemove.forEach(obj => {
                 if (obj.parent) obj.parent.remove(obj);
             });
@@ -1316,11 +1342,18 @@
             meshGroups.forEach((data, key) => {
                 const count = data.matrices.length;
                 if (count > 0) {
-                    // Even for count === 1, using InstancedMesh is fine and simplifies logic
                     const iMesh = new THREE.InstancedMesh(data.geo, data.mat, count);
                     iMesh.castShadow = data.castShadow;
                     iMesh.receiveShadow = data.receiveShadow;
+                    iMesh.frustumCulled = false; // Disable for safety in large-scale city scenes
                     
+                    // Register the InstancedMesh to its Zone for Map Animations
+                    if (data.zone) {
+                        if (!window.masterplanZones[data.zone]) window.masterplanZones[data.zone] = [];
+                        window.masterplanZones[data.zone].push(iMesh);
+                        iMesh.userData.originalY = iMesh.position.y;
+                    }
+
                     for (let i = 0; i < count; i++) {
                         iMesh.setMatrixAt(i, data.matrices[i]);
                     }
@@ -1347,8 +1380,8 @@
                     }
 
                     iMesh.instanceMatrix.needsUpdate = true;
+                    iMesh.updateMatrix(); 
                     iMesh.matrixAutoUpdate = false;
-                    iMesh.updateMatrix();
                     scene.add(iMesh);
                     
                     instanceCount += count;
@@ -1376,33 +1409,44 @@
             // Initialize with dense fog for reveal animation
             scene.fog = new THREE.FogExp2(0x87ceeb, initialFogDensity);
 
-            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.01, 14000);
-
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.5, 14000);
             camera.position.set(10, 150, 150); // Drone high-altitude start
             camera.lookAt(500, 850, 500);
-
             scene.add(camera)
 
-            // Lighting for MeshStandardMaterial
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
             scene.add(ambientLight);
 
             const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            directionalLight.position.set(5000, 5500, 5000);
+            directionalLight.position.set(2000, 4000, 2000);
             directionalLight.castShadow = true;
-            directionalLight.shadow.bias = -0.0005; // Reduces shadow acne (blinking shadows)
-            directionalLight.shadow.normalBias = 0.05; // Helps with shadow artifacts on surfaces
+            directionalLight.shadow.bias = -0.001; 
+            directionalLight.shadow.normalBias = 0.02; 
             directionalLight.shadow.mapSize.width = 2048;
             directionalLight.shadow.mapSize.height = 2048;
+
+            // Proper shadow camera bounds for the city scale
+            const sCam = directionalLight.shadow.camera;
+            sCam.left = -2000;
+            sCam.right = 2000;
+            sCam.top = 2000;
+            sCam.bottom = -2000;
+            sCam.near = 100;
+            sCam.far = 15000;
+            sCam.updateProjectionMatrix(); // Essential!
+            
             scene.add(directionalLight);
 
-
-            renderer = new THREE.WebGLRenderer({ antialias: true, logarithmicDepthBuffer: true, powerPreference: "high-performance" });
+            renderer = new THREE.WebGLRenderer({ 
+                antialias: true, 
+                logarithmicDepthBuffer: true, // RESTORED: Critical for massive cities to prevent roads from disappearing (Z-fighting)
+                powerPreference: "high-performance"
+            });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             renderer.shadowMap.enabled = true;
-            renderer.shadowMap.type = THREE.VSMShadowMap;
-            renderer.shadowMap.autoUpdate = false; // Manually update shadows for major changes
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Softer shadows than VSM for this style
+            renderer.shadowMap.autoUpdate = false; 
             document.body.appendChild(renderer.domElement);
 
             // Grid Helper
@@ -1634,24 +1678,19 @@
             // createCustomRoad(scene, {
             //     points: [
             //         new THREE.Vector3(-12, 0, -10),     // Junction (start)
-            //         new THREE.Vector3(28, 0, -10),     // Straighten out at end
-            //         // new THREE.Vector3(28, 0, -12),     // Straighten out at end
+            //         new THREE.Vector3(28, 0, -10),      // Straighten out at end
             //         new THREE.Vector3(64, 0, -70),
             //         new THREE.Vector3(104, 0, -82),
             //         new THREE.Vector3(154, 0, -60),
-            //         // new THREE.Vector3(184, 0, -72), 
             //         new THREE.Vector3(224, 0, -62),
             //         new THREE.Vector3(294, 0, -52),
-            //         // new THREE.Vector3(304, 0, -72), 
             //         new THREE.Vector3(344, 0, -48),
             //         new THREE.Vector3(484, 0, -112),
-            //         // new THREE.Vector3(144, 0, -112),     // Straighten out at end
-            //         // new THREE.Vector3(124, 0, -122),     // Straighten out at end
             //     ],
             //     width: 10,
             //     thickness: 0.21, // Matches previous road
             //     style: 'dashed',
-            //     position: { x: 276, y: 0, z: 195 },
+            //     position: { x: 276, y: 0.05, z: 195 }, // Slightly elevated to prevent z-fighting
             //     rotation: { x: 0, y: -11, z: 0 },
             // });
 
@@ -1768,6 +1807,10 @@
             const subGreenLandCL16 = new THREE.Group();
             subGreenLandCL16.position.set(-10, 0, -380);// Elevated to be above the lake surface
             cityBlocks.add(subGreenLandCL16);
+            // Lake Near 
+            const subGreenLandCL17 = new THREE.Group();
+            subGreenLandCL17.position.set(-10, 0, -296);// Elevated to be above the lake surface
+            cityBlocks.add(subGreenLandCL17);
 
             // BLOCK B -1
             const subGreenLandBB1 = new THREE.Group();
@@ -2131,6 +2174,44 @@
                 houseOX: -450, houseOZ: 900,
                 houseAreaRotation:54,
             });
+            createHouseCluster(subGreenLandCL17, {
+                innerGapScale: { x: 1, y: .5 },
+                outerGapScale: 1.5,
+                serialCount: 7,
+                startX: 330,
+                startZ: 280,
+                unitSpacing: 32,
+                houseGap: 340,
+                rowSpacing: 70,
+                startId: 2,
+                clusterName: "",
+                hasPool: true,
+                carCount: 1,
+                hasPlayground: true,
+                singleRow: true,
+                hDepth: 1550,
+                hWidth: 520,
+                basePlotW: 2000,
+                basePlotD: 4000,
+                hasWing: false,
+                hFloorH: 40,
+                houseOX: 200,
+                houseOZ: 500,
+                poolOX: -570,
+                poolOZ: -750,
+                carOX: -150,
+                carOZ: 100,
+                playOX: -570,
+                playOZ: 200,
+                carW: 200,
+                carL: 460, 
+                rotation: 180,
+                houseDesign: 'customV2',
+                hScale:5,
+                hRotate:0,
+                houseOX: -450, houseOZ: 900,
+                houseAreaRotation:90,
+            });
 
             // Shared materials for all roads
             const asphaltBaseMat = getSharedMaterial('asphaltBase', () => new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.9, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 }));
@@ -2230,6 +2311,31 @@
             sr_createRiverAndBanks(SR_LAKE_CONFIG_BUNCH);
             sr_createRiverAndBanks(SR_LAKE_CONFIG_MAIN_RIVER);
             sr_createRiverAndBanks(SR_LAKE_CONFIG_CENTER_LAKE);
+            
+            // --- Central Park Area ---
+            srv2_createParkArea(scene, {
+                w: 160, d: 180,
+                x: 100, y: 0.1, z: 450,
+                ry: Math.PI / 2,
+                landColor: 0xcdd19a
+            });
+            
+            // Internal Central Park Path
+            // srv2_createParkPath(scene, {
+            //     points: [
+            //         new THREE.Vector3(-780, 0.2, 170),
+            //         new THREE.Vector3(-750, 0.2, 200),
+            //         new THREE.Vector3(-720, 0.2, 230)
+            //     ],
+            //     width: 2.5
+            // });
+            
+            // --- Side Park (Small) ---
+            // srv2_createParkArea(scene, {
+            //     w: 30, d: 30,
+            //     x: -450, y: 0.1, z: 500,
+            //     ry: -Math.PI / 4
+            // });
 
             // --- Fill Empty Curved Area with Houses ---
             // Western Link Houses (Merged Dual-Row Staggered Serial)
@@ -2242,7 +2348,10 @@
                 separateRows: true, // Dual-row restored
                 innerGapScale: { x: 0.8, y: 0.5 },
                 houseOX: 200,
-                houseOZ: 300,
+                houseOZ: 150,
+                houseDesign: 'custom',
+                hScale:3,
+                hRotate:90,
                 poolOX: -270,
                 carOX: -150,
                 rotation: 90
@@ -2360,12 +2469,7 @@
                 );
             });
             
-            console.log("Masterplan Initialization Complete. Rendering started.");
-
-            // --- Final Scene Optimization ---
-            optimizeScene();
-
-            requestAnimationFrame(sceneRender);
+            console.log("Masterplan Initialization Complete. Proceeding to Optimization...");
         }
 
         /**
@@ -3489,6 +3593,8 @@
             mesh.rotation.set(rx, ry, rz);
             mesh.castShadow = true;
             mesh.receiveShadow = true;
+            mesh.matrixAutoUpdate = false; // Major performance win for static objects
+            mesh.updateMatrix(); // Ensure the initial matrix is calculated
             parent.add(mesh);
             return mesh;
         }
@@ -4473,6 +4579,576 @@
 
             houseMeshCache.set(cacheKey, bGrp.clone());
             return bGrp;
+        }
+
+        // --- PARK EQUIPMENT SYSTEM (srv2) FROM park.html ---
+
+        function srv2_createParkBench(parent, config) {
+            const { w = 2, h = 0.5, d = 0.6, color = 0x5d4037 } = config;
+            const group = new THREE.Group();
+            const mat = getSharedMaterial(`mat_bench_${color}`, () => new THREE.MeshStandardMaterial({ color: color, roughness: 0.8 }));
+            const ironMat = getSharedMaterial('mat_iron_bench', () => new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.8 }));
+            
+            const slatGeo = getSharedGeometry(`benchSlat_${w}`, () => new THREE.BoxGeometry(w, 0.04, 0.12));
+            const backSlatGeo = getSharedGeometry(`benchBackSlat_${w}`, () => new THREE.BoxGeometry(w, 0.12, 0.04));
+            
+            // Seat (slats)
+            for (let i = 0; i < 4; i++) {
+                const slat = new THREE.Mesh(slatGeo, mat);
+                slat.position.set(0, h, -d/2 + 0.1 + i * 0.14);
+                group.add(slat);
+            }
+            
+            // Backrest (slats)
+            for (let i = 0; i < 3; i++) {
+                const slat = new THREE.Mesh(backSlatGeo, mat);
+                slat.position.set(0, h + 0.2 + i * 0.14, -d/2);
+                slat.rotation.x = -0.2;
+                group.add(slat);
+            }
+            
+            // Legs (Iron frames)
+            const legGeo = getSharedGeometry(`benchLeg_${h}_${d}`, () => new THREE.BoxGeometry(0.1, h, d));
+            const backSupportGeo = getSharedGeometry('benchBackSupport', () => new THREE.BoxGeometry(0.08, 0.6, 0.08));
+            
+            const createLegFrame = (lx) => {
+                const frame = new THREE.Mesh(legGeo, ironMat);
+                frame.position.set(lx, h/2, 0.05);
+                group.add(frame);
+                
+                const backSupport = new THREE.Mesh(backSupportGeo, ironMat);
+                backSupport.position.set(lx, h + 0.25, -d/2 + 0.05);
+                group.add(backSupport);
+            };
+            createLegFrame(-w/2 + 0.2);
+            createLegFrame(w/2 - 0.2);
+            
+            return srv2_finalizeMesh(group, parent, config);
+        }
+
+        function srv2_createParkSwing(parent, config) {
+            const { w = 3, h = 3.5, color = 0x334155, seatColor = 0xef4444 } = config;
+            const group = new THREE.Group();
+            const frameMat = getSharedMaterial(`mat_swingFrame_${color}`, () => new THREE.MeshStandardMaterial({ color: color, metalness: 0.7, roughness: 0.2 }));
+            const ropeMat = getSharedMaterial('mat_swingRope', () => new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.9 }));
+            const seatMat = getSharedMaterial(`mat_swingSeat_${seatColor}`, () => new THREE.MeshStandardMaterial({ color: seatColor }));
+
+            const postGeo = getSharedGeometry(`swingPost_${h}`, () => new THREE.CylinderGeometry(0.08, 0.12, h + 0.5, 12));
+            const createAFrame = (px) => {
+                const left = new THREE.Mesh(postGeo, frameMat);
+                left.position.set(px, h/2, 0.6);
+                left.rotation.x = 0.2;
+                group.add(left);
+                
+                const right = new THREE.Mesh(postGeo, frameMat);
+                right.position.set(px, h/2, -0.6);
+                right.rotation.x = -0.2;
+                group.add(right);
+            };
+            createAFrame(-w/2);
+            createAFrame(w/2);
+            
+            const topBarGeo = getSharedGeometry(`swingTopBar_${w}`, () => new THREE.CylinderGeometry(0.1, 0.1, w + 0.4, 12));
+            const topBar = new THREE.Mesh(topBarGeo, frameMat);
+            topBar.rotation.z = Math.PI / 2;
+            topBar.position.y = h;
+            group.add(topBar);
+
+            const seatGroup = new THREE.Group();
+            const seatGeo = getSharedGeometry('swingSeat', () => new THREE.BoxGeometry(0.8, 0.05, 0.4));
+            const seat = new THREE.Mesh(seatGeo, seatMat);
+            seatGroup.add(seat);
+            
+            const chainGeo = getSharedGeometry(`swingChain_${h}`, () => new THREE.CylinderGeometry(0.015, 0.015, h - 0.6, 8));
+            const c1 = new THREE.Mesh(chainGeo, ropeMat);
+            c1.position.set(-0.3, h/2 - 0.3, 0);
+            seatGroup.add(c1);
+            const c2 = new THREE.Mesh(chainGeo, ropeMat);
+            c2.position.set(0.3, h/2 - 0.3, 0);
+            seatGroup.add(c2);
+            
+            seatGroup.position.set(0, 0.6, 0);
+            group.add(seatGroup);
+            
+            return srv2_finalizeMesh(group, parent, config);
+        }
+
+        function srv2_createParkSlide(parent, config) {
+            const { h = 2.2, color = 0x3b82f6, frameColor = 0xe2e8f0 } = config;
+            const group = new THREE.Group();
+            const slideMat = getSharedMaterial(`mat_slideSurface_${color}`, () => new THREE.MeshStandardMaterial({ color: color, roughness: 0.2, metalness: 0.4 }));
+            const frameMat = getSharedMaterial(`mat_slideFrame_${frameColor}`, () => new THREE.MeshStandardMaterial({ color: frameColor, metalness: 0.8 }));
+
+            const platformGeo = getSharedGeometry('slidePlatform', () => new THREE.BoxGeometry(1.2, 0.1, 1.2));
+            const platform = new THREE.Mesh(platformGeo, frameMat);
+            platform.position.y = h;
+            group.add(platform);
+            
+            const stepGeo = getSharedGeometry('slideStep', () => new THREE.BoxGeometry(1.0, 0.06, 0.15));
+            const steps = 8;
+            for (let i = 0; i < steps; i++) {
+                const step = new THREE.Mesh(stepGeo, frameMat);
+                step.position.set(0, (i/steps) * h, -0.7);
+                group.add(step);
+            }
+            const postGeo = getSharedGeometry(`slidePost_${h}`, () => new THREE.CylinderGeometry(0.06, 0.06, h + 1, 8));
+            const p1 = new THREE.Mesh(postGeo, frameMat); p1.position.set(-0.5, h/2, -0.8); group.add(p1);
+            const p2 = new THREE.Mesh(postGeo, frameMat); p2.position.set(0.5, h/2, -0.8); group.add(p2);
+            
+            const curveKey = `slideCurve_${h}`;
+            const slideGeo = getSharedGeometry(curveKey, () => {
+                const curve = new THREE.QuadraticBezierCurve3(
+                    new THREE.Vector3(0, h, 0.6),
+                    new THREE.Vector3(0, h * 0.8, 2.5),
+                    new THREE.Vector3(0, 0.1, 4.5)
+                );
+                return new THREE.TubeGeometry(curve, 32, 0.5, 12, false);
+            });
+            const slideMesh = new THREE.Mesh(slideGeo, slideMat);
+            slideMesh.scale.set(1.5, 0.4, 1);
+            group.add(slideMesh);
+            
+            const p3 = new THREE.Mesh(postGeo, frameMat); p3.position.set(-0.5, h/2, 0.5); group.add(p3);
+            const p4 = new THREE.Mesh(postGeo, frameMat); p4.position.set(0.5, h/2, 0.5); group.add(p4);
+
+            return srv2_finalizeMesh(group, parent, config);
+        }
+
+        function srv2_createParkSeesaw(parent, config) {
+            const { w = 5, color = 0xf59e0b } = config;
+            const group = new THREE.Group();
+            const boardMat = getSharedMaterial(`mat_seesawBoard_${color}`, () => new THREE.MeshStandardMaterial({ color: color, roughness: 0.5 }));
+            const pivotMat = getSharedMaterial('mat_seesawPivot', () => new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.9 }));
+            
+            const pivotBaseGeo = getSharedGeometry('seesawPivotBase', () => new THREE.CylinderGeometry(0.1, 0.15, 0.8, 12));
+            const pivotBase = new THREE.Mesh(pivotBaseGeo, pivotMat);
+            pivotBase.position.y = 0.4;
+            group.add(pivotBase);
+            
+            const pivotBarGeo = getSharedGeometry('seesawPivotBar', () => new THREE.CylinderGeometry(0.05, 0.05, 0.6, 12));
+            const pivotBar = new THREE.Mesh(pivotBarGeo, pivotMat);
+            pivotBar.rotation.z = Math.PI / 2;
+            pivotBar.position.y = 0.8;
+            group.add(pivotBar);
+            
+            const boardGeo = getSharedGeometry(`seesawBoard_${w}`, () => new THREE.BoxGeometry(w, 0.08, 0.4));
+            const board = new THREE.Mesh(boardGeo, boardMat);
+            board.position.y = 0.85;
+            board.rotation.z = Math.PI / 10;
+            group.add(board);
+            
+            const seatGeo = getSharedGeometry('seesawSeat', () => new THREE.BoxGeometry(0.5, 0.05, 0.5));
+            const handleGeo = getSharedGeometry('seesawHandle', () => new THREE.TorusGeometry(0.15, 0.02, 8, 16, Math.PI));
+            
+            const createEnd = (endX, rot) => {
+                const handle = new THREE.Mesh(handleGeo, pivotMat);
+                handle.position.set(endX - (endX > 0 ? 0.4 : -0.4), 1.05 + (endX * Math.tan(rot)), 0);
+                handle.rotation.z = Math.PI / 2;
+                group.add(handle);
+            };
+            createEnd(-w/2 + 0.3, Math.PI / 10);
+            createEnd(w/2 - 0.3, Math.PI / 10);
+            
+            return srv2_finalizeMesh(group, parent, config);
+        }
+
+        function srv2_createParkLamp(parent, config) {
+            const { h = 4.5, color = 0x1e293b, emissive = 0xfff0c0 } = config;
+            const group = new THREE.Group();
+            const postMat = getSharedMaterial(`mat_lampPost_${color}`, () => new THREE.MeshStandardMaterial({ color: color, metalness: 0.9, roughness: 0.1 }));
+            const glassMat = getSharedMaterial(`mat_lampGlass_${emissive}`, () => new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.4, emissive: emissive, emissiveIntensity: 1 }));
+            
+            const poleGeo = getSharedGeometry(`lampPole_${h}`, () => new THREE.CylinderGeometry(0.06, 0.12, h, 12));
+            const pole = new THREE.Mesh(poleGeo, postMat);
+            pole.position.y = h/2;
+            group.add(pole);
+            
+            const baseGeo = getSharedGeometry('lampBase', () => new THREE.CylinderGeometry(0.25, 0.35, 0.4, 8));
+            const base = new THREE.Mesh(baseGeo, postMat);
+            base.position.y = 0.2;
+            group.add(base);
+            
+            const headGeo = getSharedGeometry('lampHead', () => new THREE.BoxGeometry(0.5, 0.7, 0.5));
+            const head = new THREE.Mesh(headGeo, glassMat);
+            head.name = 'lampBulb';
+            head.position.y = h + 0.35;
+            group.add(head);
+            
+            const capGeo = getSharedGeometry('lampCap', () => new THREE.CylinderGeometry(0.01, 0.4, 0.2, 4));
+            const cap = new THREE.Mesh(capGeo, postMat);
+            cap.position.y = h + 0.7;
+            cap.rotation.y = Math.PI / 4;
+            group.add(cap);
+
+            const coneGeo = getSharedGeometry('lampConeGeo', () => new THREE.CylinderGeometry(0, 2.5, 5, 16));
+            const coneMat = getSharedMaterial('lampConeMat', () => new THREE.MeshBasicMaterial({ color: emissive, transparent: true, opacity: 0, depthWrite: false }));
+            const cone = new THREE.Mesh(coneGeo, coneMat);
+            cone.name = 'lampCone';
+            cone.position.set(0, h - 2.15, 0);
+            group.add(cone);
+            
+            const pLight = new THREE.PointLight(emissive, 2, 12);
+            pLight.name = 'parkLampLight';
+            pLight.position.y = h + 0.35;
+            pLight.castShadow = true;
+            group.add(pLight);
+            
+            return srv2_finalizeMesh(group, parent, config);
+        }
+
+        function srv2_createParkRoundabout(parent, config) {
+            const { r = 1.8, color = 0x10b981 } = config;
+            const group = new THREE.Group();
+            const mat = getSharedMaterial(`mat_roundabout_${color}`, () => new THREE.MeshStandardMaterial({ color: color, roughness: 0.4 }));
+            const railMat = getSharedMaterial('mat_roundaboutRail', () => new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.8 }));
+            
+            const baseGeo = getSharedGeometry(`roundaboutBase_${r}`, () => new THREE.CylinderGeometry(r, r, 0.1, 32));
+            const base = new THREE.Mesh(baseGeo, mat);
+            base.position.y = 0.15;
+            group.add(base);
+            
+            const railGeo = getSharedGeometry('roundaboutRail', () => new THREE.TorusGeometry(0.6, 0.04, 8, 16, Math.PI));
+            for (let i = 0; i < 4; i++) {
+                const angle = (i / 4) * Math.PI * 2;
+                const rail = new THREE.Mesh(railGeo, railMat);
+                rail.position.set(Math.cos(angle) * (r * 0.6), 0.75, Math.sin(angle) * (r * 0.6));
+                rail.rotation.y = angle;
+                rail.rotation.z = Math.PI / 2;
+                group.add(rail);
+            }
+            
+            const poleGeo = getSharedGeometry('roundaboutPole', () => new THREE.CylinderGeometry(0.1, 0.1, 1.2, 12));
+            const pole = new THREE.Mesh(poleGeo, railMat);
+            pole.position.y = 0.6;
+            group.add(pole);
+
+            return srv2_finalizeMesh(group, parent, config);
+        }
+
+        function srv2_createParkFountain(parent, config) {
+            const { r = 2.5, levels = 3, color = 0xe2e8f0 } = config;
+            const group = new THREE.Group();
+            const stoneMat = getSharedMaterial(`mat_fountainStone_${color}`, () => new THREE.MeshStandardMaterial({ color: color, roughness: 0.9 }));
+            const waterMat = getSharedMaterial('mat_fountainWater', () => new THREE.MeshStandardMaterial({ color: 0x0ea5e9, transparent: true, opacity: 0.7, metalness: 0.5 }));
+            
+            for (let i = 0; i < levels; i++) {
+                const levelR = r * (1 - i * 0.3);
+                const levelH = 0.4;
+                const bowlGeo = getSharedGeometry(`fountainBowl_${levelR}`, () => new THREE.CylinderGeometry(levelR, levelR * 0.8, 0.4, 16));
+                const bowl = new THREE.Mesh(bowlGeo, stoneMat);
+                bowl.position.y = i * 0.8 + levelH/2;
+                group.add(bowl);
+                
+                const waterGeo = getSharedGeometry(`fountainWater_${levelR}`, () => new THREE.CylinderGeometry(levelR - 0.1, levelR - 0.1, 0.05, 16));
+                const water = new THREE.Mesh(waterGeo, waterMat);
+                water.name = 'fountainWater';
+                water.position.y = i * 0.8 + levelH - 0.02;
+                group.add(water);
+                
+                if (i < levels - 1) {
+                    const columnGeo = getSharedGeometry('fountainColumn', () => new THREE.CylinderGeometry(0.2, 0.25, 0.8, 8));
+                    const column = new THREE.Mesh(columnGeo, stoneMat);
+                    column.position.y = i * 0.8 + 0.4 + 0.4;
+                    group.add(column);
+                }
+            }
+            
+            const spoutGeo = getSharedGeometry('fountainSpout', () => new THREE.SphereGeometry(0.15, 8, 8));
+            const spout = new THREE.Mesh(spoutGeo, waterMat);
+            spout.position.y = levels * 0.8;
+            group.add(spout);
+            
+            return srv2_finalizeMesh(group, parent, config);
+        }
+
+        function srv2_createParkTrashBin(parent, config) {
+            const { color = 0x475569 } = config;
+            const group = new THREE.Group();
+            const mat = getSharedMaterial(`mat_trashBin_${color}`, () => new THREE.MeshStandardMaterial({ color: color }));
+            
+            const bodyGeo = getSharedGeometry('trashBinBody', () => new THREE.CylinderGeometry(0.3, 0.25, 0.8, 12));
+            const body = new THREE.Mesh(bodyGeo, mat);
+            body.position.y = 0.4;
+            group.add(body);
+            
+            const lidGeo = getSharedGeometry('trashBinLid', () => new THREE.CylinderGeometry(0.32, 0.32, 0.1, 12));
+            const lid = new THREE.Mesh(lidGeo, getSharedMaterial('mat_trashBinLid', () => new THREE.MeshStandardMaterial({ color: 0x1e293b })));
+            lid.position.y = 0.85;
+            group.add(lid);
+            
+            return srv2_finalizeMesh(group, parent, config);
+        }
+
+        function srv2_createBoxTree(parent, config) {
+            const { trunkH = 1.6, boxSize = 1.6, color = 0x88cc22 } = config; 
+            const group = new THREE.Group();
+            
+            const trunkMat = getSharedMaterial('mat_boxTreeTrunk', () => new THREE.MeshStandardMaterial({ color: 0x4d3220 }));
+            const trunkGeo = getSharedGeometry(`boxTreeTrunk_${trunkH}`, () => new THREE.CylinderGeometry(0.06, 0.12, trunkH, 8));
+            const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+            trunk.position.y = trunkH / 2;
+            group.add(trunk);
+            
+            const foliageR = boxSize * 0.7; 
+            const leafMat = getSharedMaterial(`mat_boxTreeLeaf_${color}`, () => new THREE.MeshStandardMaterial({ color: color, roughness: 0.7 }));
+            const leafGeo = getSharedGeometry(`boxTreeLeaf_${foliageR}`, () => new THREE.SphereGeometry(foliageR, 32, 32));
+            const core = new THREE.Mesh(leafGeo, leafMat);
+            core.position.y = trunkH + foliageR * 0.8;
+            group.add(core);
+            
+            const potMat = getSharedMaterial('mat_boxTreePot', () => new THREE.MeshStandardMaterial({color: 0x222222}));
+            const potGeo = getSharedGeometry('boxTreePot', () => new THREE.CylinderGeometry(0.3, 0.2, 0.3, 8));
+            const pot = new THREE.Mesh(potGeo, potMat);
+            pot.position.y = 0.15;
+            group.add(pot);
+
+            return srv2_finalizeMesh(group, parent, config);
+        }
+
+        /**
+         * srv2_createBoxTreeRow — Places a serial row/array of Box Trees.
+         *
+         * Usage (array of positions):
+         *   { type: 'boxtreerow', positions: [{x:0,z:0},{x:3,z:0},{x:6,z:0}], trunkH:1.6, boxSize:1.6 }
+         *
+         * Usage (auto-generate from count + spacing):
+         *   { type: 'boxtreerow', count: 5, spacing: 3, direction: 'x', x: 0, z: 0, trunkH:1.6, boxSize:1.6 }
+         *
+         * @param {THREE.Object3D} parent
+         * @param {Object} config
+         */
+        function srv2_createBoxTreeRow(parent, config) {
+            const {
+                positions = null,    // Array of {x, y, z} — explicit placement
+                count = 10,           // Auto: how many trees
+                spacing = 3,         // Auto: gap between trees
+                direction = 'x',     // Auto: 'x' or 'z'
+                trunkH = 1.6,
+                boxSize = 1.6,
+                color = 0x88cc22,
+                x = -80, y = 0, z = -80, // Base offset for auto mode
+                ry = 0
+            } = config;
+
+            const group = new THREE.Group();
+
+            // Resolve the list of positions
+            const treePositions = positions 
+                ? positions 
+                : Array.from({ length: count }, (_, i) => ({
+                    x: direction === 'x' ? i * spacing : 0,
+                    y: 0,
+                    z: direction === 'z' ? i * spacing : 0,
+                }));
+
+            treePositions.forEach(pos => {
+                srv2_createBoxTree(group, {
+                    x: pos.x || 0,
+                    y: pos.y || 0,
+                    z: pos.z || 0,
+                    trunkH,
+                    boxSize,
+                    color
+                });
+            });
+
+            group.position.set(x, y, z);
+            group.rotation.y = ry;
+            parent.add(group);
+            return group;
+        }
+
+        function srv2_createHedge(parent, config) {
+            const { points = null, length = 10, width = 3.5, height = 1.0, color = 0x3EA65A } = config;
+            const group = new THREE.Group();
+            
+            const curve = points ? new THREE.CatmullRomCurve3(points) : new THREE.LineCurve3(new THREE.Vector3(0,0,0), new THREE.Vector3(0,0,length));
+            const actualLength = curve.getLength();
+
+            const leafMat = getSharedMaterial(`mat_hedgeLeaf_${color}`, () => {
+                const mat = new THREE.MeshStandardMaterial({ 
+                    color: color, 
+                    roughness: 0.8,
+                    side: THREE.DoubleSide 
+                });
+                mat.map = createLeafTexture();
+                mat.map.repeat.set(actualLength / 5, 1);
+                return mat;
+            });
+            const segments = Math.max(40, Math.floor(actualLength * 3));
+            const pathPoints = curve.getPoints(segments);
+            
+            const geometry = new THREE.BufferGeometry();
+            const vertices = [];
+            const indices = [];
+            const uvs = [];
+
+            for (let i = 0; i < pathPoints.length; i++) {
+                const t = i / (pathPoints.length - 1);
+                const p = pathPoints[i];
+                const tan = curve.getTangent(t).normalize();
+                const sid = new THREE.Vector3(-tan.z, 0, tan.x).normalize();
+                
+                const bL = p.clone().add(sid.clone().multiplyScalar(-width / 2));
+                const bR = p.clone().add(sid.clone().multiplyScalar(width / 2));
+                const tR = bR.clone().add(new THREE.Vector3(0, height, 0));
+                const tL = bL.clone().add(new THREE.Vector3(0, height, 0));
+                
+                vertices.push(bL.x, bL.y, bL.z, bR.x, bR.y, bR.z, tR.x, tR.y, tR.z, tL.x, tL.y, tL.z);
+                uvs.push(0, t * actualLength / 2, 1, t * actualLength / 2, 1, t * actualLength / 2, 0, t * actualLength / 2);
+
+                if (i < pathPoints.length - 1) {
+                    const b = i * 4;
+                    // Left face
+                    indices.push(b, b + 4, b + 7, b, b + 7, b + 3);
+                    // Right face
+                    indices.push(b + 1, b + 2, b + 6, b + 1, b + 6, b + 5);
+                    // Top face
+                    indices.push(b + 3, b + 7, b + 6, b + 3, b + 6, b + 2);
+                    // Bottom face (keep for completeness)
+                    indices.push(b, b + 1, b + 5, b, b + 5, b + 4);
+                }
+            }
+            const last = (segments) * 4;
+            indices.push(0, 3, 2, 0, 2, 1);
+            indices.push(last, last+1, last+2, last, last+2, last+3);
+
+            geometry.setIndex(indices);
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+            geometry.computeVertexNormals();
+
+            const hedgeMesh = new THREE.Mesh(geometry, leafMat);
+            hedgeMesh.receiveShadow = true;
+            hedgeMesh.castShadow = true;
+            group.add(hedgeMesh);
+
+            return srv2_finalizeMesh(group, parent, config);
+        }
+
+        function srv2_createParkPath(parent, config) {
+            const { points = null, length = 10, width = 3, color = 0x475569 } = config;
+            const group = new THREE.Group();
+            
+            const curve = points ? new THREE.CatmullRomCurve3(points) : new THREE.LineCurve3(new THREE.Vector3(0,0,0), new THREE.Vector3(0,0,length));
+            const actualLength = curve.getLength();
+            const segments = Math.max(50, Math.floor(actualLength * 3));
+            const pathPoints = curve.getPoints(segments);
+            
+            const geometry = new THREE.BufferGeometry();
+            const vertices = [];
+            const indices = [];
+            const uvs = [];
+
+            for (let i = 0; i < pathPoints.length; i++) {
+                const t = i / (pathPoints.length - 1);
+                const p = pathPoints[i];
+                const tan = curve.getTangent(t).normalize();
+                const sid = new THREE.Vector3(-tan.z, 0, tan.x).normalize();
+                
+                const L = p.clone().add(sid.clone().multiplyScalar(-width / 2));
+                const R = p.clone().add(sid.clone().multiplyScalar(width / 2));
+                
+                vertices.push(L.x, 0.05, L.z, R.x, 0.05, R.z);
+                uvs.push(0, t * actualLength / 5, 1, t * actualLength / 5);
+
+                if (i < pathPoints.length - 1) {
+                    const b = i * 2;
+                    indices.push(b, b + 1, b + 2, b + 1, b + 3, b + 2);
+                }
+            }
+            geometry.setIndex(indices);
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+            geometry.computeVertexNormals();
+
+            const mat = getSharedMaterial(`mat_parkPath_${color}`, () => new THREE.MeshStandardMaterial({ color: color, roughness: 0.9 }));
+            const mesh = new THREE.Mesh(geometry, mat);
+            mesh.receiveShadow = true;
+            group.add(mesh);
+
+            return srv2_finalizeMesh(group, parent, config);
+        }
+
+        function srv2_createParkArea(parent, config) {
+            const { w = 40, d = 40, items = [], landColor = 0xd0e088 } = config;
+            const group = new THREE.Group();
+
+            // Only use the land base for the park area as requested
+            const landMat = getSharedMaterial(`mat_parkLandBase_${landColor}`, () => new THREE.MeshStandardMaterial({ color: landColor, roughness: 0.9 }));
+            const landGeo = getSharedGeometry(`parkLandBase_${w+2}_${d+2}`, () => new THREE.PlaneGeometry(w + 2, d + 2));
+            const land = new THREE.Mesh(landGeo, landMat);
+            land.rotation.x = -Math.PI / 2;
+            land.position.y = -0.05; // Slightly below equipment
+            land.receiveShadow = true;
+            group.add(land);
+
+            // Add automated items if none provided
+            const finalItems = items.length > 0 ? items : [
+                // { type: 'fountain', x: 0, z: 0, r: 3 },
+                { type: 'bench', x: -8, z: -8, ry: Math.PI/4 },
+                { type: 'bench', x: 8, z: -8, ry: -Math.PI/4 },
+                { type: 'bench', x: -8, z: 8, ry: 3*Math.PI/4 },
+                { type: 'bench', x: 8, z: 8, ry: -3*Math.PI/4 },
+                { type: 'bench', x: -70, z: -70, ry: Math.PI/4 },
+                { type: 'bench', x: 70, z: -70, ry: -Math.PI/4 },
+                { type: 'bench', x: -70, z: 70, ry: 3*Math.PI/4 },
+                { type: 'bench', x: 70, z: 70, ry: -3*Math.PI/4 },
+                { type: 'swing', x: -12, z: 0, ry: Math.PI/2 },
+                { type: 'swing', x: -32, z: -20, ry: Math.PI/2 },
+                { type: 'swing', x: -52, z: 40, ry: Math.PI/2 },
+                { type: 'slide', x: 12, z: 2, ry: -Math.PI/2 },
+                { type: 'slide', x: 12, z: -52, ry: -Math.PI/2 },
+                { type: 'slide', x: -22, z: 2, ry: -Math.PI/2 },
+                // { type: 'seesaw', x: 0, z: 12 },
+                // { type: 'roundabout', x: 12, z: -12 },
+                { type: 'lamp', x: -80, z: -90 },
+                { type: 'lamp', x: -80, z: 90 },
+                { type: 'lamp', x: 80, z: 90 },
+                { type: 'lamp', x: 80, z: -90 },
+                { type: 'trashbin', x: -10, z: -11 },
+                // { type: 'boxtree', x: -18, z: 0 },
+                // { type: 'boxtree', x: 18, z: 0 },
+                // { type: 'boxtree', x: 0, z: -18 },
+                // { type: 'boxtree', x: 0, z: 18 },
+                { type: 'boxtreerow', count: 15, spacing: 10, direction: 'z', x: 80, z: -70 },
+                { type: 'boxtreerow', count: 15, spacing: 10, direction: 'z', x: -80, z: -70 },
+                { type: 'boxtreerow', count: 15, spacing: 10, direction: 'x', x: -70, z: 90 },
+                { type: 'boxtreerow', count: 15, spacing: 10, direction: 'x', x: -70, z: -90 },
+            ];
+
+            finalItems.forEach(item => {
+                srv2_createParkEquipment(group, item);
+            });
+
+            // Decorative hedge around border
+            // srv2_createHedge(group, { points: [
+            //     new THREE.Vector3(-w/2+1, 0, -d/2+1),
+            //     new THREE.Vector3(w/2-1, 0, -d/2+1),
+            //     new THREE.Vector3(w/2-1, 0, d/2-1),
+            //     new THREE.Vector3(-w/2+1, 0, d/2-1),
+            //     new THREE.Vector3(-w/2+1, 0, -d/2+1)
+            // ], width: 1.5, height: 1.0 });
+
+            return srv2_finalizeMesh(group, parent, config);
+        }
+
+        function srv2_createParkEquipment(parent, config) {
+            const { type = 'bench' } = config;
+            switch(type.toLowerCase()) {
+                case 'bench': return srv2_createParkBench(parent, config);
+                case 'swing': return srv2_createParkSwing(parent, config);
+                case 'slide': return srv2_createParkSlide(parent, config);
+                case 'seesaw': return srv2_createParkSeesaw(parent, config);
+                case 'lamp': return srv2_createParkLamp(parent, config);
+                case 'roundabout': return srv2_createParkRoundabout(parent, config);
+                case 'fountain': return srv2_createParkFountain(parent, config);
+                case 'trashbin': return srv2_createParkTrashBin(parent, config);
+                case 'boxtree': return srv2_createBoxTree(parent, config);
+                case 'boxtreerow': return srv2_createBoxTreeRow(parent, config); // NEW: Serial array of box trees
+                case 'hedge': return srv2_createHedge(parent, config);
+                default: return srv2_createParkBench(parent, config);
+            }
         }
 
 
@@ -6512,6 +7188,15 @@
                             child.material.opacity = isNight ? 0.2 : 0; // Requested opacity .2
                         }
 
+                        if (child.name === 'parkLampLight') {
+                            child.intensity = isNight ? 2.0 : 0;
+                        }
+
+                        if (child.name === 'fountainWater') {
+                            child.material.emissive.setHex(isNight ? 0x0088ff : 0x000000);
+                            child.material.emissiveIntensity = isNight ? 0.4 : 0;
+                        }
+
                         if (child.name === 'houseBulb') {
                             child.material.emissive.setHex(isNight ? 0xffea55 : 0x000000);
                             child.material.emissiveIntensity = isNight ? 25.0 : 0; // Clear porch light
@@ -6537,8 +7222,71 @@
             });
         })();
 
+        // --- Async Initialization for Smooth Loading ---
         window.onload = () => {
-            init();
+            // Create loading screen
+            const loader = document.createElement('div');
+            loader.id = 'smooth-loader';
+            loader.innerHTML = `
+                <div class="loader-content">
+                    <div class="loader-spinner"></div>
+                    <h2>Generating 3D Masterplan</h2>
+                    <p>Optimizing procedural geometry...</p>
+                </div>
+            `;
+            const style = document.createElement('style');
+            style.innerHTML = `
+                #smooth-loader {
+                    position: fixed;
+                    top: 0; left: 0; width: 100%; height: 100%;
+                    background: #87ceeb; /* Sky color matching init */
+                    z-index: 999999;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    color: white;
+                    transition: opacity 1.2s ease-out, visibility 1.2s ease-out;
+                }
+                .loader-content { text-align: center; }
+                .loader-spinner {
+                    width: 60px; height: 60px;
+                    border: 6px solid rgba(255,255,255,0.3);
+                    border-top-color: white;
+                    border-radius: 50%;
+                    animation: spin 1s linear infinite;
+                    margin: 0 auto 20px auto;
+                }
+                #smooth-loader h2 { margin: 0 0 10px 0; font-size: 24px; font-weight: 600; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+                #smooth-loader p { margin: 0; font-size: 14px; opacity: 0.8; }
+                @keyframes spin { 100% { transform: rotate(360deg); } }
+                body.night-active #smooth-loader { background: #050816; }
+            `;
+            document.head.appendChild(style);
+            document.body.appendChild(loader);
+
+            // Yield to browser to paint the loading screen
+            setTimeout(() => {
+                const initStartTime = performance.now();
+                init(); // Create the scene
+                
+                // Allow browser to breathe before heavy optimization
+                setTimeout(() => {
+                    document.querySelector('#smooth-loader p').textContent = 'Finalizing GPU instances...';
+                    optimizeScene(); // Optimize the map
+                    
+                    // Start render loop immediately
+                    requestAnimationFrame(sceneRender);
+                    
+                    // Need one render frame before fading out
+                    setTimeout(() => {
+                        loader.style.opacity = '0';
+                        loader.style.visibility = 'hidden';
+                        setTimeout(() => loader.remove(), 1200);
+                        console.log("Total Load Time: " + (performance.now() - initStartTime).toFixed(2) + "ms");
+                    }, 500); // 500ms grace period for textures to hit GPU
+                }, 100);
+            }, 50);
         }
     </script>
 
