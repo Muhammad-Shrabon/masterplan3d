@@ -32,8 +32,8 @@
 
         // --- Walking Behavior Controller ---
         let walkingConfig = {
-            baseSpeed: 0.8,
-            runSpeed: 1.2,
+            baseSpeed: 10.5,
+            runSpeed: 25.2,
             acceleration: 0.15,
             friction: 0.1,
             smoothness: 0.18,
@@ -801,6 +801,43 @@
             return materialCache[key];
         }
 
+        /**
+         * Helper to finalize srv2-style procedural objects (from park.html)
+         */
+        function srv2_finalizeMesh(group, parent, config) {
+            const { x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, scale = 1, shadow = true } = config;
+            group.position.set(x, y, z);
+            group.rotation.set(rx, ry, rz);
+            group.scale.setScalar(scale);
+            if (shadow) {
+                group.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
+            }
+            if (parent) parent.add(group);
+            return group;
+        }
+
+        /**
+         * Robustly disposes of any Three.js object and its children
+         */
+        function disposeObject(obj) {
+            if (!obj) return;
+            
+            obj.traverse(node => {
+                if (node.isMesh) {
+                    if (node.geometry) node.geometry.dispose();
+                    if (node.material) {
+                        if (Array.isArray(node.material)) {
+                            node.material.forEach(m => m.dispose());
+                        } else {
+                            node.material.dispose();
+                        }
+                    }
+                }
+            });
+            
+            if (obj.parent) obj.parent.remove(obj);
+        }
+
         // --- Fog Reveal Animation Variables (Aggressively Optimized) ---
         let fogRevealStartTime = null;
         let fogRevealDuration = 3000;
@@ -1543,14 +1580,13 @@
             
             const meshGroups = new Map();
             const toRemove = [];
+            const processedGeometries = new Set();
             
             scene.updateMatrixWorld(true);
-            window.masterplanZones = {}; // Global registry for interactive zone map
+            window.masterplanZones = {}; 
 
             function collect(node, insideNoOptimize = false, currentZone = null) {
                 const skip = insideNoOptimize || node.userData.noOptimize || node.name === 'agent' || node.name === 'flag' || node.name === 'river' || node.isRiverMesh;
-                
-                // Inherit zone from parent if current node doesn't define one
                 const nodeZone = node.userData.zone || currentZone;
 
                 if (node.isMesh && !skip) {
@@ -1570,19 +1606,17 @@
                 }
 
                 if (node.children) {
-                    for (let i = 0; i < node.children.length; i++) {
-                        collect(node.children[i], skip, nodeZone);
+                    // Clone children array to avoid modification issues during traversal
+                    const children = [...node.children];
+                    for (let i = 0; i < children.length; i++) {
+                        collect(children[i], skip, nodeZone);
                     }
                 }
             }
             
             collect(scene);
 
-            toRemove.forEach(obj => {
-                if (obj.parent) obj.parent.remove(obj);
-            });
-
-            // 3. Create InstancedMeshes
+            // 2. Create InstancedMeshes
             let instanceCount = 0;
             let groupCount = 0;
             meshGroups.forEach((data, key) => {
@@ -1591,21 +1625,13 @@
                     const iMesh = new THREE.InstancedMesh(data.geo, data.mat, count);
                     iMesh.castShadow = data.castShadow;
                     iMesh.receiveShadow = data.receiveShadow;
-                    iMesh.frustumCulled = false; // Disable for safety in large-scale city scenes
-                    
-                    // Register the InstancedMesh to its Zone for Map Animations
-                    if (data.zone) {
-                        if (!window.masterplanZones[data.zone]) window.masterplanZones[data.zone] = [];
-                        window.masterplanZones[data.zone].push(iMesh);
-                        iMesh.userData.originalY = iMesh.position.y;
-                    }
+                    processedGeometries.add(data.geo);
 
                     for (let i = 0; i < count; i++) {
                         iMesh.setMatrixAt(i, data.matrices[i]);
                     }
                     
                     if (data.mat.userData.isLeaf) {
-                        // Inject GPU Wind for leaves
                         data.mat.onBeforeCompile = (shader) => {
                             shader.uniforms.uTime = globalUniforms.uTime;
                             shader.vertexShader = `
@@ -1615,10 +1641,9 @@
                                 '#include <begin_vertex>',
                                 `
                                 #include <begin_vertex>
-                                // Procedural wind based on world position
                                 vec4 worldPos = modelMatrix * instanceMatrix * vec4(position, 1.0);
                                 float wind = sin(worldPos.x * 0.1 + worldPos.z * 0.1 + uTime * 2.0) * 0.15;
-                                transformed.x += wind * (position.y * 0.5); // Move tips more
+                                transformed.x += wind * (position.y * 0.5);
                                 transformed.y += wind * 0.2;
                                 `
                             );
@@ -1626,8 +1651,21 @@
                     }
 
                     iMesh.instanceMatrix.needsUpdate = true;
+                    
+                    // Compute a global bounding box for the entire InstancedMesh to allow efficient GPU frustum culling
+                    if (data.geo.boundingBox === null) data.geo.computeBoundingBox();
+                    const globalBox = new THREE.Box3();
+                    const tempMeshBox = new THREE.Box3();
+                    for (let i = 0; i < count; i++) {
+                        tempMeshBox.copy(data.geo.boundingBox).applyMatrix4(data.matrices[i]);
+                        globalBox.union(tempMeshBox);
+                    }
+                    iMesh.geometry.boundingBox = globalBox;
+                    iMesh.geometry.boundingSphere = globalBox.getBoundingSphere(new THREE.Sphere());
+                    
                     iMesh.updateMatrix(); 
                     iMesh.matrixAutoUpdate = false;
+                    iMesh.frustumCulled = true; // Re-enabled with accurate bounding volumes
                     scene.add(iMesh);
                     
                     instanceCount += count;
@@ -1635,8 +1673,43 @@
                 }
             });
 
+            // 3. Selective Removal & Disposal
+            // We only remove the meshes, then we need to check parents for emptiness
+            const parentsToCheck = new Set();
+            toRemove.forEach(mesh => {
+                if (mesh.parent) {
+                    parentsToCheck.add(mesh.parent);
+                    mesh.parent.remove(mesh);
+                }
+                // DANGER: We DO NOT dispose of the mesh geometry here 
+                // because it is being REUSED by the InstancedMesh.
+            });
+
+            // Clean up empty groups to reclaim CPU memory
+            let groupsRemoved = 0;
+            parentsToCheck.forEach(parent => {
+                if (parent && parent !== scene && parent.children.length === 0) {
+                    let current = parent;
+                    while (current && current.parent && current.children.length === 0 && current !== scene) {
+                        const toDelete = current;
+                        current = current.parent;
+                        current.remove(toDelete);
+                        groupsRemoved++;
+                    }
+                }
+            });
+
+            // Final CPU RAM purge: Clear the houseMeshCache as it is no longer needed after optimization
+            houseMeshCache.clear();
+            
+            // Clear animation arrays to stop CPU-side processing of removed objects
+            if (typeof breathingObjects !== 'undefined') breathingObjects.length = 0;
+            if (typeof animatedLeaves !== 'undefined') animatedLeaves.length = 0;
+            
+            window.isSceneOptimized = true; // Signal render loop to skip CPU animations
+
             console.log(`Optimization complete in ${(performance.now() - startTime).toFixed(2)}ms.`);
-            console.log(`Result: ${groupCount} draw calls for ${instanceCount} meshes. Replaced ${toRemove.length} nodes.`);
+            console.log(`Result: ${groupCount} draw calls for ${instanceCount} meshes. Replaced ${toRemove.length} nodes. Removed ${groupsRemoved} empty groups.`);
         }
 
         function init() {
@@ -3344,12 +3417,14 @@
             if (camera.position.y < 2.0) camera.position.y = 2.0;
             if (controls.target.y < 0) controls.target.y = 0;
 
-            // --- Optimized Breathing Animation (No scene.traverse) ---
-            for (let i = 0, l = breathingObjects.length; i < l; i++) {
-                const child = breathingObjects[i];
-                if (child.userData && child.userData.originalPos) {
-                    child.position.x = child.userData.originalPos.x + Math.sin(t + child.id) * 0.15;
-                    child.position.y = child.userData.originalPos.y + Math.cos(t * 0.8 + child.id) * 0.15;
+            // --- Optimized Breathing Animation (Skip if GPU-optimized) ---
+            if (!window.isSceneOptimized && typeof breathingObjects !== 'undefined') {
+                for (let i = 0, l = breathingObjects.length; i < l; i++) {
+                    const child = breathingObjects[i];
+                    if (child.userData && child.userData.originalPos) {
+                        child.position.x = child.userData.originalPos.x + Math.sin(t + child.id) * 0.15;
+                        child.position.y = child.userData.originalPos.y + Math.cos(t * 0.8 + child.id) * 0.15;
+                    }
                 }
             }
 
@@ -3635,103 +3710,95 @@
         }
 
         /**
-         * Creates a procedurally generated animated tree from tree2.html
+         * The following system uses a variation cache for procedurally generated animated trees
+         * to drastically reduce scene graph complexity and memory usage.
          */
-         function createAnimatedTree(position, rotation, scale = 3.0) {
+
+        const animatedTreeVariations = new Map();
+        function getCachedAnimatedTree(variationId = 0) {
+            if (!animatedTreeVariations.has(variationId)) {
+                const group = new THREE.Group();
+                // Create a temporary group to hold the procedural tree
+                const tempTree = new THREE.Group();
+                // We use a fixed seed for each variation to ensure consistency
+                // (Though current createAnimatedTree is random, we just take one result)
+                createAnimatedTreeInternal(tempTree, new THREE.Vector3(0,0,0), new THREE.Euler(0,0,0), 27.5);
+                animatedTreeVariations.set(variationId, tempTree);
+            }
+            return animatedTreeVariations.get(variationId).clone();
+        }
+
+        /**
+         * The internal procedural logic for createAnimatedTree
+         */
+        function createAnimatedTreeInternal(targetParent, position, rotation, scale = 3.0) {
             const treeGroup = new THREE.Group();
             treeGroup.position.copy(position);
             treeGroup.rotation.copy(rotation);
-            // Scale controls visible world size of tree (default 3.0 = tree ~3 world units tall)
-            const s = scale / 27.5; // 27.5 is the internal normalized height
+            const s = scale / 27.5; 
             treeGroup.scale.set(s, s, s);
-            scene.add(treeGroup);
-
-            // Reusing shared geometry and material cache for performance
-            const barkMat = getSharedMaterial('animatedTreeBark', () => new THREE.MeshStandardMaterial({
-                color: 0x2b1d0e,
-                roughness: 0.9,
-                metalness: 0.1
-            }));
-
+            targetParent.add(treeGroup);
+            
+            const barkMat = getSharedMaterial('animatedTreeBark', () => new THREE.MeshStandardMaterial({ color: 0x2b1d0e, roughness: 0.9 }));
             const leafShape = new THREE.Shape();
             leafShape.moveTo(0, 0);
             leafShape.quadraticCurveTo(0.5, 0.5, 0, 1.2);
             leafShape.quadraticCurveTo(-0.5, 0.5, 0, 0);
             const leafGeo = getSharedGeometry('animatedTreeLeafGeo', () => new THREE.ShapeGeometry(leafShape));
-
             const leafColors = [0x2d4c1e, 0x3a5a2a, 0x4b6e32, 0x1e3a12];
             const leafMats = leafColors.map((c, i) => getSharedMaterial(`animatedTreeLeafMat${i}`, () => {
-                const mat = new THREE.MeshStandardMaterial({
-                    color: c,
-                    side: THREE.DoubleSide,
-                    roughness: 0.8
-                });
-                mat.userData.isLeaf = true; // Mark for optimizeScene wind inject
+                const mat = new THREE.MeshStandardMaterial({ color: c, side: THREE.DoubleSide, roughness: 0.8 });
+                mat.userData.isLeaf = true;
                 return mat;
             }));
 
-            // Recursive growth scoped to this tree instance
             function growBranch(startPos, direction, length, thickness, depth) {
-                if (depth > 6) return; // Increased depth from 5 to 6 for more branching
-
+                if (depth > 6) return;
                 const endPos = new THREE.Vector3().addVectors(startPos, direction.clone().multiplyScalar(length));
                 const midpoint = new THREE.Vector3().addVectors(startPos, endPos).multiplyScalar(0.5);
-
                 const branchGeo = getSharedGeometry('animatedTreeBranch', () => new THREE.CylinderGeometry(0.7, 1.0, 1, 5));
                 const branch = new THREE.Mesh(branchGeo, barkMat);
-
                 branch.position.copy(midpoint);
                 branch.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.clone().normalize());
                 branch.scale.set(thickness, length, thickness);
-                branch.castShadow = true;
-                branch.receiveShadow = true;
                 treeGroup.add(branch);
 
-                // Leaves start from depth 1 onwards — full canopy coverage
-                if (depth >= 1) {
-                    // More leaves on deeper (outer) branches
-                    const baseCount = depth >= 4 ? 18 : (depth >= 3 ? 14 : (depth >= 2 ? 10 : 6));
-                    const leafCount = Math.floor(Math.random() * 6) + baseCount;
+                if (depth >= 2) {
+                    const baseCount = depth >= 4 ? 8 : (depth >= 3 ? 6 : 4);
+                    const leafCount = Math.floor(Math.random() * 4) + baseCount;
                     for (let i = 0; i < leafCount; i++) {
-                        const leafMat = leafMats[Math.floor(Math.random() * leafMats.length)];
-                        const leaf = new THREE.Mesh(leafGeo, leafMat);
-
-                        // Wide spread for a full, lush canopy
+                        const leaf = new THREE.Mesh(leafGeo, leafMats[Math.floor(Math.random() * leafMats.length)]);
                         const spread = length * 3.0;
-                        const spreadX = (Math.random() - 0.5) * spread;
-                        const spreadY = Math.random() * spread * 0.5; // bias upward
-                        const spreadZ = (Math.random() - 0.5) * spread;
-
-                        leaf.position.copy(endPos).add(new THREE.Vector3(spreadX, spreadY, spreadZ));
-
-                        const s = 1.0 + Math.random() * 1.5; // Larger leaves: 1.0 to 2.5
-                        leaf.scale.set(s, s, s);
-                        leaf.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
-                        leaf.castShadow = true;
-
+                        leaf.position.copy(endPos).add(new THREE.Vector3((Math.random()-0.5)*spread, Math.random()*spread*0.5, (Math.random()-0.5)*spread));
+                        const ls = 1.0 + Math.random() * 1.5;
+                        leaf.scale.set(ls, ls, ls);
+                        leaf.rotation.set(Math.random()*Math.PI, Math.random()*Math.PI, Math.random()*Math.PI);
                         treeGroup.add(leaf);
                     }
                 }
-
                 const numBranches = (depth === 0) ? 1 : (Math.random() > 0.8 ? 3 : 2);
                 for (let i = 0; i < numBranches; i++) {
                     const nextDir = direction.clone();
-                    const angle = 0.3 + Math.random() * 0.4;
-                    const randomAxis = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize();
-                    nextDir.applyAxisAngle(randomAxis, angle);
-
-                    growBranch(
-                        endPos,
-                        nextDir,
-                        length * (0.7 + Math.random() * 0.2),
-                        thickness * 0.7,
-                        depth + 1
-                    );
+                    const axis = new THREE.Vector3(Math.random()-0.5, Math.random()-0.5, Math.random()-0.5).normalize();
+                    nextDir.applyAxisAngle(axis, 0.3 + Math.random() * 0.4);
+                    growBranch(endPos, nextDir, length * (0.7+Math.random()*0.2), thickness * 0.7, depth+1);
                 }
             }
-
-            // Start growth
             growBranch(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 1, 0), 5.5, 0.9, 0);
+        }
+
+        /**
+         * Public API that uses the variation cache
+         */
+        function createAnimatedTree(position, rotation, scale = 3.0) {
+            const variationId = Math.floor(Math.random() * 8); // 8 unique tree shapes
+            const tree = getCachedAnimatedTree(variationId);
+            tree.position.copy(position);
+            tree.rotation.copy(rotation);
+            const s = scale / 27.5;
+            tree.scale.set(s, s, s);
+            scene.add(tree);
+            return tree;
         }
 
         function createGTree(scale = 4.0) {
@@ -5455,58 +5522,66 @@
             const beamMat = getSharedMaterial('houseBeam', () => new THREE.MeshStandardMaterial({ color: 0xFAF9F6, roughness: 0.5 }));
 
             // --- Merged Geometries ---
-            const wallGeos = [];
-            const gateGeos = [];
+            // --- Merged Geometries Cache ---
+            const wallKey = `mergedWall_${plotW}_${plotD}_${skipWall}`;
+            const gateKey = `mergedGate_${gateW}_${plotD}_${wallH}`;
+            const concreteKey = `mergedConcrete_${gateW}_${plotD}_${wallH}`;
 
             // Walls
-            const bwG = getSharedGeometry(`wall_bw_${plotW}_${wallH}_${wallT}`, () => new THREE.BoxGeometry(plotW, wallH, wallT));
-            const bw = bwG.clone(); bw.translate(0, wallH / 2, plotD / 2 - wallT / 2); wallGeos.push(bw);
-            
-            const sideWallG = getSharedGeometry(`wall_side_${wallT}_${wallH}_${plotD}`, () => new THREE.BoxGeometry(wallT, wallH, plotD));
-            if (skipWall !== 'left') { const lw = sideWallG.clone(); lw.translate(-plotW / 2 + wallT / 2, wallH / 2, 0); wallGeos.push(lw); }
-            if (skipWall !== 'right') { const rw = sideWallG.clone(); rw.translate(plotW / 2 - wallT / 2, wallH / 2, 0); wallGeos.push(rw); }
-
-            const frontSegW = (plotW - gateW) / 2;
-            const frontWallG = getSharedGeometry(`wall_front_${frontSegW}_${wallH}_${wallT}`, () => new THREE.BoxGeometry(frontSegW, wallH, wallT));
-            const fwL = frontWallG.clone(); fwL.translate(-plotW / 2 + frontSegW / 2, wallH / 2, -plotD / 2 + wallT / 2); wallGeos.push(fwL);
-            const fwR = frontWallG.clone(); fwR.translate(plotW / 2 - frontSegW / 2, wallH / 2, -plotD / 2 + wallT / 2); wallGeos.push(fwR);
-
-            const concreteGeos = [];
-            const pillarG = getSharedGeometry(`pillar_${wallH + 30}`, () => new THREE.BoxGeometry(28, wallH + 30, 28));
-            const pL = pillarG.clone(); pL.translate(-gateW / 2, (wallH + 30) / 2, -plotD / 2 + wallT / 2); concreteGeos.push(pL);
-            const pR = pillarG.clone(); pR.translate(gateW / 2, (wallH + 30) / 2, -plotD / 2 + wallT / 2); concreteGeos.push(pR);
-
-            const gBeamG = getSharedGeometry(`gateBeam_${gateW + 40}`, () => new THREE.BoxGeometry(gateW + 40, 12, 32));
-            const gBeam = gBeamG.clone(); gBeam.translate(0, wallH + 30 + 6, -plotD / 2 + wallT / 2); concreteGeos.push(gBeam);
-
-            const capG = getSharedGeometry('pillarCap', () => new THREE.SphereGeometry(16, 16, 16));
-            const cL = capG.clone(); cL.translate(-gateW / 2, wallH + 30 + 12 + 10, -plotD / 2 + wallT / 2); concreteGeos.push(cL);
-            const cR = capG.clone(); cR.translate(gateW / 2, wallH + 30 + 12 + 10, -plotD / 2 + wallT / 2); concreteGeos.push(cR);
-
-            for (let ax = -gateW / 2 + 12; ax <= gateW / 2 - 12; ax += 12) {
-                const xNorm = ax / (gateW / 2 - 12);
-                const archH = 20 * (1 - xNorm * xNorm);
-                const barH = wallH + 5 + archH;
-                const bar = new THREE.CylinderGeometry(2, 2, barH, 8);
-                bar.translate(ax, barH / 2, -plotD / 2 + wallT / 2);
-                gateGeos.push(bar);
-                const spear = new THREE.ConeGeometry(4, 15, 4);
-                spear.translate(ax, barH + 7, -plotD / 2 + wallT / 2);
-                gateGeos.push(spear);
-            }
-            // Gate Iron Horizontals
-            const hBar = new THREE.BoxGeometry(gateW, 5, 5);
-            const hTop = hBar.clone(); hTop.translate(0, wallH + 10, -plotD / 2 + wallT / 2); gateGeos.push(hTop);
-            const hBot = hBar.clone(); hBot.translate(0, 15, -plotD / 2 + wallT / 2); gateGeos.push(hBot);
-
-            const wallMesh = new THREE.Mesh(THREE.BufferGeometryUtils.mergeBufferGeometries(wallGeos), wallMat);
+            const wallMeshGeo = getSharedGeometry(wallKey, () => {
+                const wallGeos = [];
+                const bwG = new THREE.BoxGeometry(plotW, wallH, wallT); bwG.translate(0, wallH / 2, plotD / 2 - wallT / 2); wallGeos.push(bwG);
+                const sideWallG = new THREE.BoxGeometry(wallT, wallH, plotD);
+                if (skipWall !== 'left') { const lw = sideWallG.clone(); lw.translate(-plotW / 2 + wallT / 2, wallH / 2, 0); wallGeos.push(lw); }
+                if (skipWall !== 'right') { const rw = sideWallG.clone(); rw.translate(plotW / 2 - wallT / 2, wallH / 2, 0); wallGeos.push(rw); }
+                const frontSegW = (plotW - gateW) / 2;
+                const frontWallG = new THREE.BoxGeometry(frontSegW, wallH, wallT);
+                const fwL = frontWallG.clone(); fwL.translate(-plotW / 2 + frontSegW / 2, wallH / 2, -plotD / 2 + wallT / 2); wallGeos.push(fwL);
+                const fwR = frontWallG.clone(); fwR.translate(plotW / 2 - frontSegW / 2, wallH / 2, -plotD / 2 + wallT / 2); wallGeos.push(fwR);
+                return THREE.BufferGeometryUtils.mergeBufferGeometries(wallGeos);
+            });
+            const wallMesh = new THREE.Mesh(wallMeshGeo, wallMat);
             house.add(wallMesh);
-            const gateMesh = new THREE.Mesh(THREE.BufferGeometryUtils.mergeBufferGeometries(gateGeos), gateMat);
+
+            // Gate Iron
+            const gateMeshGeo = getSharedGeometry(gateKey, () => {
+                const gateGeos = [];
+                const barGeoSource = new THREE.CylinderGeometry(2, 2, 1, 6);
+                const spearGeoSource = new THREE.ConeGeometry(4, 15, 4);
+                for (let ax = -gateW / 2 + 12; ax <= gateW / 2 - 12; ax += 12) {
+                    const xNorm = ax / (gateW / 2 - 12);
+                    const archH = 20 * (1 - xNorm * xNorm);
+                    const barH = wallH + 5 + archH;
+                    const bar = barGeoSource.clone(); bar.scale(1, barH, 1); bar.translate(ax, barH / 2, -plotD / 2 + wallT / 2); gateGeos.push(bar);
+                    const spear = spearGeoSource.clone(); spear.translate(ax, barH + 7, -plotD / 2 + wallT / 2); gateGeos.push(spear);
+                }
+                const hBarG = new THREE.BoxGeometry(gateW, 5, 5);
+                const hTop = hBarG.clone(); hTop.translate(0, wallH + 10, -plotD / 2 + wallT / 2); gateGeos.push(hTop);
+                const hBot = hBarG.clone(); hBot.translate(0, 15, -plotD / 2 + wallT / 2); gateGeos.push(hBot);
+                return THREE.BufferGeometryUtils.mergeBufferGeometries(gateGeos);
+            });
+            const gateMesh = new THREE.Mesh(gateMeshGeo, gateMat);
             house.add(gateMesh);
 
-            // Add concrete elements to house directly (boundary elements)
-            const gateConcreteMesh = new THREE.Mesh(THREE.BufferGeometryUtils.mergeBufferGeometries(concreteGeos), beamMat);
+            // Gate Concrete
+            const concreteMeshGeo = getSharedGeometry(concreteKey, () => {
+                const concreteGeos = [];
+                const pillarG = new THREE.BoxGeometry(28, wallH + 30, 28);
+                const pL = pillarG.clone(); pL.translate(-gateW / 2, (wallH + 30) / 2, -plotD / 2 + wallT / 2); concreteGeos.push(pL);
+                const pR = pillarG.clone(); pR.translate(gateW / 2, (wallH + 30) / 2, -plotD / 2 + wallT / 2); concreteGeos.push(pR);
+                const gBeamG = new THREE.BoxGeometry(gateW + 40, 12, 32);
+                const gBeam = gBeamG.clone(); gBeam.translate(0, wallH + 30 + 6, -plotD / 2 + wallT / 2); concreteGeos.push(gBeam);
+                const capG = new THREE.SphereGeometry(16, 12, 12);
+                const cL = capG.clone(); cL.translate(-gateW / 2, wallH + 30 + 12 + 10, -plotD / 2 + wallT / 2); concreteGeos.push(cL);
+                const cR = capG.clone(); cR.translate(gateW / 2, wallH + 30 + 12 + 10, -plotD / 2 + wallT / 2); concreteGeos.push(cR);
+                return THREE.BufferGeometryUtils.mergeBufferGeometries(concreteGeos);
+            });
+            const gateConcreteMesh = new THREE.Mesh(concreteMeshGeo, beamMat);
             house.add(gateConcreteMesh);
+            
+            const wallGeos = []; // Placeholder to satisfy subsequent code if any
+
+            // Caching removed the need for manual merge loops here
 
             const building = new THREE.Group();
             building.position.set(houseOX, 0, houseOZ);
@@ -5574,15 +5649,20 @@
                     house.add(poolGroup);
                 }
             } else {
-                // Building Body Merging (Original Design)
-            const bodyGeos = [];
-            const mbG = new THREE.BoxGeometry(houseWidth, floorH * 2, houseDepth); mbG.translate(0, floorH, 0); bodyGeos.push(mbG);
-            if (hasWing) {
-                const wbG = new THREE.BoxGeometry(wingLen, floorH * 2, wingW);
-                wbG.translate(-(houseWidth / 2 + wingLen / 2), floorH, houseDepth / 2 - wingW / 2);
-                bodyGeos.push(wbG);
-            }
-            const bodyMesh = new THREE.Mesh(THREE.BufferGeometryUtils.mergeBufferGeometries(bodyGeos), bodyMat);
+            // Use shared objects for identical buildings
+            const baseCacheKey = `houseBase_${houseWidth}_${houseDepth}_${floorH}_${hasWing}_${id}`;
+            const internalBldg = getSharedGeometry(baseCacheKey, () => {
+                const bodyGeos = [];
+                const mbG = new THREE.BoxGeometry(houseWidth, floorH * 2, houseDepth); mbG.translate(0, floorH, 0); bodyGeos.push(mbG);
+                if (hasWing) {
+                    const wbG = new THREE.BoxGeometry(wingLen, floorH * 2, wingW);
+                    wbG.translate(-(houseWidth / 2 + wingLen / 2), floorH, houseDepth / 2 - wingW / 2);
+                    bodyGeos.push(wbG);
+                }
+                return THREE.BufferGeometryUtils.mergeBufferGeometries(bodyGeos);
+            });
+
+            const bodyMesh = new THREE.Mesh(internalBldg, bodyMat);
             bodyMesh.castShadow = true;
             building.add(bodyMesh);
 
@@ -5607,41 +5687,35 @@
                 ctx.fillStyle = '#FFF'; ctx.font = 'bold 30px Arial'; ctx.textAlign = 'center'; ctx.fillText(id, 32, 40);
                 return new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(canvas) });
             });
-            const dG = new THREE.Mesh(doorGeo, doorMat); dG.position.set(0, 37.5, -(houseDepth / 2 + 2)); building.add(dG);
-            const dF = dG.clone(); dF.position.y = floorH + 37.5; building.add(dF);
-
-            // Porch
-            const porchG = new THREE.BoxGeometry(houseWidth - 20, 10, 80);
-            const porchMat = getSharedMaterial('porchMat', () => new THREE.MeshStandardMaterial({ color: 0xcccccc }));
-            const p1 = new THREE.Mesh(porchG, porchMat); p1.position.set(0, 5, -(houseDepth / 2 + 40)); building.add(p1);
-            const p2 = p1.clone(); p2.position.y = floorH + 5; building.add(p2);
-
-            // Railing and Win (Merged)
-            const glassGeos = [];
-            const railH = 35;
-            const gfG = new THREE.BoxGeometry(houseWidth - 20, railH, 2); gfG.translate(0, floorH + 10 + railH / 2, -(houseDepth / 2 + 80)); glassGeos.push(gfG);
-            const gsG = new THREE.BoxGeometry(2, railH, 80);
-            const glL = gsG.clone(); glL.translate(-(houseWidth - 20) / 2, floorH + 10 + railH / 2, -(houseDepth / 2 + 40)); glassGeos.push(glL);
-            const glR = gsG.clone(); glR.translate((houseWidth - 20) / 2, floorH + 10 + railH / 2, -(houseDepth / 2 + 40)); glassGeos.push(glR);
-
+            const doorGeos = [];
+            const d1G = doorGeo.clone(); d1G.translate(0, 37.5, -(houseDepth / 2 + 2)); doorGeos.push(d1G);
+            const d2G = doorGeo.clone(); d2G.translate(0, floorH + 37.5, -(houseDepth / 2 + 2)); doorGeos.push(d2G);
             if (hasWing) {
-                const wgfG = new THREE.BoxGeometry(wingLen - 40, railH, 2); wgfG.translate(-(houseWidth / 2 + wingLen / 2), floorH + 10 + railH / 2, houseDepth / 2 - wingW - 60); glassGeos.push(wgfG);
-                const wgsG = new THREE.BoxGeometry(2, railH, 60);
-                const wglL = wgsG.clone(); wglL.translate(-(houseWidth / 2 + wingLen / 2) - (wingLen - 40) / 2, floorH + 10 + railH / 2, houseDepth / 2 - wingW - 30); glassGeos.push(wglL);
-                const wglR = wgsG.clone(); wglR.translate(-(houseWidth / 2 + wingLen / 2) + (wingLen - 40) / 2, floorH + 10 + railH / 2, houseDepth / 2 - wingW - 30); glassGeos.push(wglR);
-
-                const wdoor = new THREE.Mesh(doorGeo, doorMat); wdoor.position.set(-(houseWidth / 2 + 80), floorH + 37.5, houseDepth / 2 - wingW - 2); wdoor.rotation.y = Math.PI; building.add(wdoor);
+                const wdG = doorGeo.clone(); wdG.rotateY(Math.PI); wdG.translate(-(houseWidth / 2 + 80), floorH + 37.5, houseDepth / 2 - wingW - 2); 
+                doorGeos.push(wdG);
             }
-            const glassMesh = new THREE.Mesh(THREE.BufferGeometryUtils.mergeBufferGeometries(glassGeos), glassMat);
-            building.add(glassMesh);
+            const doorMesh = new THREE.Mesh(THREE.BufferGeometryUtils.mergeBufferGeometries(doorGeos), doorMat);
+            building.add(doorMesh);
 
-            // Windows
-            const winG = new THREE.PlaneGeometry(40, 50);
+            // Porch (Merged)
+            const porchMergedGeo = getSharedGeometry(`porchMerged_${houseWidth}_${houseDepth}_${floorH}`, () => {
+                const b1 = new THREE.BoxGeometry(houseWidth - 20, 10, 80); b1.translate(0, 5, -(houseDepth / 2 + 40));
+                const b2 = new THREE.BoxGeometry(houseWidth - 20, 10, 80); b2.translate(0, floorH + 5, -(houseDepth / 2 + 40));
+                return THREE.BufferGeometryUtils.mergeBufferGeometries([b1, b2]);
+            });
+            building.add(new THREE.Mesh(porchMergedGeo, porchMat));
+
+            // Windows (Merged)
+            const windowGeos = [];
             if (hasWing) {
                 [-(houseWidth / 2 + 80), -(houseWidth / 2 + 220)].forEach(x => {
-                    const w = new THREE.Mesh(winG, winMat); w.position.set(x, 45, houseDepth / 2 - wingW - 1.5); w.rotation.y = Math.PI; building.add(w);
-                    const wT = w.clone(); wT.position.y = floorH + 45; building.add(wT);
+                    const w1 = new THREE.PlaneGeometry(40, 50); w1.rotateY(Math.PI); w1.translate(x, 45, houseDepth / 2 - wingW - 1.5); windowGeos.push(w1);
+                    const w2 = new THREE.PlaneGeometry(40, 50); w2.rotateY(Math.PI); w2.translate(x, floorH + 45, houseDepth / 2 - wingW - 1.5); windowGeos.push(w2);
                 });
+            }
+            if (windowGeos.length > 0) {
+                const winMesh = new THREE.Mesh(THREE.BufferGeometryUtils.mergeBufferGeometries(windowGeos), winMat);
+                building.add(winMesh);
             }
 
             // House Porch Light Bulb
@@ -5755,122 +5829,54 @@
                 padMesh.position.set(padX, 1, padZ);
                 house.add(padMesh);
 
-                // Carport / Shade Structure
-                const cpGroup = new THREE.Group();
-                const cpPoleGeo = getSharedGeometry('cpPole', () => new THREE.CylinderGeometry(3, 3, 110, 8));
-                const cpPoleMat = getSharedMaterial('cpPoleMat', () => new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.8, roughness: 0.3 }));
-                const pPositions = [
-                    [-padW / 2 + 15, 55 + 2, -padD / 2 + 25],
-                    [padW / 2 - 15, 55 + 2, -padD / 2 + 25],
-                    [-padW / 2 + 15, 55 + 2, padD / 2 - 25],
-                    [padW / 2 - 15, 55 + 2, padD / 2 - 25]
-                ];
-                pPositions.forEach(pos => {
-                    const pole = new THREE.Mesh(cpPoleGeo, cpPoleMat);
-                    pole.position.set(pos[0], pos[1], pos[2]);
-                    cpGroup.add(pole);
+                // Carport / Shade Structure (Optimized)
+                const cpKey = 'cpGroup_merged';
+                const cpMergedGeo = getSharedGeometry(cpKey, () => {
+                    const geos = [];
+                    const cpPoleGeo = new THREE.CylinderGeometry(3, 3, 110, 6);
+                    const pPositions = [[-padW/2+15, 55+2, -padD/2+25], [padW/2-15, 55+2, -padD/2+25], [-padW/2+15, 55+2, padD/2-25], [padW/2-15, 55+2, padD/2-25]];
+                    pPositions.forEach(pos => { const p = cpPoleGeo.clone(); p.translate(pos[0], pos[1], pos[2]); geos.push(p); });
+                    const cpRoofGeo = new THREE.BoxGeometry(padW + 20, 6, padD + 30);
+                    cpRoofGeo.translate(0, 110 + 2 + 3, 0); geos.push(cpRoofGeo);
+                    return THREE.BufferGeometryUtils.mergeBufferGeometries(geos);
                 });
-                const cpRoofGeo = getSharedGeometry('cpRoof', () => new THREE.BoxGeometry(padW + 20, 6, padD + 30));
-                // Semi-transparent stylish blue tinted glass/polycarbonate roof
-                const cpRoofMat = getSharedMaterial('cpRoofMat', () => new THREE.MeshStandardMaterial({ color: 0x2288cc, transparent: true, opacity: 0.65, roughness: 0.1, metalness: 0.3 }));
-                const cpRoof = new THREE.Mesh(cpRoofGeo, cpRoofMat);
-                cpRoof.position.set(0, 110 + 2 + 3, 0);
-                cpGroup.add(cpRoof);
-                cpGroup.position.set(padX, 0, padZ);
-                house.add(cpGroup);
+                const cpPoleMat = getSharedMaterial('cpPoleMat', () => new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.8, roughness: 0.3 }));
+                const cpMesh = new THREE.Mesh(cpMergedGeo, cpPoleMat);
+                cpMesh.position.set(padX, 0, padZ);
+                house.add(cpMesh);
 
                 // --- REALISTIC 3D CARS ---
+                // Simplified Car Generation
+                const wheelGeo = getSharedGeometry(`carWheel_${carW}`, () => {
+                    const t = new THREE.CylinderGeometry(carW * 0.18, carW * 0.18, carW * 0.12, 12); t.rotateZ(Math.PI / 2);
+                    const r = new THREE.CylinderGeometry(carW * 0.12, carW * 0.12, carW * 0.13, 8); r.rotateZ(Math.PI / 2);
+                    return THREE.BufferGeometryUtils.mergeBufferGeometries([t, r]);
+                });
+                const carColors = [0xffffff, 0x333333, 0x1a73e8, 0xd93025, 0xfbbc04, 0x34a853];
+                const carBodyGeo = getSharedGeometry(`carBodyGeo_${carW}_${carL}`, () => {
+                    const bodyShape = new THREE.Shape();
+                    bodyShape.moveTo(-carL*0.5, 0); bodyShape.lineTo(carL*0.5, 0); bodyShape.lineTo(carL*0.5, carW*0.25);
+                    bodyShape.lineTo(carL*0.45, carW*0.35); bodyShape.lineTo(carL*0.15, carW*0.35); bodyShape.lineTo(carL*0.05, carW*0.65);
+                    bodyShape.lineTo(-carL*0.3, carW*0.65); bodyShape.lineTo(-carL*0.45, carW*0.35); bodyShape.lineTo(-carL*0.5, carW*0.35); bodyShape.lineTo(-carL*0.5, 0);
+                    return new THREE.ExtrudeGeometry(bodyShape, { depth: carW, bevelEnabled: true, bevelThickness: 4, bevelSize: 4, bevelSegments: 2 });
+                });
+                const chromeMat = getSharedMaterial('carChrome', () => new THREE.MeshStandardMaterial({ color: 0xeeeeee, metalness: 1.0, roughness: 0.1 }));
+                const blackMat = getSharedMaterial('carBlack', () => new THREE.MeshStandardMaterial({ color: 0x080808, roughness: 0.9 }));
+                
                 for (let i = 0; i < carCount; i++) {
                     const car = new THREE.Group();
-                    const carColors = [0xffffff, 0x333333, 0x1a73e8, 0xd93025, 0xfbbc04, 0x34a853];
-                    const carColor = carColors[Math.floor(Math.random() * carColors.length)];
-                    const mainMat = new THREE.MeshStandardMaterial({
-                        color: carColor,
-                        metalness: 0.8,
-                        roughness: 0.2,
-                        envMapIntensity: 1.0
-                    });
-                    const glassMat = new THREE.MeshStandardMaterial({ color: 0x111111, transparent: true, opacity: 0.8, roughness: 0.1 });
-                    const blackMat = new THREE.MeshStandardMaterial({ color: 0x080808, roughness: 0.9 });
-                    const chromeMat = new THREE.MeshStandardMaterial({ color: 0xeeeeee, metalness: 1.0, roughness: 0.1 });
-
-                    // Realistic Body with Shape Extrusion
-                    const bodyShape = new THREE.Shape();
-                    bodyShape.moveTo(-carL * 0.5, 0);
-                    bodyShape.lineTo(carL * 0.5, 0);
-                    bodyShape.lineTo(carL * 0.5, carW * 0.25);
-                    bodyShape.lineTo(carL * 0.45, carW * 0.35); // Front Hood
-                    bodyShape.lineTo(carL * 0.15, carW * 0.35); // Windshield base
-                    bodyShape.lineTo(carL * 0.05, carW * 0.65); // Roof start
-                    bodyShape.lineTo(-carL * 0.3, carW * 0.65); // Roof end
-                    bodyShape.lineTo(-carL * 0.45, carW * 0.35); // Back window
-                    bodyShape.lineTo(-carL * 0.5, carW * 0.35); // Trunk end
-                    bodyShape.lineTo(-carL * 0.5, 0);
-
-                    const carBodyGeo = getSharedGeometry(`carBodyGeo_${carW}_${carL}`, () => new THREE.ExtrudeGeometry(bodyShape, {
-                        depth: carW,
-                        bevelEnabled: true,
-                        bevelThickness: 5,
-                        bevelSize: 5,
-                        bevelOffset: 0,
-                        bevelSegments: 3
-                    }));
+                    const carColor = carColors[i % carColors.length];
+                    const mainMat = getSharedMaterial(`carMain_${carColor}`, () => new THREE.MeshStandardMaterial({ color: carColor, metalness: 0.7, roughness: 0.2 }));
                     const bodyMesh = new THREE.Mesh(carBodyGeo, mainMat);
-                    bodyMesh.rotation.y = Math.PI / 2;
-                    bodyMesh.position.set(carW / 2, carW * 0.1, 0);
-                    bodyMesh.castShadow = true;
-                    car.add(bodyMesh);
-
-                    // Windows (Dark Glass)
-                    const winGeo = getSharedGeometry(`carWinGeo_${carW}_${carL}`, () => new THREE.BoxGeometry(carW * 0.92, carW * 0.28, carL * 0.4));
-                    const winMesh = new THREE.Mesh(winGeo, glassMat);
-                    winMesh.position.set(0, carW * 0.5, -carL * 0.1);
-                    car.add(winMesh);
-
-                    // Front Grille (Chrome)
-                    const grilleGeo = getSharedGeometry(`grille_${carW}`, () => new THREE.BoxGeometry(carW * 0.7, carW * 0.15, 5));
-                    const grille = new THREE.Mesh(grilleGeo, chromeMat);
-                    grille.position.set(0, carW * 0.25, carL * 0.5 + 2);
-                    car.add(grille);
-
-                    // Lights
-                    const hLightGeo = getSharedGeometry(`hLight_${carW}`, () => new THREE.SphereGeometry(carW * 0.1, 16, 16));
-                    const lightMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 2 });
-                    [-(carW * 0.35), carW * 0.35].forEach(x => {
-                        const hl = new THREE.Mesh(hLightGeo, lightMat);
-                        hl.scale.set(1, 0.6, 0.2);
-                        hl.position.set(x, carW * 0.28, carL * 0.5);
-                        car.add(hl);
-                    });
-
-                    const tLightMat = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 1.5 });
-                    [-(carW * 0.38), carW * 0.38].forEach(x => {
-                        const tl = new THREE.Mesh(hLightGeo, tLightMat);
-                        tl.scale.set(1.2, 0.5, 0.1);
-                        tl.position.set(x, carW * 0.32, -carL * 0.5);
-                        car.add(tl);
-                    });
-
-                    // Wheels with Rims
-                    const wheelGeo = getSharedGeometry(`tire_${carW}`, () => new THREE.CylinderGeometry(carW * 0.18, carW * 0.18, carW * 0.12, 24));
-                    const rimGeo = getSharedGeometry(`rim_${carW}`, () => new THREE.CylinderGeometry(carW * 0.12, carW * 0.12, carW * 0.13, 12));
-                    const rimMat = getSharedMaterial('rimMat', () => new THREE.MeshStandardMaterial({ color: 0xdddddd, metalness: 0.9, roughness: 0.1 }));
-
-                    const wOffsets = [[-carW * 0.52, carW * 0.18, carL * 0.3], [carW * 0.52, carW * 0.18, carL * 0.3], [-carW * 0.52, carW * 0.18, -carL * 0.32], [carW * 0.52, carW * 0.18, -carL * 0.32]];
+                    bodyMesh.rotation.y = Math.PI / 2; bodyMesh.position.set(carW / 2, carW * 0.1, 0); car.add(bodyMesh);
+                    
+                    const wOffsets = [[-carW*0.52, carW*0.18, carL*0.3], [carW*0.52, carW*0.18, carL*0.3], [-carW*0.52, carW*0.18, -carL*0.32], [carW*0.52, carW*0.18, -carL*0.32]];
                     wOffsets.forEach(pos => {
-                        const wWrap = new THREE.Group();
-                        const tire = new THREE.Mesh(wheelGeo, blackMat); tire.rotation.z = Math.PI / 2; wWrap.add(tire);
-                        const rim = new THREE.Mesh(rimGeo, rimMat); rim.rotation.z = Math.PI / 2; wWrap.add(rim);
-                        wWrap.position.set(pos[0], pos[1], pos[2]);
-                        car.add(wWrap);
+                        const w = new THREE.Mesh(wheelGeo, blackMat); w.position.set(pos[0], pos[1], pos[2]); car.add(w);
                     });
-
                     const spacing = (carL + 100) * igy;
-                    const frontGap = 180 * igy;
-                    const rightGap = 70 * igx;
-                    car.position.set(plotW / 2 - (carL / 2 + rightGap) - (i * spacing) + carOX, 0, -plotD / 2 + frontGap + carOZ);
-                    car.rotation.y = Math.PI / 2;
-                    house.add(car);
+                    car.position.set(plotW / 2 - (carL / 2 + 70*igx) - (i * spacing) + carOX, 0, -plotD / 2 + 180*igy + carOZ);
+                    car.rotation.y = Math.PI / 2; house.add(car);
                 }
             } // end hasCarParking
 
@@ -6785,8 +6791,14 @@
             });
 
             sr_riverMesh = new THREE.Mesh(riverGeo, riverMat);
+            sr_riverMesh.name = 'river';
             sr_bankMesh = new THREE.Mesh(bankGeo, bankMat);
+            sr_bankMesh.name = 'river';
             const sr_wallMesh = new THREE.Mesh(wallGeo, wallMat);
+            sr_wallMesh.name = 'river';
+            sr_riverMesh.userData.noOptimize = true;
+            sr_bankMesh.userData.noOptimize = true;
+            sr_wallMesh.userData.noOptimize = true;
 
             sr_group.add(sr_riverMesh);
             sr_group.add(sr_bankMesh);

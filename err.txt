@@ -1,0 +1,8 @@
+Error creating WebGL context.
+Error: Error creating WebGL context.
+    at new ws (https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js:6:337663)
+    at init (about:blank:1666:24)
+    at about:blank:7635:17
+    at Timeout.task [as _onTimeout] (D:\MYSPACE\Animation\node_modules\jsdom\lib\jsdom\browser\Window.js:552:19)
+    at listOnTimeout (node:internal/timers:608:17)
+    at process.processTimers (node:internal/timers:543:7)
