@@ -1728,7 +1728,7 @@
             // Initialize with dense fog for reveal animation
             scene.fog = new THREE.FogExp2(0x87ceeb, initialFogDensity);
 
-            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.5, 14000);
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 14000);
             camera.position.set(10, 150, 150); // Drone high-altitude start
             camera.lookAt(500, 850, 500);
             scene.add(camera)
@@ -2542,6 +2542,7 @@
 
                 // Create a group for each road to handle position and rotation together
                 const roadGroup = new THREE.Group();
+                roadGroup.userData.noOptimize = true; // KEEP AS INDIVIDUAL MESH TO PREVENT FRUSTUM CULLING ISSUES WHEN IN WALKING MODE
                 scene.add(roadGroup);
 
                 // Check if elevated
@@ -2554,12 +2555,12 @@
                 }
 
                 const baseMesh = new THREE.Mesh(roadGeo, localBaseMat);
-                baseMesh.position.y = 0.05; // Lift up slightly to avoid Z-fighting with city land
+                baseMesh.position.y = 0.15; // Increased lift to 0.15 to prevent Z-fighting at close range
                 baseMesh.receiveShadow = true;
                 roadGroup.add(baseMesh);
 
                 const markingsMesh = new THREE.Mesh(roadGeo, markingsMat);
-                markingsMesh.position.y = 0.06; // Slightly above baseMesh
+                markingsMesh.position.y = 0.17; // Slightly above baseMesh
                 roadGroup.add(markingsMesh);
 
                 // Apply Position if defined
