@@ -163,7 +163,7 @@
         }
 
         function createWall(config) {
-            const { w = 5, h = 3, t = 0.2, color = 0xffffff, useTexture = false, textureUrl = '', bumpScale = 0.05 } = config;
+            const { w = 5, h = 3, t = 0.2, color = 0xB8AAA6, useTexture = false, textureUrl = '', bumpScale = 0.05 } = config;
             const geometry = new THREE.BoxGeometry(w, h, t);
             const material = new THREE.MeshStandardMaterial({
                 color: color,
@@ -178,7 +178,7 @@
         }
 
         function createFloor(config) {
-            const { w = 5, d = 5, t = 0.15, color = 0xcccccc, useTexture = false } = config;
+            const { w = 5, d = 5, t = 0.15, color = 0xBBA990, useTexture = false } = config;
             const geometry = new THREE.BoxGeometry(w, t, d);
             const material = new THREE.MeshStandardMaterial({
                 color: color,
@@ -667,7 +667,7 @@
         }
 
         function createRoof(config) {
-            const { w = 6, d = 8, h = 2, faces = 2, style = 'pitched', color = 0x8b0000 } = config;
+            const { w = 6, d = 8, h = 2, faces = 2, style = 'pitched', color = 0xACAD99 } = config;
             const group = new THREE.Group();
             
             let actualFaces = faces;
@@ -766,7 +766,7 @@
         }
 
         function createGable(config) {
-            const { w = 6, h = 1.5, t = 0.2, color = 0xeee8aa } = config;
+            const { w = 6, h = 1.5, t = 0.2, color = 0xb8aaa6 } = config;
             const group = new THREE.Group();
             
             const shape = new THREE.Shape();
@@ -825,7 +825,7 @@
         }
 
         function createWallVine(config) {
-            const { h = 2, w = 1.5, depth = 0.3, leafColor = 0x2d5a27, stemColor = 0x4d2a1a } = config;
+            const { h = 2, w = 1.5, depth = 0.3, leafColor = 0xBBA990, stemColor = 0x4d2a1a } = config;
             const group = new THREE.Group();
             
             const leafMat = new THREE.MeshStandardMaterial({ color: leafColor, roughness: 0.8 });
@@ -1126,26 +1126,26 @@
 
             // Ground floor
             createFloor({ x: 0,z:-5.1, y: 0, w: 16.8, d: 6.6, color: 0xfcf286, ry: Math.PI / 2 }); // 1st floor=
-            createWall({ x: 3, z: 0, w: 6, h: 4, ry: Math.PI / 2, color: 0xeee8aa });
-            createWall({ x: 3, z: -10.2, w: 5.8, h: 4, ry: Math.PI / 2, color: 0xeee8aa }); // RIGHT PART front WALL
-            createWall({ x: 0, y: 0, z: -3, w: 6, h: 4, color: 0xeee8aa });
-            createWall({ x: 0, y: 0, z: -7, w: 6, h: 4, color: 0xeee8aa }); // right part - left wall 
-            createWall({ x: 0, y: 0, z: -13.2, w: 6, h: 4, color: 0xeee8aa }); // right part - right wall
-            createWall({ x: -3, z: -5.1, w: 16.4, h: 8, ry: Math.PI / 2, color: 0xeee8aa });
-            createWall({ x: 0, z: 3, w: 6, h: 4, color: 0xeee8aa });
+            createWall({ x: 3, z: 0, w: 6, h: 4, ry: Math.PI / 2, color: 0xb8aaa6 });
+            createWall({ x: 3, z: -10.2, w: 5.8, h: 4, ry: Math.PI / 2, color: 0xb8aaa6 }); // RIGHT PART front WALL
+            createWall({ x: 0, y: 0, z: -3, w: 6, h: 4, color: 0xb8aaa6 });
+            createWall({ x: 0, y: 0, z: -7, w: 6, h: 4, color: 0xb8aaa6 }); // right part - left wall 
+            createWall({ x: 0, y: 0, z: -13.2, w: 6, h: 4, color: 0xb8aaa6 }); // right part - right wall
+            createWall({ x: -3, z: -5.1, w: 16.4, h: 8, ry: Math.PI / 2, color: 0xb8aaa6 });
+            createWall({ x: 0, z: 3, w: 6, h: 4, color: 0xb8aaa6 });
             createDoor({ x: 3.2, y: .5, z: 0, w: 1.2, h: 2.2, ry: Math.PI / 2, isOpen: false });
             createDoor({ x: 3.2, y: .5, z: -10.2, w: 1.2, h: 2.2, ry: Math.PI / 2, isOpen: false }); // right part
             
             // Floor two
-            createWall({ x: 3,y:4, z: -10.2, w: 6, h: 4, ry: Math.PI / 2, color: 0xeee8aa }); // top front side wall
-            createWall({ x: 0, y: 4, z: -7.2, w: 6, h: 4, color: 0xeee8aa }); // right part - left wall 
-            createWall({ x: 0, y: 4, z: -13.2, w: 6, h: 4, color: 0xeee8aa }); // right part - right wall 
-            createWall({ x: 3, z: 0, y: 4, w: 6, h: 4, ry: Math.PI / 2, color: 0xeee8aa });
-            createWall({ x: 0, y: 4, z: -3, w: 6, h: 4, color: 0xeee8aa });
-            createWall({ x: -3, z: -2, y: 4, w: 10, h: 4, ry: Math.PI / 2, color: 0xeee8aa });
-            createWall({ x: 0, z: 3, y: 4, w: 6, h: 4, color: 0xeee8aa });
-            createWall({ x: -1.5, z: -7.2, y: 4, w: 3, h: 4, color: 0xeee8aa });
-            createWall({ x: 0, z: -5.2, y: 4, w: 4.5, h: 4,ry: Math.PI / 2 , color: 0xeee8aa });
+            createWall({ x: 3,y:4, z: -10.2, w: 6, h: 4, ry: Math.PI / 2, color: 0xb8aaa6 }); // top front side wall
+            createWall({ x: 0, y: 4, z: -7.2, w: 6, h: 4, color: 0xb8aaa6 }); // right part - left wall 
+            createWall({ x: 0, y: 4, z: -13.2, w: 6, h: 4, color: 0xb8aaa6 }); // right part - right wall 
+            createWall({ x: 3, z: 0, y: 4, w: 6, h: 4, ry: Math.PI / 2, color: 0xb8aaa6 });
+            createWall({ x: 0, y: 4, z: -3, w: 6, h: 4, color: 0xb8aaa6 });
+            createWall({ x: -3, z: -2, y: 4, w: 10, h: 4, ry: Math.PI / 2, color: 0xb8aaa6 });
+            createWall({ x: 0, z: 3, y: 4, w: 6, h: 4, color: 0xb8aaa6 });
+            createWall({ x: -1.5, z: -7.2, y: 4, w: 3, h: 4, color: 0xb8aaa6 });
+            createWall({ x: 0, z: -5.2, y: 4, w: 4.5, h: 4,ry: Math.PI / 2 , color: 0xb8aaa6 });
             createFloor({ x: 0, y: 4, z:-5.1, w: 16.8, d: 6.6, color: 0xfcf286, ry: Math.PI / 2 }); // 2nd floor
             createFloor({ x: 0, y: 8, z:-10.2, w: 6.5, d: 6.6, color: 0xfcf286, ry: Math.PI / 2 }); // 2nd floor right part
             createDoor({ x: 3.2, y: 4.3, z: 0, w: 1.2, h: 2.2, ry: Math.PI / 2, isOpen: true });
@@ -1164,28 +1164,37 @@
             createFloor({ x: 5.2, y: 0, z:-5.1, w: 4.6, d: 4.2, ry: Math.PI / 2 }); // 2nd floor right part  color: 0xfcf286,  useTexture: true,
             createBeamSet({ x: 7, y: 0, z: -5.1, dist: 4, h: 8.2, w: 0.4, count: 2, style: 'Y' });
             createRoof({ x: 5.2, z: -5.1, y: 8.2, w: 4.8, d: 4.8, h: 2, ry: Math.PI / 2, faces: 40,style: 'flat' });
-            createWall({ x: 3, z: -5.2, w: 5.8, h: 4, ry: Math.PI / 2, color: 0xeee8aa }); // Gate Part front WALL
+            createWall({ x: 3, z: -5.2, w: 5.8, h: 4, ry: Math.PI / 2, color: 0xb8aaa6 }); // Gate Part front WALL
            
             // Stylish Premium Main Double Door!
             createMainDoor({ x: 3.12, y: 0, z: -5.2, w: 2.6, h: 2.6, ry: Math.PI / 2, isOpen: false });
            
             // Wood Grills (Premium Fence Style)
-            createWoodGril({ x: 7.0, y: 4.15, z: -5.2, w: 4, h: 1.2, ry: -Math.PI / 2, startPost: false, midPost: true, endPost: false }); // Front ground left
-            createWoodGril({ x: 5.0, y: 4.15, z: -7.1, w: 4, h: 1.2, startPost: false, midPost: true, endPost: false }); // Front ground left
             createWoodGril({ x: 5.0, y: 4.15, z: -3.1, w: 4, h: 1.2, startPost: false, midPost: true, endPost: false }); // Front ground left
+            createWoodGril({ x: 5.0, y: 4.15, z: -3.1, w: 4, h: 1.2, startPost: false, midPost: true, endPost: false }); // Front ground left
+            createWoodGril({ x: 7.0, y: 4.15, z: -5.2, w: 4, h: 1.2, ry: -Math.PI / 2, startPost: false, midPost: true, endPost: false }); // Front ground left
             
-
-
+            // Roof Grill 
+            createWoodGril({ x: 7.4, y: 8.15, z: -5.1, w: 4.4, h: 1.2, ry: -Math.PI / 2, startPost: false, midPost: true, endPost: false }); // Front ground left
+            createWoodGril({ x: 5.3, y: 8.15, z: -7.3, w: 4, h: 1.2, startPost: true, midPost: true, endPost: true }); // Front ground left
+            createWoodGril({ x: 5.3, y: 8.15, z: -3.0, w: 4, h: 1.2, startPost: true, midPost: true, endPost: true }); // Front ground left
+            //  
+            createWoodGril({ x: -3.3, y: 8.15, z: -5.2, w: 15.8, h: 1.2, ry: -Math.PI / 2, startPost: true, midPost: true, endPost: true }); // Front ground left
+            createWoodGril({ x: 3.2, y: 8.15, z: -0.2, w: 5.8, h: 1.2, ry: -Math.PI / 2, startPost: false, midPost: true, endPost: true }); // Front ground left
+            createWoodGril({ x: 3.2, y: 8.15, z: -10.2, w: 5.8, h: 1.2, ry: -Math.PI / 2, startPost: true, midPost: true, endPost: false }); // Front ground left
+            //  
+            createWoodGril({ x: -.1, y: 8.15, z: 2.8, w: 6.5, h: 1.2, startPost: false, midPost: true, endPost: false }); // Front ground left
+            createWoodGril({ x: -.1, y: 8.15, z: -13.2, w: 6.5, h: 1.2, startPost: false, midPost: true, endPost: false }); // Front ground left
 
 
              
             createFloor({ x: 0, y: 8, z:0, w: 6, d: 6.5, color: 0xfcf286, ry: Math.PI / 2 }); // 3rd floor
-            // createWall({ x: 0, y: 8, z: 3, w: 6, h: 1, color: 0xeee8aa }); // Main 3rd floor front gap
-            // createWall({ x: 0, y: 8, z: -3, w: 6, h: 1, color: 0xeee8aa }); // Main 3rd floor back gap
+            // createWall({ x: 0, y: 8, z: 3, w: 6, h: 1, color: 0xb8aaa6 }); // Main 3rd floor front gap
+            // createWall({ x: 0, y: 8, z: -3, w: 6, h: 1, color: 0xb8aaa6 }); // Main 3rd floor back gap
 
             createFloor({ x: -1.5, y: 8, z:-5.2, w: 4.5, d: 3.5, color: 0xfcf286, ry: Math.PI / 2 }); // 3rd floor right extend
-            // createWall({ x: -3, y: 8, z: -5.2, w: 4.5, h: 0.6, ry: Math.PI / 2, color: 0xeee8aa }); // Ext wall left
-            // createWall({ x: 0, y: 8, z: -5.2, w: 4.5, h: 0.6, ry: Math.PI / 2, color: 0xeee8aa }); // Ext wall right
+            // createWall({ x: -3, y: 8, z: -5.2, w: 4.5, h: 0.6, ry: Math.PI / 2, color: 0xb8aaa6 }); // Ext wall left
+            // createWall({ x: 0, y: 8, z: -5.2, w: 4.5, h: 0.6, ry: Math.PI / 2, color: 0xb8aaa6 }); // Ext wall right
             
             createStairs({ x: 4.2, z: 0, y: 0, ry: -Math.PI / 2, w: 1.8, steps: 3 });
             createStairs({ x: 4.2, z: -10.2, y: 0, ry: -Math.PI / 2, w: 1.8, steps: 3 }); // right part 
@@ -1211,7 +1220,7 @@
             createRoof({ x: -0, z: -4.3, y: 8.2, w: 7.2, d: 9, ry: Math.PI / 1, style: 'flat' });
 
             // Wall Hanging Vines (Germani Lota Style)
-            createWallVine({ x: 3.5, y: 8.5, z: 2.4, h: 7, w: 1.0, ry: Math.PI / 2 }); // Right wall top
+            // createWallVine({ x: 3.5, y: 8.5, z: 2.4, h: 7, w: 1.0, ry: Math.PI / 2 }); // Right wall top
          
             // Wood Grill Roof (Pergola) above this area
             createPergola({ x: 1.5, y: 7.5, z: -5.2, w: 2.6, d: 4, color: 0x5d4037 }); 

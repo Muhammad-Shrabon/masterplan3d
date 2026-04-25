@@ -132,6 +132,10 @@
         const CITY_BOUNDS = { minX: -700, maxX: 700, minZ: -1600, maxZ: 1600 };
         const customTreePositions = [
             // Add your tree positions here. x/z = world position, y = height offset, scale = tree height in world units
+            { x: -450,  y: 0.1, z: -630,   scale: 15 },
+            { x: -450,  y: 0.1, z: -610,   scale: 15 },
+            { x: -450,  y: 0.1, z: -590,   scale: 15 },
+            { x: -450,  y: 0.1, z: -570,   scale: 15 },
             { x: -450,  y: 0.1, z: -550,   scale: 15 },
             { x: -450,  y: 0.1, z: -480,   scale: 16 },
             { x: -450,  y: 0.1, z: -410,   scale: 14 },
@@ -143,6 +147,11 @@
             { x: -450,  y: 0.1, z: -170,   scale: 16 },
             { x: -450,  y: 0.1, z: -210,   scale: 14 },
             // serial
+            { x: -500,  y: 0.1, z: -630,   scale: 15 },
+            { x: -500,  y: 0.1, z: -610,   scale: 15 },
+            { x: -500,  y: 0.1, z: -590,   scale: 15 },
+            { x: -500,  y: 0.1, z: -510,   scale: 15 },
+            { x: -500,  y: 0.1, z: -525,   scale: 15 },
             { x: -500,  y: 0.1, z: -550,   scale: 15 },
             { x: -500,  y: 0.1, z: -480,   scale: 16 },
             { x: -500,  y: 0.1, z: -410,   scale: 14 },
@@ -152,8 +161,15 @@
             { x: -500,   y: 0.1, z: -190,  scale: 16 },
             { x: -500,  y: 0.1, z: -140,   scale: 15 },
             { x: -500,  y: 0.1, z: -100,   scale: 16 },
+            { x: -500,  y: 0.1, z: -50,   scale: 16 },
             { x: -500,  y: 0.1, z: -10,   scale: 14 },
+            { x: -500,  y: 0.1, z: 20,   scale: 14 },
+            { x: -500,  y: 0.1, z: 50,   scale: 14 },
+            { x: -500,  y: 0.1, z: 80,   scale: 14 },
             // Serial 2
+            { x: -550,  y: 0.1, z: -630,   scale: 15 },
+            { x: -550,  y: 0.1, z: -600,   scale: 15 },
+            { x: -550,  y: 0.1, z: -570,   scale: 15 },
             { x: -550,  y: 0.1, z: -550,   scale: 15 },
             { x: -550,  y: 0.1, z: -480,   scale: 16 },
             { x: -550,  y: 0.1, z: -410,   scale: 14 },
@@ -164,7 +180,16 @@
             { x: -550,  y: 0.1, z: -140,   scale: 15 },
             { x: -550,  y: 0.1, z: -100,   scale: 16 },
             { x: -550,  y: 0.1, z: -10,   scale: 14 },
+            { x: -550,  y: 0.1, z: -50,   scale: 16 },
+            { x: -550,  y: 0.1, z: -10,   scale: 14 },
+            { x: -550,  y: 0.1, z: 20,   scale: 14 },
+            { x: -550,  y: 0.1, z: 50,   scale: 14 },
+            { x: -550,  y: 0.1, z: 80,   scale: 14 },
             // Serial
+            { x: -600,  y: 0.1, z: -650,   scale: 15 },
+            { x: -600,  y: 0.1, z: -620,   scale: 15 },
+            { x: -600,  y: 0.1, z: -590,   scale: 15 },
+            { x: -600,  y: 0.1, z: -570,   scale: 15 },
             { x: -600,  y: 0.1, z: -550,   scale: 15 },
             { x: -600,  y: 0.1, z: -480,   scale: 16 },
             { x: -600,  y: 0.1, z: -410,   scale: 14 },
@@ -175,7 +200,17 @@
             { x: -600,  y: 0.1, z: -140,   scale: 15 },
             { x: -600,  y: 0.1, z: -100,   scale: 16 },
             { x: -600,  y: 0.1, z: -10,   scale: 14 },
+            { x: -600,  y: 0.1, z: -50,   scale: 16 },
+            { x: -600,  y: 0.1, z: -10,   scale: 14 },
+            { x: -600,  y: 0.1, z: 20,   scale: 14 },
+            { x: -600,  y: 0.1, z: 50,   scale: 14 },
+            { x: -600,  y: 0.1, z: 80,   scale: 14 },
             // Serial 3
+            { x: -650,  y: 0.1, z: -650,   scale: 15 },
+            { x: -650,  y: 0.1, z: -630,   scale: 15 },
+            { x: -650,  y: 0.1, z: -610,   scale: 15 },
+            { x: -650,  y: 0.1, z: -590,   scale: 15 },
+            { x: -650,  y: 0.1, z: -570,   scale: 15 },
             { x: -650,  y: 0.1, z: -550,   scale: 15 },
             { x: -650,  y: 0.1, z: -480,   scale: 16 },
             { x: -650,  y: 0.1, z: -410,   scale: 14 },
@@ -185,8 +220,17 @@
             { x: -650,   y: 0.1, z: -190,  scale: 16 },
             { x: -650,  y: 0.1, z: -140,   scale: 15 },
             { x: -650,  y: 0.1, z: -100,   scale: 16 },
+            { x: -650,  y: 0.1, z: -50,   scale: 16 },
             { x: -650,  y: 0.1, z: -10,   scale: 14 },
+            { x: -650,  y: 0.1, z: 20,   scale: 14 },
+            { x: -650,  y: 0.1, z: 50,   scale: 14 },
+            { x: -650,  y: 0.1, z: 80,   scale: 14 },
             // Serial 3
+            { x: -700,  y: 0.1, z: -660,   scale: 15 },
+            { x: -700,  y: 0.1, z: -630,   scale: 15 },
+            { x: -700,  y: 0.1, z: -610,   scale: 15 },
+            { x: -700,  y: 0.1, z: -590,   scale: 15 },
+            { x: -700,  y: 0.1, z: -570,   scale: 15 },
             { x: -700,  y: 0.1, z: -550,   scale: 15 },
             { x: -700,  y: 0.1, z: -480,   scale: 16 },
             { x: -700,  y: 0.1, z: -410,   scale: 14 },
@@ -196,7 +240,11 @@
             { x: -700,   y: 0.1, z: -190,  scale: 16 },
             { x: -700,  y: 0.1, z: -140,   scale: 15 },
             { x: -700,  y: 0.1, z: -100,   scale: 16 },
+            { x: -700,  y: 0.1, z: -50,   scale: 16 },
             { x: -700,  y: 0.1, z: -10,   scale: 14 },
+            { x: -700,  y: 0.1, z: 20,   scale: 14 },
+            { x: -700,  y: 0.1, z: 50,   scale: 14 },
+            { x: -700,  y: 0.1, z: 80,   scale: 14 },
             // Top Free Space Serial
             { x: -650,  y: 0.1, z: -1250,   scale: 15 },
             { x: -650,  y: 0.1, z: -1280,   scale: 16 },
@@ -223,6 +271,7 @@
             { x: -580,  y: 0.1, z: -940,   scale: 14 },
             { x: -580,  y: 0.1, z: -890,   scale: 14 },
             { x: -580,  y: 0.1, z: -840,   scale: 14 },
+            { x: -580,  y: 0.1, z: -810,   scale: 14 },
             // Top Serial 
             { x: -510,  y: 0.1, z: -1250,   scale: 15 },
             { x: -510,  y: 0.1, z: -1280,   scale: 16 },
@@ -236,6 +285,8 @@
             { x: -510,  y: 0.1, z: -940,   scale: 14 },
             { x: -510,  y: 0.1, z: -890,   scale: 14 },
             { x: -510,  y: 0.1, z: -840,   scale: 14 },
+            { x: -510,  y: 0.1, z: -810,   scale: 14 },
+            { x: -510,  y: 0.1, z: -790,   scale: 14 },
             // Top Serial 
             { x: -440,  y: 0.1, z: -1250,   scale: 15 },
             { x: -440,  y: 0.1, z: -1280,   scale: 16 },
@@ -249,6 +300,9 @@
             { x: -440,  y: 0.1, z: -940,   scale: 14 },
             { x: -440,  y: 0.1, z: -890,   scale: 14 },
             { x: -440,  y: 0.1, z: -840,   scale: 14 },
+            { x: -440,  y: 0.1, z: -810,   scale: 14 },
+            { x: -440,  y: 0.1, z: -790,   scale: 14 },
+            { x: -440,  y: 0.1, z: -770,   scale: 14 },
             // Top Serial 
             { x: -370,  y: 0.1, z: -1250,   scale: 15 },
             { x: -370,  y: 0.1, z: -1280,   scale: 16 },
@@ -262,6 +316,10 @@
             { x: -370,  y: 0.1, z: -940,   scale: 14 },
             { x: -370,  y: 0.1, z: -890,   scale: 14 },
             { x: -370,  y: 0.1, z: -840,   scale: 14 },
+            { x: -370,  y: 0.1, z: -810,   scale: 14 },
+            { x: -370,  y: 0.1, z: -790,   scale: 14 },
+            { x: -370,  y: 0.1, z: -770,   scale: 14 },
+            { x: -370,  y: 0.1, z: -740,   scale: 14 },
             // Top Serial 
             { x: -310,  y: 0.1, z: -1250,   scale: 15 },
             { x: -310,  y: 0.1, z: -1280,   scale: 16 },
@@ -275,6 +333,10 @@
             { x: -310,  y: 0.1, z: -940,   scale: 14 },
             { x: -310,  y: 0.1, z: -890,   scale: 14 },
             { x: -310,  y: 0.1, z: -840,   scale: 14 },
+            { x: -310,  y: 0.1, z: -810,   scale: 14 },
+            { x: -310,  y: 0.1, z: -780,   scale: 14 },
+            { x: -310,  y: 0.1, z: -750,   scale: 14 },
+            { x: -310,  y: 0.1, z: -720,   scale: 14 },
             // Top Serial 
             { x: -240,  y: 0.1, z: -1250,   scale: 15 },
             { x: -240,  y: 0.1, z: -1280,   scale: 16 },
@@ -288,6 +350,11 @@
             { x: -240,  y: 0.1, z: -940,   scale: 14 },
             { x: -240,  y: 0.1, z: -890,   scale: 14 },
             { x: -240,  y: 0.1, z: -840,   scale: 14 },
+            { x: -240,  y: 0.1, z: -810,   scale: 14 },
+            { x: -240,  y: 0.1, z: -780,   scale: 14 },
+            { x: -240,  y: 0.1, z: -750,   scale: 14 },
+            { x: -240,  y: 0.1, z: -720,   scale: 14 },
+            { x: -240,  y: 0.1, z: -700,   scale: 14 },
             // Top Serial 
             { x: -170,  y: 0.1, z: -1250,   scale: 15 },
             { x: -170,  y: 0.1, z: -1280,   scale: 16 },
@@ -301,6 +368,11 @@
             { x: -170,  y: 0.1, z: -940,   scale: 14 },
             { x: -170,  y: 0.1, z: -890,   scale: 14 },
             { x: -170,  y: 0.1, z: -840,   scale: 14 },
+            { x: -170,  y: 0.1, z: -810,   scale: 14 },
+            { x: -170,  y: 0.1, z: -780,   scale: 14 },
+            { x: -170,  y: 0.1, z: -750,   scale: 14 },
+            { x: -170,  y: 0.1, z: -720,   scale: 14 },
+            { x: -170,  y: 0.1, z: -690,   scale: 14 },
             // Top Serial 
             { x: -120,  y: 0.1, z: -1250,   scale: 15 },
             { x: -120,  y: 0.1, z: -1280,   scale: 16 },
@@ -314,6 +386,11 @@
             { x: -120,  y: 0.1, z: -940,   scale: 14 },
             { x: -120,  y: 0.1, z: -890,   scale: 14 },
             { x: -120,  y: 0.1, z: -840,   scale: 14 },
+            { x: -120,  y: 0.1, z: -810,   scale: 14 },
+            { x: -120,  y: 0.1, z: -780,   scale: 14 },
+            { x: -120,  y: 0.1, z: -750,   scale: 14 },
+            { x: -120,  y: 0.1, z: -720,   scale: 14 },
+            { x: -120,  y: 0.1, z: -690,   scale: 14 },
             // Top Serial 
             { x: -60,  y: 0.1, z: -1250,   scale: 15 },
             { x: -60,  y: 0.1, z: -1280,   scale: 16 },
@@ -329,8 +406,10 @@
             { x: -60,  y: 0.1, z: -840,   scale: 14 },
             { x: -60,  y: 0.1, z: -800,   scale: 14 },
             { x: -60,  y: 0.1, z: -770,   scale: 14 },
-            { x: -60,  y: 0.1, z: -730,   scale: 14 },
-            { x: -60,  y: 0.1, z: -700,   scale: 14 },
+            { x: -60,  y: 0.1, z: -735,   scale: 14 },
+            { x: -60,  y: 0.1, z: -705,   scale: 14 },
+            { x: -60,  y: 0.1, z: -685,   scale: 14 },
+            { x: -60,  y: 0.1, z: -665,   scale: 14 },
 
             // Top Serial 
             { x: 40,  y: 0.1, z: -1250,   scale: 15 },
@@ -348,7 +427,9 @@
             { x: 40,  y: 0.1, z: -800,   scale: 14 },
             { x: 40,  y: 0.1, z: -770,   scale: 14 },
             { x: 40,  y: 0.1, z: -730,   scale: 14 },
-            { x: 40,  y: 0.1, z: -700,   scale: 14 },
+            { x: 40,  y: 0.1, z: -710,   scale: 14 },
+            { x: 40,  y: 0.1, z: -690,   scale: 14 },
+            { x: 40,  y: 0.1, z: -670,   scale: 14 },
             // Top Serial 
             { x: 110,  y: 0.1, z: -1250,   scale: 15 },
             { x: 110,  y: 0.1, z: -1280,   scale: 16 },
@@ -366,6 +447,8 @@
             { x: 110,  y: 0.1, z: -770,   scale: 14 },
             { x: 110,  y: 0.1, z: -730,   scale: 14 },
             { x: 110,  y: 0.1, z: -700,   scale: 14 },
+            { x: 110,  y: 0.1, z: -680,   scale: 14 },
+            { x: 110,  y: 0.1, z: -660,   scale: 14 },
             // Top Serial 
             { x: 150,  y: 0.1, z: -1250,   scale: 15 },
             { x: 150,  y: 0.1, z: -1280,   scale: 16 },
@@ -1774,31 +1857,30 @@
 
             // Orbit Controls (Lightning Fast Interaction)
             controls = new THREE.OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true;
-            controls.dampingFactor = 0.15; // Smoother natural damping
-            controls.rotateSpeed = 1.2;   
-            controls.zoomSpeed = 1.2;     
-            controls.panSpeed = 1.2;      
-            controls.minDistance = 50; // Distance constraints to keep land in view
-            controls.maxDistance = 2500; // Prevent zooming out too far into the sky
-            controls.maxPolarAngle = Math.PI / 2.15; // Lower angle to keep ground filling the horizon
+            controls.enableDamping = false; // Disabled damping so it stops immediately when you let go
+            controls.rotateSpeed = 0.8;
+            controls.zoomSpeed = 1.2;
+            controls.panSpeed = 1.0;
+            controls.minDistance = 10; 
+            controls.maxDistance = 2500;
+            controls.maxPolarAngle = Math.PI / 2.15; 
             controls.minPolarAngle = 0;
-            controls.screenSpacePanning = false; // Disable screen space panning to keep target on ground
-            controls.target.set(10, 15, -100); // Initial target
+            controls.screenSpacePanning = false; 
+            controls.target.set( 0, 0, 0); 
 
             // Ground Land
-            const ground = new THREE.PlaneGeometry(14000, 14000);
-            const groundMaterial = new THREE.MeshBasicMaterial({
-                color: 0x187C19,
-                side: THREE.DoubleSide,
-                polygonOffset: true,
-                polygonOffsetFactor: 10,
-                polygonOffsetUnits: 10
-            });
-            const groundMesh = new THREE.Mesh(ground, groundMaterial);
-            groundMesh.rotation.x = -Math.PI / 2;
-            groundMesh.position.y = -0.1;
-            scene.add(groundMesh);
+            // const ground = new THREE.PlaneGeometry(14000, 14000);
+            // const groundMaterial = new THREE.MeshBasicMaterial({
+            //     color: 0x187C19,
+            //     side: THREE.DoubleSide,
+            //     polygonOffset: true,
+            //     polygonOffsetFactor: 10,
+            //     polygonOffsetUnits: 10
+            // });
+            // const groundMesh = new THREE.Mesh(ground, groundMaterial);
+            // groundMesh.rotation.x = -Math.PI / 2;
+            // groundMesh.position.y = -0.1;
+            // scene.add(groundMesh);
 
             // --- Enhanced Night Sky Setup ---
             nightSkyGroup = new THREE.Group();
@@ -2530,6 +2612,52 @@
                 hRotate:0,
                 houseOX: -450, houseOZ: 900,
                 houseAreaRotation:90,
+            });
+
+            // ADDING THE CUSTOM BUILDING FROM customeHouseBuilding.html
+            const customBuildingGroup = new THREE.Group();
+            customBuildingGroup.position.set(-200, 0, 550); // Near the roadside/flag area
+            scene.add(customBuildingGroup);
+
+            createHouseCluster(customBuildingGroup, {
+                innerGapScale: { x: 1, y: .5 },
+                outerGapScale: .5,
+                serialCount: 16,
+                startX: 0,
+                startZ: 0,
+                unitSpacing: 6,
+                houseGap: 40,
+                rowSpacing: 10,
+                startId: 2,
+                clusterName: "CUSTOM-CLUSTER",
+                hasPool: true,
+                carCount: 2,
+                hasPlayground: true,
+                singleRow: true,
+                hDepth: 400,
+                hWidth: 350,
+                basePlotW: 300,
+                basePlotD: 250,
+                hasWing: false,
+                hFloorH: 40,
+                houseOX: 0,
+                houseOZ: 0,
+                poolOX: -550,
+                poolOZ: -550,
+                poolW: 100,
+                poolL: 260,
+                carOX: 300,
+                carOZ: 200,
+                playOX: -350,
+                playOZ: 450,
+                carW: 100,
+                carL: 260, 
+                rotation: 0,
+                houseDesign: 'customV3',
+                hScale:6,
+                hRotate:90,
+                houseOX: 350, houseOZ: 400,
+                houseAreaRotation:0,
             });
 
             // Shared materials for all roads
@@ -4895,6 +5023,146 @@
             return bGrp;
         }
 
+        function createFancyBuildingV3(parent, hScale = 1) {
+            // Check cache for identical hScale
+            const cacheKey = `fancyV3_${hScale}`;
+            if (houseMeshCache.has(cacheKey)) {
+                const cachedBGrp = houseMeshCache.get(cacheKey).clone();
+                parent.add(cachedBGrp);
+                return cachedBGrp;
+            }
+
+            const bGrp = new THREE.Group();
+            const finalScale = 13 * hScale;
+            bGrp.scale.set(finalScale, finalScale, finalScale);
+            bGrp.position.y = 0.1;
+            parent.add(bGrp);
+
+            const mergeRegistry = new Map();
+            const collect = (mesh) => {
+                if (!mesh.isMesh) return;
+                const mat = mesh.material;
+                const mKey = mat.uuid;
+                if (!mergeRegistry.has(mKey)) mergeRegistry.set(mKey, { mat: mat, geos: [] });
+                
+                let g = mesh.geometry.clone();
+                g.applyMatrix4(mesh.matrixWorld);
+                if (g.index) g = g.toNonIndexed();
+                if (!g.attributes.uv) {
+                    const uvs = new Float32Array(g.attributes.position.count * 2);
+                    g.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+                }
+                if (!g.attributes.normal) g.computeVertexNormals();
+                const skip = ['position', 'normal', 'uv'];
+                Object.keys(g.attributes).forEach(name => {
+                    if (!skip.includes(name)) g.deleteAttribute(name);
+                });
+                mergeRegistry.get(mKey).geos.push(g);
+            };
+
+            const tempParent = new THREE.Group();
+            
+            // Logic from customeHouseBuilding.html
+            srv2_createBeamSet(tempParent, { dist: 6, h: 8, w: 0.4 });
+            srv2_createBeamSet(tempParent, { x: 0, y: 0, z: -10.2, dist: 6, h: 8, w: 0.4, count: 4 });
+
+            // Ground floor
+            srv2_createFloor(tempParent, { x: 0, z: -5.1, y: 0, w: 16.8, d: 6.6, color: 0xfcf286, ry: Math.PI / 2 });
+            srv2_createWall(tempParent, { x: 3, z: 0, w: 6, h: 4, ry: Math.PI / 2, color: 0xb8aaa6 });
+            srv2_createWall(tempParent, { x: 3, z: -10.2, w: 5.8, h: 4, ry: Math.PI / 2, color: 0xb8aaa6 });
+            srv2_createWall(tempParent, { x: 0, y: 0, z: -3, w: 6, h: 4, color: 0xb8aaa6 });
+            srv2_createWall(tempParent, { x: 0, y: 0, z: -7, w: 6, h: 4, color: 0xb8aaa6 });
+            srv2_createWall(tempParent, { x: 0, y: 0, z: -13.2, w: 6, h: 4, color: 0xb8aaa6 });
+            srv2_createWall(tempParent, { x: -3, z: -5.1, w: 16.4, h: 8, ry: Math.PI / 2, color: 0xb8aaa6 });
+            srv2_createWall(tempParent, { x: 0, z: 3, w: 6, h: 4, color: 0xb8aaa6 });
+            srv2_createDoor(tempParent, { x: 3.2, y: .5, z: 0, w: 1.2, h: 2.2, ry: Math.PI / 2, isOpen: false });
+            srv2_createDoor(tempParent, { x: 3.2, y: .5, z: -10.2, w: 1.2, h: 2.2, ry: Math.PI / 2, isOpen: false });
+
+            // Floor two
+            srv2_createWall(tempParent, { x: 3, y: 4, z: -10.2, w: 6, h: 4, ry: Math.PI / 2, color: 0xb8aaa6 });
+            srv2_createWall(tempParent, { x: 0, y: 4, z: -7.2, w: 6, h: 4, color: 0xb8aaa6 });
+            srv2_createWall(tempParent, { x: 0, y: 4, z: -13.2, w: 6, h: 4, color: 0xb8aaa6 });
+            srv2_createWall(tempParent, { x: 3, z: 0, y: 4, w: 6, h: 4, ry: Math.PI / 2, color: 0xb8aaa6 });
+            srv2_createWall(tempParent, { x: 0, y: 4, z: -3, w: 6, h: 4, color: 0xb8aaa6 });
+            srv2_createWall(tempParent, { x: -3, z: -2, y: 4, w: 10, h: 4, ry: Math.PI / 2, color: 0xb8aaa6 });
+            srv2_createWall(tempParent, { x: 0, z: 3, y: 4, w: 6, h: 4, color: 0xb8aaa6 });
+            srv2_createWall(tempParent, { x: -1.5, z: -7.2, y: 4, w: 3, h: 4, color: 0xb8aaa6 });
+            srv2_createWall(tempParent, { x: 0, z: -5.2, y: 4, w: 4.5, h: 4, ry: Math.PI / 2, color: 0xb8aaa6 });
+            srv2_createFloor(tempParent, { x: 0, y: 4, z: -5.1, w: 16.8, d: 6.6, color: 0xfcf286, ry: Math.PI / 2 });
+            srv2_createFloor(tempParent, { x: 0, y: 8, z: -10.2, w: 6.5, d: 6.6, color: 0xfcf286, ry: Math.PI / 2 });
+            srv2_createDoor(tempParent, { x: 3.2, y: 4.3, z: 0, w: 1.2, h: 2.2, ry: Math.PI / 2, isOpen: true });
+            srv2_createDoor(tempParent, { x: 3.2, y: 4.3, z: -10.2, w: 1.2, h: 2.2, ry: Math.PI / 2, isOpen: true });
+            srv2_createDoor(tempParent, { x: 0.2, y: 4.3, z: -5.2, w: 1.2, h: 2.2, ry: Math.PI / 2, isOpen: false });
+
+            // Furniture
+            srv2_createBed(tempParent, { x: -1.5, y: 4, z: -1.5, w: 2, d: 2.5 });
+            srv2_createTable(tempParent, { x: 1.5, y: 4, z: -6.5, w: 1, d: 0.8 });
+            srv2_createChair(tempParent, { x: 1.5, y: 4, z: -6.0, ry: Math.PI });
+            srv2_createTV(tempParent, { x: -1.5, y: 4.8, z: 2, ry: Math.PI });
+            srv2_createLight(tempParent, { x: 0, y: 7.8, z: 0 });
+
+            // Main Gate Area
+            srv2_createFloor(tempParent, { x: 5.2, y: 4, z: -5.1, w: 4.6, d: 4.2, ry: Math.PI / 2 });
+            srv2_createFloor(tempParent, { x: 5.2, y: 0, z: -5.1, w: 4.6, d: 4.2, ry: Math.PI / 2 });
+            srv2_createBeamSet(tempParent, { x: 7, y: 0, z: -5.1, dist: 4, h: 8.2, w: 0.4, count: 2, style: 'Y' });
+            srv2_createRoof(tempParent, { x: 5.2, z: -5.1, y: 8.2, w: 4.8, d: 4.8, h: 2, ry: Math.PI / 2, faces: 40, style: 'flat',color:'0xACAD99' });
+            srv2_createWall(tempParent, { x: 3, z: -5.2, w: 5.8, h: 4, ry: Math.PI / 2, color: 0xb8aaa6 });
+            srv2_createMainDoor(tempParent, { x: 3.12, y: 0, z: -5.2, w: 2.6, h: 2.6, ry: Math.PI / 2, isOpen: false });
+
+            // Stylish Fences
+            srv2_createWoodGril(tempParent, { x: 5.0, y: 4.15, z: -3.1, w: 4, h: 1.2, startPost: false, midPost: true, endPost: false });
+            srv2_createWoodGril(tempParent, { x: 7.0, y: 4.15, z: -5.2, w: 4, h: 1.2, ry: -Math.PI / 2, startPost: false, midPost: true, endPost: false });
+            srv2_createWoodGril(tempParent, { x: 7.4, y: 8.15, z: -5.1, w: 4.4, h: 1.2, ry: -Math.PI / 2, startPost: false, midPost: true, endPost: false });
+            srv2_createWoodGril(tempParent, { x: 5.3, y: 8.15, z: -7.3, w: 4, h: 1.2, startPost: true, midPost: true, endPost: true });
+            srv2_createWoodGril(tempParent, { x: 5.3, y: 8.15, z: -3.0, w: 4, h: 1.2, startPost: true, midPost: true, endPost: true });
+            srv2_createWoodGril(tempParent, { x: -3.3, y: 8.15, z: -5.2, w: 15.8, h: 1.2, ry: -Math.PI / 2, startPost: true, midPost: true, endPost: true });
+            srv2_createWoodGril(tempParent, { x: 3.2, y: 8.15, z: -0.2, w: 5.8, h: 1.2, ry: -Math.PI / 2, startPost: false, midPost: true, endPost: true });
+            srv2_createWoodGril(tempParent, { x: 3.2, y: 8.15, z: -10.2, w: 5.8, h: 1.2, ry: -Math.PI / 2, startPost: true, midPost: true, endPost: false });
+            srv2_createWoodGril(tempParent, { x: -.1, y: 8.15, z: 2.8, w: 6.5, h: 1.2, startPost: false, midPost: true, endPost: false });
+            srv2_createWoodGril(tempParent, { x: -.1, y: 8.15, z: -13.2, w: 6.5, h: 1.2, startPost: false, midPost: true, endPost: false });
+
+            // Third Floor
+            srv2_createFloor(tempParent, { x: 0, y: 8, z: 0, w: 6, d: 6.5, color: 0xfcf286, ry: Math.PI / 2 });
+            srv2_createFloor(tempParent, { x: -1.5, y: 8, z: -5.2, w: 4.5, d: 3.5, color: 0xfcf286, ry: Math.PI / 2 });
+            srv2_createStairs(tempParent, { x: 4.2, z: 0, y: 0, ry: -Math.PI / 2, w: 1.8, steps: 3 });
+            srv2_createStairs(tempParent, { x: 4.2, z: -10.2, y: 0, ry: -Math.PI / 2, w: 1.8, steps: 3 });
+
+            // Arched Windows
+            srv2_createFancyWindow(tempParent, { x: 1.0, y: 6.4, z: 3.25, w: 1.2, h: 1.8, hasTree: false });
+            srv2_createFancyWindow(tempParent, { x: 1.0, y: 2.4, z: 3.25, w: 1.2, h: 1.8, hasTree: false });
+            srv2_createFancyWindow(tempParent, { x: 1.0, y: 6.4, z: -13.4, w: 1.2, h: 1.8, hasTree: false });
+            srv2_createFancyWindow(tempParent, { x: 1.0, y: 2.4, z: -13.4, w: 1.2, h: 1.8, hasTree: false });
+            
+            srv2_createBalcony(tempParent, { x: 3.4, y: 4.2, z: 0, w: 3.5, ry: Math.PI / 2 });
+            srv2_createBalcony(tempParent, { x: 3.4, y: 4.2, z: -10.2, w: 3.5, ry: Math.PI / 2 });
+
+            // Roofs
+            srv2_createRoof(tempParent, { x: -0, z: -10.2, y: 8.2, w: 6.8, d: 7.2, ry: Math.PI / 2, style: 'flat',color:'0xACAD99' });
+            srv2_createRoof(tempParent, { x: -0, z: 0, y: 8.2, w: 6.4, d: 7.2, ry: Math.PI / 2, style: 'flat',color:'0xACAD99' });
+            srv2_createRoof(tempParent, { x: -0, z: -4.3, y: 8.2, w: 7.2, d: 9, ry: Math.PI / 1, style: 'flat',color:'0xACAD99' });
+
+            // Pergola
+            srv2_createPergola(tempParent, { x: 1.5, y: 7.5, z: -5.2, w: 2.6, d: 4, color: 0x5d4037 });
+
+            tempParent.updateMatrixWorld(true);
+            tempParent.traverse(collect);
+
+            mergeRegistry.forEach(group => {
+                if (group.geos.length > 0) {
+                    const mergedGeo = THREE.BufferGeometryUtils.mergeBufferGeometries(group.geos);
+                    const mesh = new THREE.Mesh(mergedGeo, group.mat);
+                    mesh.castShadow = true;
+                    mesh.receiveShadow = true;
+                    mesh.matrixAutoUpdate = false;
+                    bGrp.add(mesh);
+                }
+            });
+
+            houseMeshCache.set(cacheKey, bGrp.clone());
+            return bGrp;
+        }
+
+
         // --- PARK EQUIPMENT SYSTEM (srv2) FROM park.html ---
 
         function srv2_createParkBench(parent, config) {
@@ -5649,6 +5917,24 @@
                     poolGroup.add(border_c);
                     house.add(poolGroup);
                 }
+            } else if (houseDesign === 'customV3') {
+                createFancyBuildingV3(building, hScale);
+                if (hasPool) {
+                    const poolGroup = new THREE.Group();
+                    const poolW_c = Math.max(200, plotW * 0.3), poolD_c = Math.max(350, plotD * 0.3), poolH_c = 10;
+                    const poolKey_c = `poolWater_${poolW_c}_${poolD_c}`;
+                    const poolGeo_c = getSharedGeometry(poolKey_c, () => new THREE.BoxGeometry(poolW_c, poolH_c, poolD_c, 12, 1, 12));
+                    poolWaterGeometries.add(poolGeo_c);
+                    const poolMat_c = getSharedMaterial('poolWaterMat', () => new THREE.MeshStandardMaterial({ color: 0x00aaff, roughness: 0.1, metalness: 0.5, transparent: true, opacity: 0.8 }));
+                    const poolWater_c = new THREE.Mesh(poolGeo_c, poolMat_c);
+                    poolWater_c.position.set(poolOX, 0.5, poolOZ);
+                    poolGroup.add(poolWater_c);
+                    const borderGeo_c = getSharedGeometry(`poolBorder_${poolW_c}_${poolD_c}`, () => new THREE.BoxGeometry(poolW_c + 20, 5, poolD_c + 20));
+                    const border_c = new THREE.Mesh(borderGeo_c, getSharedMaterial('poolBorderMat', () => new THREE.MeshStandardMaterial({ color: 0xdddddd })));
+                    border_c.position.set(poolOX, 0.1, poolOZ);
+                    poolGroup.add(border_c);
+                    house.add(poolGroup);
+                }
             } else {
             // Use shared objects for identical buildings
             const baseCacheKey = `houseBase_${houseWidth}_${houseDepth}_${floorH}_${hasWing}_${id}`;
@@ -6276,12 +6562,7 @@
                     evenRow.add(unitGroup);
                 }
 
-                // Add tree at the front side of the house area
-                const tree = createTree();
-                // Front side of row. 
-                const treeZ = (serialNum % 2 !== 0) ? -rowSpacing * 0.4 : rowSpacing + rowSpacing * 0.4;
-                tree.position.set(unitGroup.position.x + 2.5, 0, treeZ);
-                housesGroup.add(tree);
+                // Removed extra tree at the front side of the house area
             }
 
             return bunchGroup;
