@@ -163,7 +163,7 @@
         }
 
         function createWall(config) {
-            const { w = 5, h = 3, t = 0.2, color = 0xffffff, useTexture = false, textureUrl = '', bumpScale = 0.05 } = config;
+            const { w = 5, h = 3, t = 0.2, color = 0xB8AAA6, useTexture = false, textureUrl = '', bumpScale = 0.05 } = config;
             const geometry = new THREE.BoxGeometry(w, h, t);
             const material = new THREE.MeshStandardMaterial({
                 color: color,
@@ -178,15 +178,8 @@
         }
 
         function createFloor(config) {
-            const { w = 5, d = 5, t = 0.15, color = 0xcccccc, useTexture = false, style = 'square' } = config;
-            
-            let geometry;
-            if (style === 'circle') {
-                geometry = new THREE.CylinderGeometry(Math.max(w, d) / 2, Math.max(w, d) / 2, t, 32);
-            } else {
-                geometry = new THREE.BoxGeometry(w, t, d);
-            }
-            
+            const { w = 5, d = 5, t = 0.15, color = 0xBBA990, useTexture = false } = config;
+            const geometry = new THREE.BoxGeometry(w, t, d);
             const material = new THREE.MeshStandardMaterial({
                 color: color,
                 roughness: useTexture ? 0.8 : 0.4,
@@ -585,7 +578,7 @@
                     const pz = count === 1 ? 0 : -dist / 2 + (i / (count - 1)) * dist;
                     positions.push({ px: 0, pz: pz });
                 }
-            } else if (count === 4 && style !== 'circle') {
+            } else if (count === 4) {
                 // Default square corners
                 positions = [{ px: -dist / 2, pz: -dist / 2 }, { px: dist / 2, pz: -dist / 2 }, { px: -dist / 2, pz: dist / 2 }, { px: dist / 2, pz: dist / 2 }];
             } else {
@@ -600,7 +593,7 @@
             }
 
             positions.forEach(pos => {
-                const geo = (isCircle || style === 'circle') ? new THREE.CylinderGeometry(w / 2, w / 2, h, 16) : new THREE.BoxGeometry(w, h, w);
+                const geo = isCircle ? new THREE.CylinderGeometry(w / 2, w / 2, h, 16) : new THREE.BoxGeometry(w, h, w);
                 const beam = new THREE.Mesh(geo, mat);
                 beam.position.set(pos.px, h / 2, pos.pz);
                 beam.castShadow = true;
@@ -674,7 +667,7 @@
         }
 
         function createRoof(config) {
-            const { w = 6, d = 8, h = 2, faces = 2, style = 'pitched', color = 0x8b0000 } = config;
+            const { w = 6, d = 8, h = 2, faces = 2, style = 'pitched', color = 0xACAD99 } = config;
             const group = new THREE.Group();
             
             let actualFaces = faces;
@@ -700,83 +693,42 @@
                         return s;
                     };
                     
-                    if (actualFaces >= 3) {
-                        // 3 or more faced pitched roof (Hip/Pyramid/Cone Roof)
+                    if (actualFaces >= 4) {
+                        // 4-faced pitched roof (Hip Roof)
                         const oW = w + 1.0; 
                         const oD = d + 1.0;
-                        const oMaxSize = Math.max(oW, oD);
                         
-                        let coneRadius = (oMaxSize / 2);
-                        if (actualFaces === 4) {
-                            coneRadius *= Math.sqrt(2);
-                        } else {
-                            coneRadius *= 1.15; // standard overhang ratio
-                        }
-                        
-                        // Dynamic Slab based on faces
-                        let slab;
-                        if (actualFaces === 4) {
-                            slab = new THREE.Mesh(new THREE.BoxGeometry(oW, 0.1, oD), roofMat);
-                        } else {
-                            slab = new THREE.Mesh(new THREE.CylinderGeometry(coneRadius, coneRadius, 0.1, actualFaces), roofMat);
-                            if (actualFaces === 3) slab.rotation.y = Math.PI / 2;
-                        }
+                        const slab = new THREE.Mesh(new THREE.BoxGeometry(oW, 0.1, oD), roofMat);
                         group.add(slab);
 
-                        const cone = new THREE.Mesh(new THREE.ConeGeometry(coneRadius, h, actualFaces), roofMat);
-                        if (actualFaces === 4) {
-                            cone.rotation.y = Math.PI / 4;
-                        } else if (actualFaces === 3) {
-                            cone.rotation.y = Math.PI / 2;
-                        }
-                        
+                        const oMaxSize = Math.max(oW, oD);
+                        const coneRadius = (oMaxSize / 2) * Math.sqrt(2);
+                        const cone = new THREE.Mesh(new THREE.ConeGeometry(coneRadius, h, 4), roofMat);
+                        cone.rotation.y = Math.PI / 4;
                         cone.position.y = h / 2 + 0.05;
-                        
-                        // Apply scaling to match exact width/depth
-                        const scaleX = oW / oMaxSize;
-                        const scaleZ = oD / oMaxSize;
-                        cone.scale.set(scaleX, 1, scaleZ);
-                        if (actualFaces !== 4) {
-                            slab.scale.set(scaleX, 1, scaleZ);
-                        }
-                        
+                        cone.scale.set(oW / oMaxSize, 1, oD / oMaxSize);
                         group.add(cone);
 
-                        // --- Dynamic Roof Seams for ANY Polygon ---
-                        const apex = new THREE.Vector3(0, h + 0.05, 0);
-                        const applyTransform = (vx, vz) => {
-                            const v = new THREE.Vector3(vx, 0.05, vz);
-                            v.applyAxisAngle(new THREE.Vector3(0, 1, 0), cone.rotation.y);
-                            v.x *= scaleX;
-                            v.z *= scaleZ;
-                            return v;
+                        const addFaceSeams = (w_side, startZ, isXAxis) => {
+                            const seams = new THREE.Group();
+                            const numSeams = 12;
+                            for (let i = 0; i <= numSeams; i++) {
+                                const p = -w_side / 2 + (i / numSeams) * w_side;
+                                const start = isXAxis ? new THREE.Vector3(p, 0.05, startZ) : new THREE.Vector3(startZ, 0.05, p);
+                                const end = new THREE.Vector3(0, h + 0.05, 0);
+                                const dist = start.distanceTo(end);
+                                const seam = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, dist, 6), roofMat);
+                                seam.position.copy(start).lerp(end, 0.5);
+                                seam.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), end.clone().sub(start).normalize());
+                                seams.add(seam);
+                            }
+                            return seams;
                         };
 
-                        const numSeamsPerFace = Math.max(2, Math.floor(48 / actualFaces));
-                        for (let i = 0; i < actualFaces; i++) {
-                            const theta1 = i * 2 * Math.PI / actualFaces;
-                            const theta2 = (i + 1) * 2 * Math.PI / actualFaces;
-                            
-                            const v1 = applyTransform(coneRadius * Math.sin(theta1), coneRadius * Math.cos(theta1));
-                            const v2 = applyTransform(coneRadius * Math.sin(theta2), coneRadius * Math.cos(theta2));
-                            
-                            const apexOut = apex.clone();
-                            apexOut.y += 0.03; 
-                            
-                            for (let j = 0; j <= numSeamsPerFace; j++) {
-                                if (j === numSeamsPerFace && i !== actualFaces - 1) continue; 
-                                
-                                const basePoint = v1.clone().lerp(v2, j / numSeamsPerFace);
-                                basePoint.x *= 1.02;
-                                basePoint.z *= 1.02;
-                                
-                                const dist = basePoint.distanceTo(apexOut);
-                                const seam = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, dist, 4), roofMat);
-                                seam.position.copy(basePoint).lerp(apexOut, 0.5);
-                                seam.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), apexOut.clone().sub(basePoint).normalize());
-                                group.add(seam);
-                            }
-                        }
+                        group.add(addFaceSeams(oW, oD / 2, true));
+                        group.add(addFaceSeams(oW, -oD / 2, true));
+                        group.add(addFaceSeams(oD, oW / 2, false));
+                        group.add(addFaceSeams(oD, -oW / 2, false));
                     } else {
                         // Standard 2-faced pitched roof
                         group.add(createS(Math.PI / 6, -w / 4, w, d));
@@ -814,7 +766,7 @@
         }
 
         function createGable(config) {
-            const { w = 6, h = 1.5, t = 0.2, color = 0xeee8aa } = config;
+            const { w = 6, h = 1.5, t = 0.2, color = 0xb8aaa6 } = config;
             const group = new THREE.Group();
             
             const shape = new THREE.Shape();
@@ -873,7 +825,7 @@
         }
 
         function createWallVine(config) {
-            const { h = 2, w = 1.5, depth = 0.3, leafColor = 0x2d5a27, stemColor = 0x4d2a1a } = config;
+            const { h = 2, w = 1.5, depth = 0.3, leafColor = 0xBBA990, stemColor = 0x4d2a1a } = config;
             const group = new THREE.Group();
             
             const leafMat = new THREE.MeshStandardMaterial({ color: leafColor, roughness: 0.8 });
@@ -1010,38 +962,24 @@
         }
 
         function createTable(config) {
-            const { w = 1.2, d = 0.8, h = 0.75, style = 'square' } = config;
+            const { w = 1.2, d = 0.8, h = 0.75 } = config;
             const group = new THREE.Group();
             const mat = new THREE.MeshStandardMaterial({ color: 0x4d2a1a });
-            
-            if (style === 'circle') {
-                const radius = Math.max(w, d) / 2;
-                const top = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, 0.05, 32), mat);
-                top.position.y = h;
-                group.add(top);
-                
-                const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.15, h, 16), mat);
-                leg.position.y = h / 2;
+            // Top
+            const top = new THREE.Mesh(new THREE.BoxGeometry(w, 0.05, d), mat);
+            top.position.y = h;
+            group.add(top);
+            // Legs
+            const legGeo = new THREE.BoxGeometry(0.08, h, 0.08);
+            const createLeg = (lx, lz) => {
+                const leg = new THREE.Mesh(legGeo, mat);
+                leg.position.set(lx, h/2, lz);
                 group.add(leg);
-                
-                const base = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.05, 16), mat);
-                base.position.y = 0.025;
-                group.add(base);
-            } else {
-                const top = new THREE.Mesh(new THREE.BoxGeometry(w, 0.05, d), mat);
-                top.position.y = h;
-                group.add(top);
-                const legGeo = new THREE.BoxGeometry(0.08, h, 0.08);
-                const createLeg = (lx, lz) => {
-                    const leg = new THREE.Mesh(legGeo, mat);
-                    leg.position.set(lx, h/2, lz);
-                    group.add(leg);
-                };
-                createLeg(-w/2 + 0.1, -d/2 + 0.1);
-                createLeg(w/2 - 0.1, -d/2 + 0.1);
-                createLeg(-w/2 + 0.1, d/2 - 0.1);
-                createLeg(w/2 - 0.1, d/2 - 0.1);
-            }
+            };
+            createLeg(-w/2 + 0.1, -d/2 + 0.1);
+            createLeg(w/2 - 0.1, -d/2 + 0.1);
+            createLeg(-w/2 + 0.1, d/2 - 0.1);
+            createLeg(w/2 - 0.1, d/2 - 0.1);
 
             return finalizeMesh(group, layers.furniture, config);
         }
@@ -1090,6 +1028,182 @@
 
             return finalizeMesh(group, layers.furniture, config);
         }
+
+        function createStoreFront(config) {
+            const { w = 4, h = 3.5, frameT = 0.12, color = 0x222222 } = config;
+            const group = new THREE.Group();
+            
+            const frameMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.2, metalness: 0.8 });
+            const glassMat = new THREE.MeshStandardMaterial({ 
+                color: 0x88ccff, 
+                transparent: true, 
+                opacity: 0.3, 
+                metalness: 0.95, 
+                roughness: 0.05 
+            });
+
+            // Frame
+            const createPart = (fw, fh, fd, px, py, pz) => {
+                const mesh = new THREE.Mesh(new THREE.BoxGeometry(fw, fh, fd), frameMat);
+                mesh.position.set(px, py, pz);
+                group.add(mesh);
+            };
+
+            // Outer Frame
+            createPart(w, frameT, 0.3, 0, h - frameT/2, 0); // Top
+            createPart(w, frameT, 0.3, 0, frameT/2, 0); // Bottom
+            createPart(frameT, h, 0.3, -w/2 + frameT/2, h/2, 0); // Left
+            createPart(frameT, h, 0.3, w/2 - frameT/2, h/2, 0); // Right
+
+            // Mullions
+            createPart(frameT * 0.8, h - frameT * 2, 0.2, 0, h/2, 0); // Vertical
+            createPart(w - frameT * 2, frameT * 0.5, 0.2, 0, h * 0.7, 0); // Horizontal
+
+            // Glass
+            const glass = new THREE.Mesh(new THREE.BoxGeometry(w - frameT*2, h - frameT*2, 0.05), glassMat);
+            glass.position.set(0, h/2, 0);
+            group.add(glass);
+
+            return finalizeMesh(group, layers.windows, config);
+        }
+
+        function createSignboard(config) {
+            const { w = 4, h = 1, d = 0.4, text = 'MARKET', color = 0xef4444, fontSize = 60, intensity = 1.2 } = config;
+            const group = new THREE.Group();
+            
+            // 1. Physical Board
+            const boardMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.4, metalness: 0.6 });
+            const board = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), boardMat);
+            board.position.y = h/2;
+            group.add(board);
+
+            // 2. Dynamic Text via Canvas
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 512;
+            canvas.height = 128;
+            
+            // Draw background
+            ctx.fillStyle = '#' + new THREE.Color(color).offsetHSL(0, 0, -0.1).getHexString();
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw border
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 10;
+            ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
+
+            // Draw text
+            ctx.fillStyle = 'white';
+            ctx.font = `bold ${fontSize}px "Inter", sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
+            ctx.shadowBlur = 10;
+            ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const textMat = new THREE.MeshStandardMaterial({ 
+                map: texture,
+                emissive: 0xffffff,
+                emissiveMap: texture,
+                emissiveIntensity: intensity,
+                transparent: true
+            });
+
+            // 3. Text Planes
+            const planeGeo = new THREE.PlaneGeometry(w * 0.95, h * 0.85);
+            
+            const frontPlane = new THREE.Mesh(planeGeo, textMat);
+            frontPlane.position.set(0, h/2, d/2 + 0.02);
+            group.add(frontPlane);
+
+            const backPlane = frontPlane.clone();
+            backPlane.rotation.y = Math.PI;
+            backPlane.position.z = -d/2 - 0.02;
+            group.add(backPlane);
+
+            // 4. Glow Light (Now using custom intensity)
+            const signLight = new THREE.PointLight(0xffffff, intensity * 0.3, w * 2);
+            signLight.position.set(0, h/2, d/2 + 0.4);
+            group.add(signLight);
+
+            return finalizeMesh(group, layers.walls, config);
+        }
+
+
+
+
+        function createAwning(config) {
+            const { w = 4, d = 2.2, color1 = 0xef4444, color2 = 0xffffff } = config;
+            const group = new THREE.Group();
+            
+            const angle = Math.PI / 8;
+            const stripCount = 14;
+            const stripW = w / stripCount;
+
+            for(let i = 0; i < stripCount; i++) {
+                const mat = new THREE.MeshStandardMaterial({ 
+                    color: i % 2 === 0 ? color1 : color2,
+                    roughness: 0.9
+                });
+                const strip = new THREE.Mesh(new THREE.BoxGeometry(stripW, 0.1, d), mat);
+                
+                // Pivot at the top edge
+                strip.geometry.translate(0, 0, d/2);
+                strip.rotation.x = angle;
+                strip.position.set(-w/2 + i * stripW + stripW/2, 0, 0);
+                group.add(strip);
+            }
+
+            // Side panels
+            const sideShape = new THREE.Shape();
+            sideShape.moveTo(0, 0);
+            sideShape.lineTo(0, -0.5);
+            sideShape.lineTo(d * Math.cos(angle), -0.5 - d * Math.sin(angle));
+            sideShape.lineTo(d * Math.cos(angle), -d * Math.sin(angle));
+            sideShape.lineTo(0, 0);
+
+            const sideMat = new THREE.MeshStandardMaterial({ color: color1 });
+            const sideL = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.6, d), sideMat);
+            sideL.rotation.x = angle;
+            sideL.position.set(-w/2, -0.1, d/2 * Math.cos(angle));
+            // group.add(sideL); // Simplified for now
+
+            return finalizeMesh(group, layers.roof, config);
+        }
+
+        function createShelf(config) {
+            const { w = 2.5, h = 3, d = 0.8, levels = 5, color = 0xdddddd } = config;
+            const group = new THREE.Group();
+            const mat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.7 });
+
+            // Back
+            const back = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.1), mat);
+            back.position.set(0, h/2, -d/2);
+            group.add(back);
+
+            // Shelves
+            for(let i = 0; i <= levels; i++) {
+                const shelf = new THREE.Mesh(new THREE.BoxGeometry(w, 0.08, d), mat);
+                shelf.position.y = (i / levels) * (h - 0.2) + 0.1;
+                group.add(shelf);
+                
+                // Random items
+                const items = 6;
+                for(let j = 0; j < items; j++) {
+                    const itemH = 0.2 + Math.random() * 0.3;
+                    const item = new THREE.Mesh(
+                        new THREE.BoxGeometry(0.2, itemH, 0.2),
+                        new THREE.MeshStandardMaterial({ color: Math.random() * 0xffffff })
+                    );
+                    item.position.set(-w/2 + 0.3 + j * (w/items), shelf.position.y + itemH/2 + 0.04, 0);
+                    group.add(item);
+                }
+            }
+
+            return finalizeMesh(group, layers.furniture, config);
+        }
+
 
         function createLight(config) {
             const group = new THREE.Group();
@@ -1173,135 +1287,72 @@
             // Very subtle 3D terrain ripples (0.05 height)
             // createLand({ w: 40, d: 40, useTexture: true, textureUrl: 'assets/images/grass3.png', textureCover: true, displacementScale: 0.05 });
             // Big grassy trenches and sinkholes (0.5 height)
-            createLand({ w: 40, d: 40, useTexture: true, textureUrl: 'assets/images/grass3.png', textureCover: true, displacementScale: 0.02 });
+            createLand({ w: 80, d: 80, useTexture: true, textureUrl: 'assets/images/grass3.png', textureCover: true, displacementScale: 0.02 });
 
-            // Floors with demo rx, ry, rz
-            // createFloor({ x: -1.5, y: 0, z: 0, w: 5.5, d: 7, color: 0x888888, useTexture: true }); 
-            // createFloor({ x: -1.5, y: 3, z: 0, w: 5.5, d: 7, rz: 0.05 }); // Tilted floor demo
-            // createFloor({ x: -1.5, y: 6, z: 0, w: 5.5, d: 7 }); 
-
-            createBeamSet({ dist: 6, h: 8, w: 0.4 });
-            createBeamSet({ x: 0, y: 0, z: -10.2, dist: 6, h: 8, w: 0.4,count: 4, });
-            // createBeamSet({ x: -1.5, y: 0, z: -12, dist: 3, h: 8, w: 0.4,count: 2, });
-            // createBeamSet({ x: 0, y: 0, z: -7.2, dist: 6, h: 4, w: 0.4, count: 1, isCircle: false });
-            // createBeamSet({ x: 0, y: 0, z: -12, dist: 6, h: 8, w: 0.4, count: 1, isCircle: false });
-
-            // Ground floor
-            createFloor({ x: 0,z:-5.1, y: 0, w: 16.8, d: 6.6, color: 0xfcf286, ry: Math.PI / 2 }); // 1st floor=
-            createWall({ x: 3, z: 0, w: 6, h: 4, ry: Math.PI / 2, color: 0xeee8aa });
-            createWall({ x: 3, z: -10.2, w: 5.8, h: 4, ry: Math.PI / 2, color: 0xeee8aa }); // RIGHT PART front WALL
-            createWall({ x: 0, y: 0, z: -3, w: 6, h: 4, color: 0xeee8aa });
-            createWall({ x: 0, y: 0, z: -7, w: 6, h: 4, color: 0xeee8aa }); // right part - left wall 
-            createWall({ x: 0, y: 0, z: -13.2, w: 6, h: 4, color: 0xeee8aa }); // right part - right wall
-            createWall({ x: -3, z: -5.1, w: 16.4, h: 8, ry: Math.PI / 2, color: 0xeee8aa });
-            createWall({ x: 0, z: 3, w: 6, h: 4, color: 0xeee8aa });
-            createDoor({ x: 3.2, y: .5, z: 0, w: 1.2, h: 2.2, ry: Math.PI / 2, isOpen: false });
-            createDoor({ x: 3.2, y: .5, z: -10.2, w: 1.2, h: 2.2, ry: Math.PI / 2, isOpen: false }); // right part
+            // --- MARKET COMPLEX DESIGN ---
             
-            // Floor two
-            createWall({ x: 3,y:4, z: -10.2, w: 6, h: 4, ry: Math.PI / 2, color: 0xeee8aa }); // top front side wall
-            createWall({ x: 0, y: 4, z: -7.2, w: 6, h: 4, color: 0xeee8aa }); // right part - left wall 
-            createWall({ x: 0, y: 4, z: -13.2, w: 6, h: 4, color: 0xeee8aa }); // right part - right wall 
-            createWall({ x: 3, z: 0, y: 4, w: 6, h: 4, ry: Math.PI / 2, color: 0xeee8aa });
-            createWall({ x: 0, y: 4, z: -3, w: 6, h: 4, color: 0xeee8aa });
-            createWall({ x: -3, z: -2, y: 4, w: 10, h: 4, ry: Math.PI / 2, color: 0xeee8aa });
-            createWall({ x: 0, z: 3, y: 4, w: 6, h: 4, color: 0xeee8aa });
-            createWall({ x: -1.5, z: -7.2, y: 4, w: 3, h: 4, color: 0xeee8aa });
-            createWall({ x: 0, z: -5.2, y: 4, w: 4.5, h: 4,ry: Math.PI / 2 , color: 0xeee8aa });
-            createFloor({ x: 0, y: 4, z:-5.1, w: 16.8, d: 6.6, color: 0xfcf286, ry: Math.PI / 2 }); // 2nd floor
-            createFloor({ x: 0, y: 8, z:-10.2, w: 6.5, d: 6.6, color: 0xfcf286, ry: Math.PI / 2 }); // 2nd floor right part
-            createDoor({ x: 3.2, y: 4.3, z: 0, w: 1.2, h: 2.2, ry: Math.PI / 2, isOpen: true });
-            createDoor({ x: 3.2, y: 4.3, z: -10.2, w: 1.2, h: 2.2, ry: Math.PI / 2, isOpen: true });
-            createDoor({ x: 0.2, y: 4.3, z: -5.2, w: 1.2, h: 2.2, ry: Math.PI / 2, isOpen: false });
+            const shopConfigs = [
+                { text: 'PHARMACY', color: 0x10b981, accent: 0x059669 },
+                { text: 'BAKERY', color: 0xf59e0b, accent: 0xd97706 },
+                { text: 'CAFE', color: 0x6366f1, accent: 0x4f46e5 },
+                { text: 'GROCERY', color: 0xef4444, accent: 0xdc2626 },
+                { text: 'FASHION', color: 0xec4899, accent: 0xdb2777 },
+                { text: 'GADGETS', color: 0x3b82f6, accent: 0x2563eb }
+            ];
+
+            const shopW = 6;
+            const complexLength = shopConfigs.length * shopW;
+            const startZ = -(complexLength / 2) + shopW / 2;
+
+            // Main Market Foundation & Structure
+            createFloor({ x: 0, z: 0, y: 0.01, w: complexLength + 4, d: 10, color: 0x444444, ry: Math.PI / 2 }); // Pavement + Internal floor
+            createWall({ x: -3, z: 0, w: complexLength + 2, h: 5, ry: Math.PI / 2, color: 0xdddddd }); // Long Back wall
+            createWall({ x: 0, y: 0, z: complexLength / 2 + 1, w: 6, h: 5, color: 0xcccccc }); // Side wall Left
+            createWall({ x: 0, y: 0, z: -complexLength / 2 - 1, w: 6, h: 5, color: 0xcccccc }); // Side wall Right
             
-            // Second Floor Interior Furniture
-            createBed({ x: -1.5, y: 4, z: -1.5, w: 2, d: 2.5 });
-            createTable({ x: 1.5, y: 4, z: -6.5, w: 1, d: 0.8 });
-            createChair({ x: 1.5, y: 4, z: -6.0, ry: Math.PI });
-            createTV({ x: -1.5, y: 4.8, z: 2, ry: Math.PI }); // TV on the wall
-            createLight({ x: 0, y: 7.8, z: 0 }); // Ceiling light in the middle
+            // Modern Flat Roof with Overhang
+            createRoof({ x: 0, z: 0, y: 5, w: complexLength + 4, d: 8, ry: Math.PI / 2, style: 'flat', color: 0x222222 });
 
-            // Main Gate of House
-            createFloor({ x: 5.2, y: 4, z:-5.1, w: 4.6, d: 4.2, ry: Math.PI / 2 }); // 2nd floor right part  color: 0xfcf286,  useTexture: true,
-            createFloor({ x: 5.2, y: 0, z:-5.1, w: 4.6, d: 4.2, ry: Math.PI / 2 }); // 2nd floor right part  color: 0xfcf286,  useTexture: true,
-            createBeamSet({ x: 7, y: 0, z: -5.1, dist: 4, h: 8.2, w: 0.4, count: 2, style: 'Y' });
-            createRoof({ x: 5.2, z: -5.1, y: 8.2, w: 4.8, d: 4.8, h: 2, ry: Math.PI / 2, faces: 4,style: 'pitched' });
-            createWall({ x: 3, z: -5.2, w: 5.8, h: 4, ry: Math.PI / 2, color: 0xeee8aa }); // Gate Part front WALL
-           
-            // Stylish Premium Main Double Door!
-            createMainDoor({ x: 3.12, y: 0, z: -5.2, w: 2.6, h: 2.6, ry: Math.PI / 2, isOpen: false });
-           
-            // Wood Grills (Premium Fence Style)
-            createWoodGril({ x: 7.0, y: 4.15, z: -5.2, w: 4, h: 1.2, ry: -Math.PI / 2, startPost: false, midPost: true, endPost: false }); // Front ground left
-            createWoodGril({ x: 5.0, y: 4.15, z: -7.1, w: 4, h: 1.2, startPost: false, midPost: true, endPost: false }); // Front ground left
-            createWoodGril({ x: 5.0, y: 4.15, z: -3.1, w: 4, h: 1.2, startPost: false, midPost: true, endPost: false }); // Front ground left
+            // Main Market Name Board (Grand Signage)
+            createSignboard({ x: 4.5, y: 5.2, z: 0, w: 18, h: 2.5, text: 'CITY SQUARE MARKET', color: 0x111111, ry: Math.PI / 2, fontSize: 40, intensity: 0.7 });
 
-
-            
+            // Signboard supports
+            createBeamSet({ x: 4.2, y: 5, z: -7, dist: 0, h: 1.2, w: 0.25, count: 1 });
+            createBeamSet({ x: 4.2, y: 5, z: 7, dist: 0, h: 1.2, w: 0.25, count: 1 });
 
 
 
+            // Instantiate Shop Units in a Row
+            shopConfigs.forEach((config, i) => {
+                const z = startZ + i * shopW;
+                
+                // Storefront (at the front edge x=3)
+                createStoreFront({ x: 3, y: 0, z: z, w: shopW - 0.8, h: 4, ry: Math.PI / 2 });
+                
+                // Signage & Branding
+                createSignboard({ x: 3.3, y: 4, z: z, w: shopW - 1, h: 0.8, text: config.text, color: config.color, ry: Math.PI / 2 });
+                
+                // Protective Awning
+                createAwning({ x: 3.5, y: 4, z: z, w: shopW - 0.5, d: 2, color1: config.accent, color2: 0xffffff, ry: Math.PI / 2 });
+                
+                // Interior Display Shelves
+                createShelf({ x: -1, y: 0, z: z, w: shopW - 2, h: 3, ry: Math.PI / 2 });
+                
+                // Interior Lighting
+                createLight({ x: 0, y: 4.5, z: z });
 
-             
-            createFloor({ x: 0, y: 8, z:0, w: 6, d: 6.5, color: 0xfcf286, ry: Math.PI / 2 }); // 3rd floor
-            // createWall({ x: 0, y: 8, z: 3, w: 6, h: 1, color: 0xeee8aa }); // Main 3rd floor front gap
-            // createWall({ x: 0, y: 8, z: -3, w: 6, h: 1, color: 0xeee8aa }); // Main 3rd floor back gap
+                // Decorative Divider Beams between shops
+                if (i < shopConfigs.length) {
+                    createBeamSet({ x: 3, y: 0, z: z + shopW/2, dist: 0, h: 5, w: 0.3, count: 1 });
+                }
+            });
 
-            createFloor({ x: -1.5, y: 8, z:-5.2, w: 4.5, d: 3.5, color: 0xfcf286, ry: Math.PI / 2 }); // 3rd floor right extend
-            // createWall({ x: -3, y: 8, z: -5.2, w: 4.5, h: 0.6, ry: Math.PI / 2, color: 0xeee8aa }); // Ext wall left
-            // createWall({ x: 0, y: 8, z: -5.2, w: 4.5, h: 0.6, ry: Math.PI / 2, color: 0xeee8aa }); // Ext wall right
-            
-            createStairs({ x: 4.2, z: 0, y: 0, ry: -Math.PI / 2, w: 1.8, steps: 3 });
-            createStairs({ x: 4.2, z: -10.2, y: 0, ry: -Math.PI / 2, w: 1.8, steps: 3 }); // right part 
-            // createWall({ ry: 2,x: -1.5, w: 5.5, h: 9, useTexture: true });
-            // Original window calls commented out as requested
-            // createWindow({ x: 1.0, y: 6, z: 3.3, w: 2, h: 1.5 });
-            // createWindow({ x: 1.0, y: 2, z: 3.3, w: 2, h: 1.5 });
-            // createWindow({ x: 1.0, y: 6, z: -13.5, w: 2, h: 1.5 }); // right part
-            // createWindow({ x: 1.0, y: 2, z: -13.5, w: 2, h: 1.5 }); // right part
-            
-            // New Fancy Majestic Arched Windows: 2 types (Simple and with Flower Bed/Tree)
-            createFancyWindow({ x: 1.0, y: 6.4, z: 3.25, w: 1.2, h: 1.8, hasTree: false }); // Top left (with tree)
-            createFancyWindow({ x: 1.0, y: 2.4, z: 3.25, w: 1.2, h: 1.8, hasTree: false }); // Bottom left (simple)
-            createFancyWindow({ x: 1.0, y: 6.4, z: -13.4, w: 1.2, h: 1.8, hasTree: false }); // Top right (simple)
-            createFancyWindow({ x: 1.0, y: 2.4, z: -13.4, w: 1.2, h: 1.8, hasTree: false }); // Bottom right (with tree)
-            createBalcony({ x:3.4, y: 4.2, z: 0, w: 3.5,ry: Math.PI/2, });
-            createBalcony({ x:3.4, y: 4.2, z: -10.2, w: 3.5,ry: Math.PI/2, });
-            createRoof({ x: -0, z: 0, y: 9, w: 6.4, d: 7.2, ry: Math.PI / 2, style: 'pitched' });
-            createRoof({ x: -0, z: -10.2, y: 9.0, w: 6.8, d: 7.2, ry: Math.PI / 2, style: 'pitched' }); // right part
-            createGable({ x: 3.3, y: 8.1, z: 0, w: 6, h: 1.7, ry: Math.PI / 2 }); // Main gable left part - right
-            createGable({ x: 3.3, y: 8.1, z: -10.2, w: 6, h: 1.7, ry: Math.PI / 2 }); // Main gable right part - right
-            createGable({ x: -3.3, y: 8.1, z: 0, w: 6, h: 1.7, ry: Math.PI / 2 }); // Main gable left part - left
-            createGable({ x: -3.3, y: 8.1, z: -10.2, w: 6, h: 1.7, ry: Math.PI / 2 }); // Main gable right part -left
-
-            createRoof({ x: -1.5, z: -4.3, y: 8.7, w: 3.6, d: 9, ry: Math.PI / 1, style: 'pitched' });
-            createGable({ x: -1.5, y: 8.15, z: -1.5, w: 3.1, h: 0.9 }); // Ext gable front
-            createGable({ x: -1.5, y: 8.15, z: -7.2, w: 3.1, h: 0.9 }); // Ext gable back
-
-
-            // Wall Hanging Vines (Germani Lota Style)
-            createWallVine({ x: 3.5, y: 8.5, z: 2.4, h: 7, w: 1.0, ry: Math.PI / 2 }); // Right wall top
-            
-         
-            // Wood Grill Roof (Pergola) above this area
-            createPergola({ x: 1.5, y: 7.5, z: -5.2, w: 2.6, d: 4, color: 0x5d4037 }); 
-
-
-            // Sawni Start
-            createRoof({ x: 15.2, z: -0.1, y: 4.2, w: 4.8, d: 4.8, h: 2, ry: Math.PI / 2, faces: 18, style: 'pitched' });
-            createBeamSet({ x: 15, y: 0, z: -0.1, dist: 5, h: 4.2, w: 0.4,count: 4,style:'circle' });
-            createFloor({ x: 15, y: 0, z:-0.1, w: 6.5, d: 6.6, color: 0xfcf286, ry: Math.PI / 2,style:'circle' }); 
-
-            createTable({ x: 15, y: 0.2, z: -0.1, w: 2.0, d: 2.0, style: 'circle' });
-            createChair({ x: 15, y: 0.1, z: 1.1, ry: Math.PI }); // Top
-            createChair({ x: 15, y: 0.1, z: -1.3, ry: 0 }); // Bottom
-            createChair({ x: 13.8, y: 0.1, z: -0.1, ry: -Math.PI / 2 }); // Left
-            createChair({ x: 16.2, y: 0.1, z: -0.1, ry: Math.PI / 2 }); // Right
-            // Sawni End
-
-
-
- 
+            // Add some street furniture/vegetation in front
+            for(let i = 0; i < 4; i++) {
+                const pz = -15 + i * 10;
+                createBeamSet({ x: 6, y: 0, z: pz, dist: 0, h: 4, w: 0.15, count: 1, isCircle: true }); // Lampposts
+                createLight({ x: 6, y: 4, z: pz });
+            }
 
             window.addEventListener('resize', onWindowResize);
             document.getElementById('rotSpeed').addEventListener('input', (e) => rotationSpeed = parseFloat(e.target.value));

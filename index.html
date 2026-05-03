@@ -18,6 +18,11 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <!-- Load BufferGeometryUtils -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/BufferGeometryUtils.js"></script>
+    <!-- GSAP for smooth camera transitions and UI animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <!-- Lenis for ultra-smooth scrolling (Removed: Conflicts with 3D OrbitControls and causes lag) -->
+    <!-- <script src="https://cdn.jsdelivr.net/gh/studio-freight/lenis@1.0.19/bundled/lenis.min.js"></script> -->
     <script>
         let scene, camera, renderer, controls, flagObj, lakeObj, river;
         let sr_riverMesh, sr_bankMesh, sr_waterTexture, sr_treeGroup;
@@ -929,6 +934,8 @@
         let fogRevealComplete = false;
         let initialCameraY = null;
 
+
+
         // --- Performance Optimization: Animation Lists ---
         const breathingObjects = [];
 
@@ -1679,12 +1686,15 @@
                             geo: node.geometry,
                             mat: node.material,
                             matrices: [],
+                            originalMeshes: [],
                             castShadow: node.castShadow,
                             receiveShadow: node.receiveShadow,
                             zone: nodeZone
                         });
                     }
-                    meshGroups.get(key).matrices.push(node.matrixWorld.clone());
+                    const gData = meshGroups.get(key);
+                    gData.matrices.push(node.matrixWorld.clone());
+                    gData.originalMeshes.push(node);
                     toRemove.push(node);
                 }
 
@@ -1699,100 +1709,99 @@
             
             collect(scene);
 
-            // 2. Create InstancedMeshes
+            // 2. Create InstancedMeshes (Asynchronously to prevent hang)
+            const keys = Array.from(meshGroups.keys());
+            let currentKeyIndex = 0;
             let instanceCount = 0;
             let groupCount = 0;
-            meshGroups.forEach((data, key) => {
-                const count = data.matrices.length;
-                if (count > 0) {
-                    const iMesh = new THREE.InstancedMesh(data.geo, data.mat, count);
-                    iMesh.castShadow = data.castShadow;
-                    iMesh.receiveShadow = data.receiveShadow;
-                    processedGeometries.add(data.geo);
 
-                    for (let i = 0; i < count; i++) {
-                        iMesh.setMatrixAt(i, data.matrices[i]);
-                    }
-                    
-                    if (data.mat.userData.isLeaf) {
-                        data.mat.onBeforeCompile = (shader) => {
-                            shader.uniforms.uTime = globalUniforms.uTime;
-                            shader.vertexShader = `
-                                uniform float uTime;
-                                ${shader.vertexShader}
-                            `.replace(
-                                '#include <begin_vertex>',
-                                `
-                                #include <begin_vertex>
-                                vec4 worldPos = modelMatrix * instanceMatrix * vec4(position, 1.0);
-                                float wind = sin(worldPos.x * 0.1 + worldPos.z * 0.1 + uTime * 2.0) * 0.15;
-                                transformed.x += wind * (position.y * 0.5);
-                                transformed.y += wind * 0.2;
-                                `
-                            );
-                        };
+            function processBatch() {
+                try {
+                    const batchStartTime = performance.now();
+                    while (currentKeyIndex < keys.length && performance.now() - batchStartTime < 16) { 
+                        const key = keys[currentKeyIndex++];
+                        const data = meshGroups.get(key);
+                        if (!data || !data.geo || !data.mat) continue;
+                        
+                        const count = data.matrices.length;
+                        if (count > 0) {
+                            try {
+                                const iMesh = new THREE.InstancedMesh(data.geo, data.mat, count);
+                                iMesh.castShadow = data.castShadow;
+                                iMesh.receiveShadow = data.receiveShadow;
+                                
+                                for (let i = 0; i < count; i++) {
+                                    iMesh.setMatrixAt(i, data.matrices[i]);
+                                }
+
+                                // Keep original meshes visible until the end of the batch
+                                // data.originalMeshes.forEach(m => { m.visible = false; });
+
+                                if (data.mat.userData && data.mat.userData.isLeaf) {
+                                    const oldOnBefore = data.mat.onBeforeCompile;
+                                    data.mat.onBeforeCompile = (shader) => {
+                                        if (oldOnBefore) oldOnBefore(shader);
+                                        shader.uniforms.uTime = globalUniforms.uTime;
+                                        shader.vertexShader = `
+                                            uniform float uTime;
+                                            ${shader.vertexShader}
+                                        `.replace(
+                                            '#include <begin_vertex>',
+                                            `
+                                            #include <begin_vertex>
+                                            vec4 worldPos = modelMatrix * instanceMatrix * vec4(position, 1.0);
+                                            float wind = sin(worldPos.x * 0.1 + worldPos.z * 0.1 + uTime * 2.0) * 0.15;
+                                            transformed.x += wind * (position.y * 0.5);
+                                            transformed.y += wind * 0.2;
+                                            `
+                                        );
+                                    };
+                                }
+
+                                iMesh.frustumCulled = false; // MUST be false unless computeBoundingBox/Sphere is implemented for all instances
+                                iMesh.instanceMatrix.needsUpdate = true;
+                                iMesh.matrixAutoUpdate = false;
+                                scene.add(iMesh);
+                                
+                                instanceCount += count;
+                                groupCount++;
+                            } catch (innerErr) {
+                                console.warn("Failed to instance group:", key, innerErr);
+                            }
+                        }
                     }
 
-                    iMesh.instanceMatrix.needsUpdate = true;
-                    
-                    // Compute a global bounding box for the entire InstancedMesh to allow efficient GPU frustum culling
-                    if (data.geo.boundingBox === null) data.geo.computeBoundingBox();
-                    const globalBox = new THREE.Box3();
-                    const tempMeshBox = new THREE.Box3();
-                    for (let i = 0; i < count; i++) {
-                        tempMeshBox.copy(data.geo.boundingBox).applyMatrix4(data.matrices[i]);
-                        globalBox.union(tempMeshBox);
+                    if (currentKeyIndex < keys.length) {
+                        setTimeout(processBatch, 4); // Shorter delay for faster background optimization
+                    } else {
+                        finalizeOptimization();
                     }
-                    iMesh.geometry.boundingBox = globalBox;
-                    iMesh.geometry.boundingSphere = globalBox.getBoundingSphere(new THREE.Sphere());
-                    
-                    iMesh.updateMatrix(); 
-                    iMesh.matrixAutoUpdate = false;
-                    iMesh.frustumCulled = true; // Re-enabled with accurate bounding volumes
-                    scene.add(iMesh);
-                    
-                    instanceCount += count;
-                    groupCount++;
+                } catch (e) {
+                    console.error("Optimization batch failed:", e);
+                    finalizeOptimization(); // Try to finish anyway
                 }
-            });
+            }
 
-            // 3. Selective Removal & Disposal
-            // We only remove the meshes, then we need to check parents for emptiness
-            const parentsToCheck = new Set();
-            toRemove.forEach(mesh => {
-                if (mesh.parent) {
-                    parentsToCheck.add(mesh.parent);
-                    mesh.parent.remove(mesh);
+            function finalizeOptimization() {
+                try {
+                    // 3. Selective Removal
+                    toRemove.forEach(mesh => {
+                        if (mesh.parent) mesh.parent.remove(mesh);
+                    });
+
+                    houseMeshCache.clear();
+                    if (typeof breathingObjects !== 'undefined') breathingObjects.length = 0;
+                    window.isSceneOptimized = true;
+                    
+                    console.log(`Optimization complete. Draw calls: ${groupCount}, Meshes: ${instanceCount}`);
+                    if (window.onOptimizationComplete) window.onOptimizationComplete();
+                } catch (e) {
+                    console.error("Finalization failed:", e);
+                    if (window.onOptimizationComplete) window.onOptimizationComplete();
                 }
-                // DANGER: We DO NOT dispose of the mesh geometry here 
-                // because it is being REUSED by the InstancedMesh.
-            });
+            }
 
-            // Clean up empty groups to reclaim CPU memory
-            let groupsRemoved = 0;
-            parentsToCheck.forEach(parent => {
-                if (parent && parent !== scene && parent.children.length === 0) {
-                    let current = parent;
-                    while (current && current.parent && current.children.length === 0 && current !== scene) {
-                        const toDelete = current;
-                        current = current.parent;
-                        current.remove(toDelete);
-                        groupsRemoved++;
-                    }
-                }
-            });
-
-            // Final CPU RAM purge: Clear the houseMeshCache as it is no longer needed after optimization
-            houseMeshCache.clear();
-            
-            // Clear animation arrays to stop CPU-side processing of removed objects
-            if (typeof breathingObjects !== 'undefined') breathingObjects.length = 0;
-            if (typeof animatedLeaves !== 'undefined') animatedLeaves.length = 0;
-            
-            window.isSceneOptimized = true; // Signal render loop to skip CPU animations
-
-            console.log(`Optimization complete in ${(performance.now() - startTime).toFixed(2)}ms.`);
-            console.log(`Result: ${groupCount} draw calls for ${instanceCount} meshes. Replaced ${toRemove.length} nodes. Removed ${groupsRemoved} empty groups.`);
+            processBatch();
         }
 
         function init() {
@@ -1811,6 +1820,7 @@
             // Initialize with dense fog for reveal animation
             scene.fog = new THREE.FogExp2(0x87ceeb, initialFogDensity);
 
+            // Camera near plane restored to 0.1
             camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 14000);
             camera.position.set(10, 150, 150); // Drone high-altitude start
             camera.lookAt(500, 850, 500);
@@ -1845,7 +1855,7 @@
                 powerPreference: "high-performance"
             });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.setPixelRatio(1); // Performance: Cap at 1.0 to prevent hang on 4K screens
             renderer.shadowMap.enabled = true;
             renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Softer shadows than VSM for this style
             renderer.shadowMap.autoUpdate = false; 
@@ -1857,14 +1867,15 @@
 
             // Orbit Controls (Lightning Fast Interaction)
             controls = new THREE.OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = false; // Disabled damping so it stops immediately when you let go
-            controls.rotateSpeed = 0.8;
-            controls.zoomSpeed = 1.2;
-            controls.panSpeed = 1.0;
-            controls.minDistance = 10; 
+            controls.enableDamping = true; 
+            controls.dampingFactor = 0.05; // Weighted momentum like KodeClubs
+            controls.rotateSpeed = 0.7;
+            controls.zoomSpeed = 1.0;
+            controls.panSpeed = 0.8;
+            controls.minDistance = 200; 
             controls.maxDistance = 2500;
-            controls.maxPolarAngle = Math.PI / 2.15; 
-            controls.minPolarAngle = 0;
+            controls.maxPolarAngle = 1.49; // Professional horizon clamp
+            controls.minPolarAngle = 0.52; // Professional top-down clamp
             controls.screenSpacePanning = false; 
             controls.target.set( 0, 0, 0); 
 
@@ -2119,27 +2130,27 @@
 
 
             const subGreenLand1 = new THREE.Group();
-            subGreenLand1.position.set(-20, 0, 5);
+            subGreenLand1.position.set(0, 0, 5);
             cityBlocks.add(subGreenLand1);
 
             const subGreenLand2 = new THREE.Group();
-            subGreenLand2.position.set(-20, 0, 5);
+            subGreenLand2.position.set(0, 0, 5);
             cityBlocks.add(subGreenLand2);
 
             const subGreenLand3 = new THREE.Group();
-            subGreenLand3.position.set(-20, 0, 5);
+            subGreenLand3.position.set(0, 0, 5);
             cityBlocks.add(subGreenLand3);
 
             const subGreenLand4 = new THREE.Group();
-            subGreenLand4.position.set(-20, 0, 5);
+            subGreenLand4.position.set(0, 0, 5);
             cityBlocks.add(subGreenLand4);
 
             const subGreenLand5 = new THREE.Group();
-            subGreenLand5.position.set(-20, 0, 5);
+            subGreenLand5.position.set(0, 0, 5);
             cityBlocks.add(subGreenLand5);
 
             const subGreenLand6 = new THREE.Group();
-            subGreenLand6.position.set(-20, 0, 5);
+            subGreenLand6.position.set(0, 0, 5);
             cityBlocks.add(subGreenLand6);
 
 
@@ -2250,12 +2261,12 @@
 
 
             // Create House Bunches and Clusters synchronously for guaranteed visibility
-            createHouseBunch(subGreenLand6, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 30, startX: 0, startZ: 5, unitSpacing: 16, houseGap: 280, rowSpacing: 25, startId: 1, clusterName: "BUNCH-6", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale:4, hRotate:90 });
-            createHouseBunch(subGreenLand5, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 28, startX: 0, startZ: 60, unitSpacing: 16, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-5", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale:4, hRotate:90 });
-            createHouseBunch(subGreenLand4, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 24, startX: 0, startZ: 115, unitSpacing: 16, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-4", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale:4, hRotate:90 });
-            createHouseBunch(subGreenLand3, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 27, startX: 0, startZ: 170, unitSpacing: 16, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-3", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale:4, hRotate:90 });
-            createHouseBunch(subGreenLand2, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 28, startX: 0, startZ: 225, unitSpacing: 16, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-2", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale:4, hRotate:90 });
-            createHouseBunch(subGreenLand1, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 280, unitSpacing: 16, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-1", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale:4, hRotate:90 });
+            createHouseBunch(subGreenLand6, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 30, startX: 0, startZ: 5, unitSpacing: 20, houseGap: 280, rowSpacing: 25, startId: 1, clusterName: "BUNCH-6", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale:4, hRotate:90 });
+            createHouseBunch(subGreenLand5, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 28, startX: 0, startZ: 60, unitSpacing: 20, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-5", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale:4, hRotate:90 });
+            createHouseBunch(subGreenLand4, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 24, startX: 0, startZ: 115, unitSpacing: 20, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-4", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale:4, hRotate:90 });
+            createHouseBunch(subGreenLand3, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 27, startX: 0, startZ: 170, unitSpacing: 20, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-3", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale:4, hRotate:90 });
+            createHouseBunch(subGreenLand2, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 28, startX: 0, startZ: 225, unitSpacing: 20, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-2", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale:4, hRotate:90 });
+            createHouseBunch(subGreenLand1, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 280, unitSpacing: 15.5, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-1", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale:4, hRotate:90 });
 
             createHouseCluster(subGreenLandCL1, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 23, startId: 2, clusterName: "CLUSTER-1", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale:4, hRotate:90 });
             createHouseCluster(subGreenLandCL2, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 20, startId: 2, clusterName: "CLUSTER-2", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale:4, hRotate:90 });
@@ -2616,49 +2627,49 @@
 
             // ADDING THE CUSTOM BUILDING FROM customeHouseBuilding.html
             const customBuildingGroup = new THREE.Group();
-            customBuildingGroup.position.set(-200, 0, 550); // Near the roadside/flag area
+            customBuildingGroup.position.set(-300, 0, 550); // Near the roadside/flag area
             scene.add(customBuildingGroup);
 
-            createHouseCluster(customBuildingGroup, {
-                innerGapScale: { x: 1, y: .5 },
-                outerGapScale: .5,
-                serialCount: 16,
-                startX: 0,
-                startZ: 0,
-                unitSpacing: 6,
-                houseGap: 40,
-                rowSpacing: 10,
-                startId: 2,
-                clusterName: "CUSTOM-CLUSTER",
-                hasPool: true,
-                carCount: 2,
-                hasPlayground: true,
-                singleRow: true,
-                hDepth: 400,
-                hWidth: 350,
-                basePlotW: 300,
-                basePlotD: 250,
-                hasWing: false,
-                hFloorH: 40,
-                houseOX: 0,
-                houseOZ: 0,
-                poolOX: -550,
-                poolOZ: -550,
-                poolW: 100,
-                poolL: 260,
-                carOX: 300,
-                carOZ: 200,
-                playOX: -350,
-                playOZ: 450,
-                carW: 100,
-                carL: 260, 
-                rotation: 0,
-                houseDesign: 'customV3',
-                hScale:6,
-                hRotate:90,
-                houseOX: 350, houseOZ: 400,
-                houseAreaRotation:0,
-            });
+            // createHouseCluster(customBuildingGroup, {
+            //     innerGapScale: { x: 1, y: .5 },
+            //     outerGapScale: .5,
+            //     serialCount: 16,
+            //     startX: 0,
+            //     startZ: 0,
+            //     unitSpacing: 6,
+            //     houseGap: 40,
+            //     rowSpacing: 10,
+            //     startId: 2,
+            //     clusterName: "CUSTOM-CLUSTER",
+            //     hasPool: true,
+            //     carCount: 2,
+            //     hasPlayground: true,
+            //     singleRow: true,
+            //     hDepth: 400,
+            //     hWidth: 350,
+            //     basePlotW: 300,
+            //     basePlotD: 250,
+            //     hasWing: false,
+            //     hFloorH: 40,
+            //     houseOX: 0,
+            //     houseOZ: 0,
+            //     poolOX: -550,
+            //     poolOZ: -550,
+            //     poolW: 100,
+            //     poolL: 260,
+            //     carOX: 300,
+            //     carOZ: 200,
+            //     playOX: -350,
+            //     playOZ: 450,
+            //     carW: 100,
+            //     carL: 260, 
+            //     rotation: 0,
+            //     houseDesign: 'customV3',
+            //     hScale:6,
+            //     hRotate:90,
+            //     houseOX: 350, houseOZ: 400,
+            //     houseAreaRotation:0,
+            // });
 
             // Shared materials for all roads
             const asphaltBaseMat = getSharedMaterial('asphaltBase', () => new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.9, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 }));
@@ -2670,7 +2681,7 @@
 
                 // Create a group for each road to handle position and rotation together
                 const roadGroup = new THREE.Group();
-                roadGroup.userData.noOptimize = true; // KEEP AS INDIVIDUAL MESH TO PREVENT FRUSTUM CULLING ISSUES WHEN IN WALKING MODE
+                roadGroup.userData.noOptimize = false; // Allow lamp posts and roads to be instanced for massive performance boost
                 scene.add(roadGroup);
 
                 // Check if elevated
@@ -2798,11 +2809,37 @@
                 houseOX: 200,
                 houseOZ: 150,
                 houseDesign: 'custom',
-                hScale:3,
-                hRotate:90,
+                hScale: 3,
+                hRotate: 90,
                 poolOX: -270,
                 carOX: -150,
                 rotation: 90
+            });
+
+            // --- Added Shop Market (Bangla Bosoti Commercial Area) ---
+            createShopMarket({
+                posX: -20, posY: 0.1, posZ: 22,
+                rotY: -180, scale: 1
+            });
+            createShopMarket({
+                posX: -20, posY: 0.1, posZ: 78,
+                rotY: -180, scale: 1
+            });
+            createShopMarket({
+                posX: -20, posY: 0.1, posZ: 135,
+                rotY: -180, scale: 1
+            });
+            createShopMarket({
+                posX: -20, posY: 0.1, posZ: 190,
+                rotY: -180, scale: 1
+            });
+            createShopMarket({
+                posX: -20, posY: 0.1, posZ: 240,
+                rotY: -180, scale: 1
+            });
+            createShopMarket({
+                posX: -20, posY: 0.1, posZ: 300,
+                rotY: -180, scale: 1
             });
             // Zone - A
             createCurveHouseBunch(scene, ROAD_CONFIGS[1], {
@@ -3377,17 +3414,12 @@
 
 
         function sceneRender(time) {
-            requestAnimationFrame(sceneRender);
             const t = time * 0.001;
             globalUniforms.uTime.value = t;
 
             // Only update controls if damping is enabled (performance)
-            if (controls.enableDamping && !isWalkingMode) {
-                controls.update();
-                // Limit panning/movement area to city bounds
-                controls.target.x = THREE.MathUtils.clamp(controls.target.x, CITY_BOUNDS.minX, CITY_BOUNDS.maxX);
-                controls.target.z = THREE.MathUtils.clamp(controls.target.z, CITY_BOUNDS.minZ, CITY_BOUNDS.maxZ);
-            }
+            // Always update controls when not in walking mode for smooth interaction
+            // Removed redundant controls.update() call
 
             flagObj.animateFlag(time);
 
@@ -3453,94 +3485,6 @@
                 sr_waterTexture.offset.y -= 0.00278; // 6-second flow cycle
             }
 
-            // --- Enhanced Gaming Walking Mode Logic ---
-            if (isWalkingMode && agent) {
-                const isSprinting = keys.Shift;
-                const targetSpeed = isSprinting ? walkingConfig.runSpeed : walkingConfig.baseSpeed;
-
-                const inputDirection = new THREE.Vector3();
-                const frontVector = new THREE.Vector3();
-                const sideVector = new THREE.Vector3();
-
-                camera.getWorldDirection(frontVector);
-                frontVector.y = 0;
-                frontVector.normalize();
-                sideVector.copy(frontVector).applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 2);
-
-                const up = keys.w || keys.ArrowUp;
-                const down = keys.s || keys.ArrowDown;
-                const left = keys.a || keys.ArrowLeft;
-                const right = keys.d || keys.ArrowRight;
-
-                if (up) inputDirection.add(frontVector);
-                if (down) inputDirection.sub(frontVector);
-                if (left) inputDirection.add(sideVector);
-                if (right) inputDirection.sub(sideVector);
-
-                // --- Auto-detect View Mode based on Mouse Rotation ---
-                if (cameraSystemConfig.autoSwitch && controls) {
-                    // Check azimuthal angle to see if camera is in front or behind agent
-                    // OrbitControls angle 0 is usually 'behind' if agent starts facing forward
-                    const az = controls.getAzimuthalAngle();
-                    const isFrontAngle = Math.abs(az) < Math.PI / 2; // Simple heuristic for front viewing
-
-                    if (isFrontAngle && cameraSystemConfig.frontView) {
-                        walkingCameraMode = 'front';
-                    } else if (!isFrontAngle && cameraSystemConfig.behindView) {
-                        walkingCameraMode = 'behind';
-                    }
-                }
-
-                if (inputDirection.length() > 0) {
-                    inputDirection.normalize();
-
-                    // Character Rotation Smoothness
-                    let targetRotation = Math.atan2(inputDirection.x, inputDirection.z);
-                    if (walkingCameraMode === 'front') targetRotation += Math.PI;
-
-                    let diff = targetRotation - agent.rotation.y;
-                    while (diff < -Math.PI) diff += Math.PI * 2;
-                    while (diff > Math.PI) diff -= Math.PI * 2;
-
-                    // High interpolation for buttery smooth rotation
-                    agent.rotation.y += diff * 0.12;
-
-                    // Acceleration with smoothing
-                    currentWalkingSpeed += (targetSpeed - currentWalkingSpeed) * 0.08;
-                } else {
-                    // Friction/Braking
-                    currentWalkingSpeed *= (1 - (walkingConfig.friction || 0.1));
-                    if (currentWalkingSpeed < 0.01) currentWalkingSpeed = 0;
-                }
-
-                // Apply velocity
-                if (currentWalkingSpeed > 0) {
-                    // Character always moves according to input, but faces mirror direction in front mode
-                    const moveDir = inputDirection.clone();
-                    agent.position.addScaledVector(moveDir, currentWalkingSpeed);
-
-                    // Animation intensity
-                    const speedRatio = currentWalkingSpeed / (walkingConfig.runSpeed || 1.2);
-                    animateAgent(agent, time, speedRatio);
-                } else {
-                    resetAgentAnimation(time);
-                }
-
-                // Boundary clamping
-                agent.position.x = THREE.MathUtils.clamp(agent.position.x, CITY_BOUNDS.minX, CITY_BOUNDS.maxX);
-                agent.position.z = THREE.MathUtils.clamp(agent.position.z, CITY_BOUNDS.minZ, CITY_BOUNDS.maxZ);
-
-                // --- Game Standard Camera Follow (Exact Speed Sync) ---
-                const cameraOffset = new THREE.Vector3(0, 1.8, 0);
-                const targetFocus = agent.position.clone().add(cameraOffset);
-                const frameOffset = targetFocus.clone().sub(controls.target);
-
-                camera.position.add(frameOffset);
-                controls.target.copy(targetFocus);
-
-                controls.update();
-                agent.visible = true;
-            }
 
             // --- Final Safety Check ---
             if (camera.position.y < 2.0) camera.position.y = 2.0;
@@ -3557,7 +3501,9 @@
                 }
             }
 
-            renderer.render(scene, camera)
+            if (controls && !isWalkingMode) controls.update();
+            renderer.render(scene, camera);
+            requestAnimationFrame(sceneRender);
         }
 
 
@@ -3814,26 +3760,26 @@
         function createHighQualityTree() {
             const treeGroup = new THREE.Group();
             treeGroup.name = 'hqTree';
-            // Internal height is 2.5. Normalize to 1.0 (1/2.5 = 0.4)
             treeGroup.scale.set(0.4, 0.4, 0.4);
 
-            const trunkGeo = getSharedGeometry('hqTrunk', () => new THREE.CylinderGeometry(0.15, 0.2, 1.0, 6));
             const trunkMat = getSharedMaterial('hqTrunkMat', () => new THREE.MeshStandardMaterial({ color: 0x654321, roughness: 0.88 }));
-            const trunk = new THREE.Mesh(trunkGeo, trunkMat);
-            trunk.position.y = 0.5;
-            treeGroup.add(trunk);
+            const trunkGeo = getSharedGeometry('hqTrunk', () => {
+                const g = new THREE.CylinderGeometry(0.15, 0.2, 1.0, 6);
+                g.translate(0, 0.5, 0);
+                return g;
+            });
+            treeGroup.add(new THREE.Mesh(trunkGeo, trunkMat));
 
             const leafMat = getSharedMaterial('hqLeafMat', () => new THREE.MeshStandardMaterial({ color: 0x2E7D32 }));
-            const leafGeo = getSharedGeometry('hqLeafSphere', () => new THREE.SphereGeometry(0.7, 8, 8));
-
-            const s1 = new THREE.Mesh(leafGeo, leafMat);
-            s1.position.y = 1.0; treeGroup.add(s1);
-
-            const s2 = new THREE.Mesh(leafGeo, leafMat);
-            s2.scale.setScalar(0.85); s2.position.y = 1.6; treeGroup.add(s2);
-
-            const s3 = new THREE.Mesh(leafGeo, leafMat);
-            s3.scale.setScalar(0.65); s3.position.y = 2.1; treeGroup.add(s3);
+            const mergedLeafGeo = getSharedGeometry('hqLeafMerged', () => {
+                const geos = [];
+                const sphere = new THREE.SphereGeometry(0.7, 8, 8);
+                const s1 = sphere.clone(); s1.translate(0, 1.0, 0); geos.push(s1);
+                const s2 = sphere.clone(); s2.scale(0.85, 0.85, 0.85); s2.translate(0, 1.6, 0); geos.push(s2);
+                const s3 = sphere.clone(); s3.scale(0.65, 0.65, 0.65); s3.translate(0, 2.1, 0); geos.push(s3);
+                return THREE.BufferGeometryUtils.mergeBufferGeometries(geos);
+            });
+            treeGroup.add(new THREE.Mesh(mergedLeafGeo, leafMat));
 
             return treeGroup;
         }
@@ -4819,6 +4765,9 @@
             srv2_createWall(tempParent, { x: -3, z: 0, w: 6, h: 4, ry: Math.PI / 2, color: 0xeee8aa });
             srv2_createWall(tempParent, { x: 0, z: 3, w: 6, h: 4, color: 0xeee8aa });
             srv2_createDoor(tempParent, { x: 3.2, y: .5, z: 0, w: 1.2, h: 2.2, ry: Math.PI / 2, isOpen: false });
+            
+            // Sawni placed directly in front of the door
+            srv2_createSawni(tempParent, { x: 10, y: 0, z: -5, scale: 0.5 });
 
             srv2_createWall(tempParent, { x: 3, z: 0, y: 4, w: 6, h: 4, ry: Math.PI / 2, color: 0xeee8aa });
             srv2_createWall(tempParent, { x: 0, y: 4, z: -3, w: 6, h: 4, color: 0xeee8aa });
@@ -4969,6 +4918,9 @@
             srv2_createWall(tempParent, { x: 3, z: -5.2, w: 5.8, h: 4, ry: Math.PI / 2, color: 0xeee8aa });
             srv2_createMainDoor(tempParent, { x: 3.2, y: 0, z: -5.2, w: 2.6, h: 2.6, ry: Math.PI / 2, isOpen: false });
             
+            // Sawni placed directly in front of the door
+            srv2_createSawni(tempParent, { x: 8.5, y: 0, z: -20, scale: 1.0 });
+            
             // Fences
             srv2_createWoodGril(tempParent, { x: 7.0, y: 4.15, z: -5.2, w: 4, h: 1.2, ry: -Math.PI / 2, startPost: false, midPost: true, endPost: false });
             srv2_createWoodGril(tempParent, { x: 5.0, y: 4.15, z: -7.1, w: 4, h: 1.2, startPost: false, midPost: true, endPost: false });
@@ -5108,6 +5060,9 @@
             srv2_createRoof(tempParent, { x: 5.2, z: -5.1, y: 8.2, w: 4.8, d: 4.8, h: 2, ry: Math.PI / 2, faces: 40, style: 'flat',color:'0xACAD99' });
             srv2_createWall(tempParent, { x: 3, z: -5.2, w: 5.8, h: 4, ry: Math.PI / 2, color: 0xb8aaa6 });
             srv2_createMainDoor(tempParent, { x: 3.12, y: 0, z: -5.2, w: 2.6, h: 2.6, ry: Math.PI / 2, isOpen: false });
+            
+            // Sawni placed directly in front of the door
+            srv2_createSawni(tempParent, { x: 8.5, y: 0, z: -20.2, scale: 1.0 });
 
             // Stylish Fences
             srv2_createWoodGril(tempParent, { x: 5.0, y: 4.15, z: -3.1, w: 4, h: 1.2, startPost: false, midPost: true, endPost: false });
@@ -5751,6 +5706,131 @@
             }
         }
 
+        function srv2_createSawni(parent, config) {
+            const { x = 0, y = 0, z = 0, scale = 1 } = config;
+            const group = new THREE.Group();
+            group.position.set(x, y, z);
+            group.scale.set(scale, scale, scale);
+            
+            const roofMat = getSharedMaterial('sawni_roof_mat', () => new THREE.MeshStandardMaterial({ color: 0x8b0000, roughness: 0.5, metalness: 0.3 }));
+            const beamMat = getSharedMaterial('sawni_beam_mat', () => new THREE.MeshStandardMaterial({ color: 0xdddddd }));
+            const floorMat = getSharedMaterial('sawni_floor_mat', () => new THREE.MeshStandardMaterial({ color: 0xfcf286, roughness: 0.8, metalness: 0.1 }));
+            const furMat = getSharedMaterial('sawni_fur_mat', () => new THREE.MeshStandardMaterial({ color: 0x4d2a1a }));
+
+            // 1. ROOF (Slab, Cone, Seams)
+            const roofGeo = getSharedGeometry('sawni_roof_geo_merged', () => {
+                const geos = [];
+                const roofRadius = 5.8 / 2 * 1.15;
+                const roofH = 2.0;
+                
+                const slab = new THREE.CylinderGeometry(roofRadius, roofRadius, 0.1, 18);
+                slab.translate(0, 4.2, 0);
+                geos.push(slab);
+                
+                const cone = new THREE.ConeGeometry(roofRadius, roofH, 18);
+                cone.translate(0, 4.2 + roofH / 2 + 0.05, 0);
+                geos.push(cone);
+                
+                const apex = new THREE.Vector3(0, roofH + 0.05, 0);
+                for (let i = 0; i < 18; i++) {
+                    const theta1 = i * 2 * Math.PI / 18;
+                    const theta2 = (i + 1) * 2 * Math.PI / 18;
+                    const v1 = new THREE.Vector3(roofRadius * Math.sin(theta1), 0.05, roofRadius * Math.cos(theta1));
+                    const v2 = new THREE.Vector3(roofRadius * Math.sin(theta2), 0.05, roofRadius * Math.cos(theta2));
+                    const apexOut = apex.clone(); apexOut.y += 0.03;
+                    
+                    for (let j = 0; j <= 2; j++) {
+                        if (j === 2 && i !== 17) continue;
+                        const bp = v1.clone().lerp(v2, j / 2);
+                        bp.x *= 1.02; bp.z *= 1.02;
+                        const dist = bp.distanceTo(apexOut);
+                        const seamGeo = new THREE.CylinderGeometry(0.015, 0.015, dist, 4);
+                        
+                        const m = new THREE.Matrix4();
+                        const pos = bp.clone().lerp(apexOut, 0.5);
+                        const quat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), apexOut.clone().sub(bp).normalize());
+                        m.compose(pos, quat, new THREE.Vector3(1, 1, 1));
+                        seamGeo.applyMatrix4(m);
+                        seamGeo.translate(0, 4.2, 0);
+                        geos.push(seamGeo);
+                    }
+                }
+                return THREE.BufferGeometryUtils.mergeBufferGeometries(geos);
+            });
+            const roofMesh = new THREE.Mesh(roofGeo, roofMat);
+            roofMesh.castShadow = true;
+            group.add(roofMesh);
+
+            // 2. BEAMS
+            const beamsGeo = getSharedGeometry('sawni_beams_geo_merged', () => {
+                const geos = [];
+                const beamGeo = new THREE.CylinderGeometry(0.2, 0.2, 4.2, 16);
+                for (let i = 0; i < 4; i++) {
+                    const angle = (i / 4) * Math.PI * 2;
+                    const b = beamGeo.clone();
+                    b.translate(Math.cos(angle) * 2.5, 2.1, Math.sin(angle) * 2.5);
+                    geos.push(b);
+                }
+                return THREE.BufferGeometryUtils.mergeBufferGeometries(geos);
+            });
+            const beamsMesh = new THREE.Mesh(beamsGeo, beamMat);
+            beamsMesh.castShadow = true;
+            group.add(beamsMesh);
+
+            // 3. FLOOR
+            const floorGeo = getSharedGeometry('sawni_floor_geo_merged', () => {
+                const f = new THREE.CylinderGeometry(3.3, 3.3, 0.15, 32);
+                f.translate(0, 0.075, 0);
+                return f;
+            });
+            group.add(new THREE.Mesh(floorGeo, floorMat));
+
+            // 4. FURNITURE (Table + Chairs)
+            const furGeo = getSharedGeometry('sawni_fur_geo_merged', () => {
+                const geos = [];
+                const m = new THREE.Matrix4();
+                
+                // Table
+                const t1 = new THREE.CylinderGeometry(1.0, 1.0, 0.05, 32); m.makeTranslation(0, 0.75, 0); geos.push(t1.applyMatrix4(m));
+                const t2 = new THREE.CylinderGeometry(0.1, 0.15, 0.75, 16); m.makeTranslation(0, 0.375, 0); geos.push(t2.applyMatrix4(m));
+                const t3 = new THREE.CylinderGeometry(0.4, 0.4, 0.05, 16); m.makeTranslation(0, 0.025, 0); geos.push(t3.applyMatrix4(m));
+                
+                // Chairs
+                const cPositions = [
+                    { z: 1.2, ry: Math.PI },
+                    { z: -1.2, ry: 0 },
+                    { x: -1.2, ry: -Math.PI / 2 },
+                    { x: 1.2, ry: Math.PI / 2 }
+                ];
+                cPositions.forEach(cp => {
+                    const cGeo = [];
+                    const cm = new THREE.Matrix4();
+                    const seat = new THREE.BoxGeometry(0.5, 0.05, 0.5); cm.makeTranslation(0, 0.45, 0); cGeo.push(seat.applyMatrix4(cm));
+                    const back = new THREE.BoxGeometry(0.5, 0.6, 0.05); cm.makeTranslation(0, 0.75, -0.22); cGeo.push(back.applyMatrix4(cm));
+                    const legG = new THREE.BoxGeometry(0.05, 0.45, 0.05);
+                    for(let lx = -1; lx <= 1; lx += 2) {
+                        for(let lz = -1; lz <= 1; lz += 2) {
+                            const l = legG.clone(); cm.makeTranslation(lx * 0.2, 0.225, lz * 0.2); cGeo.push(l.applyMatrix4(cm));
+                        }
+                    }
+                    const chairGeoCombined = THREE.BufferGeometryUtils.mergeBufferGeometries(cGeo);
+                    
+                    const rotM = new THREE.Matrix4().makeRotationY(cp.ry);
+                    chairGeoCombined.applyMatrix4(rotM);
+                    const posM = new THREE.Matrix4().makeTranslation(cp.x || 0, 0, cp.z || 0);
+                    chairGeoCombined.applyMatrix4(posM);
+                    
+                    geos.push(chairGeoCombined);
+                });
+                return THREE.BufferGeometryUtils.mergeBufferGeometries(geos);
+            });
+            const furMesh = new THREE.Mesh(furGeo, furMat);
+            furMesh.position.set(0, 0.1, 0);
+            furMesh.castShadow = true;
+            group.add(furMesh);
+
+            parent.add(group);
+        }
 
         function createHouse(id, plotW = 500, plotD = 600, skipWall = null, hasPool = false, carCount = 0, hasPlayground = false, hDepth = 280, hWidth = 220, hasWing = true, hFloorH = 100, houseOX = 0, houseOZ = 0, poolOX = 0, poolOZ = 0, carOX = 0, carOZ = 0, playOX = 0, playOZ = 0, carW = 80, carL = 160, innerGapScale = 1, isTerrace = false, hasCarParking = true, houseDesign = 'standard', hScale = 1, hRotate = 0) {
             
@@ -5968,10 +6048,10 @@
 
             // Doors and unique parts
             const doorGeo = getSharedGeometry('houseDoor', () => new THREE.BoxGeometry(45, 75, 5));
-            const doorMat = getSharedMaterial('doorMat_' + id, () => {
-                const canvas = document.createElement('canvas'); canvas.width = 64; canvas.height = 128;
-                const ctx = canvas.getContext('2d'); ctx.fillStyle = '#8b4513'; ctx.fillRect(0, 0, 64, 128);
-                ctx.fillStyle = '#FFF'; ctx.font = 'bold 30px Arial'; ctx.textAlign = 'center'; ctx.fillText(id, 32, 40);
+            // Shared material without unique text allows all 500+ doors to be instanced into 1 draw call!
+            const doorMat = getSharedMaterial('doorMat_shared', () => {
+                const canvas = document.createElement('canvas'); canvas.width = 16; canvas.height = 16;
+                const ctx = canvas.getContext('2d'); ctx.fillStyle = '#8b4513'; ctx.fillRect(0, 0, 16, 16);
                 return new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(canvas) });
             });
             const doorGeos = [];
@@ -5983,6 +6063,14 @@
             }
             const doorMesh = new THREE.Mesh(THREE.BufferGeometryUtils.mergeBufferGeometries(doorGeos), doorMat);
             building.add(doorMesh);
+
+            // Sawni for Standard House
+            const sawniGrp = new THREE.Group();
+            srv2_createSawni(sawniGrp, { x: 10, y: 0, z: -10, scale: 0.5});
+            sawniGrp.rotation.y = -Math.PI / 2;
+            sawniGrp.position.set(0, 0, -(houseDepth / 2 + 180));
+            sawniGrp.scale.set(15, 15, 15);
+            building.add(sawniGrp);
 
             // Porch (Merged)
             const porchMergedGeo = getSharedGeometry(`porchMerged_${houseWidth}_${houseDepth}_${floorH}`, () => {
@@ -6781,6 +6869,350 @@
             scene.add(group);
         }
 
+        // --- SHOP MARKET SYSTEM (Optimized) ---
+        function sm_applyTexture(material, url, repeatX = 1, repeatY = 1) {
+            if (url) {
+                const loader = new THREE.TextureLoader();
+                loader.setCrossOrigin('anonymous');
+                loader.load(url, (tex) => {
+                    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+                    tex.repeat.set(repeatX, repeatY);
+                    material.map = tex;
+                    material.needsUpdate = true;
+                });
+            }
+        }
+
+        function sm_finalizeMesh(mesh, group, config) {
+            const { x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0 } = config;
+            mesh.position.set(x, y, z);
+            mesh.rotation.set(rx, ry, rz);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            group.add(mesh);
+            return mesh;
+        }
+
+        function sm_createWall(config, group) {
+            const { w = 5, h = 3, t = 0.2, color = 0xB8AAA6, useTexture = false, textureUrl = '' } = config;
+            const geoKey = `sm_wall_${w}_${h}_${t}`;
+            const geometry = getSharedGeometry(geoKey, () => {
+                const g = new THREE.BoxGeometry(w, h, t);
+                g.translate(0, h / 2, 0);
+                return g;
+            });
+            const matKey = `sm_wall_mat_${color}_${textureUrl}`;
+            const material = getSharedMaterial(matKey, () => {
+                const m = new THREE.MeshStandardMaterial({ color: color });
+                if (useTexture && textureUrl) sm_applyTexture(m, textureUrl, w / 2, h / 2);
+                return m;
+            });
+            const wall = new THREE.Mesh(geometry, material);
+            return sm_finalizeMesh(wall, group, config);
+        }
+
+        function sm_createFloor(config, group) {
+            const { w = 5, d = 5, t = 0.15, color = 0xBBA990 } = config;
+            const geoKey = `sm_floor_${w}_${d}_${t}`;
+            const geometry = getSharedGeometry(geoKey, () => {
+                const g = new THREE.BoxGeometry(w, t, d);
+                g.translate(0, t / 2, 0);
+                return g;
+            });
+            const matKey = `sm_floor_mat_${color}`;
+            const material = getSharedMaterial(matKey, () => new THREE.MeshStandardMaterial({ color: color }));
+            const floor = new THREE.Mesh(geometry, material);
+            return sm_finalizeMesh(floor, group, config);
+        }
+
+        function sm_createStoreFront(config, group) {
+            const { w = 4, h = 3.5, frameT = 0.12, color = 0x222222 } = config;
+            const subGroup = new THREE.Group();
+            const frameMat = getSharedMaterial(`sm_frame_mat_${color}`, () => new THREE.MeshStandardMaterial({ color: color, roughness: 0.2, metalness: 0.8 }));
+            const glassMat = getSharedMaterial('sm_glass_mat', () => new THREE.MeshStandardMaterial({ color: 0x88ccff, transparent: true, opacity: 0.3, metalness: 0.95, roughness: 0.05 }));
+            
+            const geoKey = `sm_sf_frame_${w}_${h}_${frameT}`;
+            const frameGeo = getSharedGeometry(geoKey, () => {
+                const geos = [];
+                const addPart = (fw, fh, fd, px, py, pz) => {
+                    const g = new THREE.BoxGeometry(fw, fh, fd);
+                    g.translate(px, py, pz);
+                    geos.push(g);
+                };
+                addPart(w, frameT, 0.3, 0, h - frameT/2, 0);
+                addPart(w, frameT, 0.3, 0, frameT/2, 0);
+                addPart(frameT, h, 0.3, -w/2 + frameT/2, h/2, 0);
+                addPart(frameT, h, 0.3, w/2 - frameT/2, h/2, 0);
+                addPart(frameT * 0.8, h - frameT * 2, 0.2, 0, h/2, 0);
+                addPart(w - frameT * 2, frameT * 0.5, 0.2, 0, h * 0.7, 0);
+                return THREE.BufferGeometryUtils.mergeBufferGeometries(geos);
+            });
+
+            const glassGeoKey = `sm_sf_glass_${w}_${h}_${frameT}`;
+            const glassGeo = getSharedGeometry(glassGeoKey, () => {
+                const g = new THREE.BoxGeometry(w - frameT*2, h - frameT*2, 0.05);
+                g.translate(0, h/2, 0);
+                return g;
+            });
+
+            subGroup.add(new THREE.Mesh(frameGeo, frameMat));
+            subGroup.add(new THREE.Mesh(glassGeo, glassMat));
+            return sm_finalizeMesh(subGroup, group, config);
+        }
+
+        function sm_createSignboard(config, group) {
+            const { w = 4, h = 1, d = 0.4, text = 'MARKET', color = 0xef4444, fontSize = 60, intensity = 1.2 } = config;
+            const subGroup = new THREE.Group();
+            const boardMat = getSharedMaterial(`sm_board_mat_${color}`, () => new THREE.MeshStandardMaterial({ color: color, roughness: 0.4, metalness: 0.6 }));
+            const boardGeo = getSharedGeometry(`sm_board_geo_${w}_${h}_${d}`, () => {
+                const g = new THREE.BoxGeometry(w, h, d);
+                g.translate(0, h/2, 0);
+                return g;
+            });
+            subGroup.add(new THREE.Mesh(boardGeo, boardMat));
+
+            const textMatKey = `sm_text_mat_${text}_${color}_${fontSize}_${intensity}`;
+            const textMat = getSharedMaterial(textMatKey, () => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = 512; canvas.height = 128;
+                ctx.fillStyle = '#' + new THREE.Color(color).getHexString();
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.strokeStyle = 'white'; ctx.lineWidth = 10;
+                ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
+                ctx.fillStyle = 'white'; ctx.font = `bold ${fontSize}px "Inter", sans-serif`;
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+                const texture = new THREE.CanvasTexture(canvas);
+                return new THREE.MeshStandardMaterial({ map: texture, emissive: 0xffffff, emissiveMap: texture, emissiveIntensity: intensity, transparent: true });
+            });
+
+            const planeGeo = getSharedGeometry(`sm_sign_plane_${w}_${h}`, () => new THREE.PlaneGeometry(w * 0.95, h * 0.85));
+            const frontPlane = new THREE.Mesh(planeGeo, textMat);
+            frontPlane.position.set(0, h/2, d/2 + 0.02);
+            subGroup.add(frontPlane);
+            const backPlane = frontPlane.clone();
+            backPlane.rotation.y = Math.PI;
+            backPlane.position.z = -d/2 - 0.02;
+            subGroup.add(backPlane);
+            return sm_finalizeMesh(subGroup, group, config);
+        }
+
+        function sm_createAwning(config, group) {
+            const { w = 4, d = 2.2, color1 = 0xef4444, color2 = 0xffffff } = config;
+            const subGroup = new THREE.Group();
+            const angle = Math.PI / 8;
+            const stripCount = 14;
+            const stripW = w / stripCount;
+            
+            const createMergedStrips = (isColor1) => {
+                const geos = [];
+                for(let i = 0; i < stripCount; i++) {
+                    if ((i % 2 === 0) === isColor1) {
+                        const strip = new THREE.BoxGeometry(stripW, 0.1, d);
+                        strip.translate(0, 0, d/2);
+                        strip.rotateX(angle);
+                        strip.translate(-w/2 + i * stripW + stripW/2, 0, 0);
+                        geos.push(strip);
+                    }
+                }
+                return THREE.BufferGeometryUtils.mergeBufferGeometries(geos);
+            };
+
+            const mat1 = getSharedMaterial(`sm_awning_mat_${color1}`, () => new THREE.MeshStandardMaterial({ color: color1, roughness: 0.9 }));
+            const mat2 = getSharedMaterial(`sm_awning_mat_${color2}`, () => new THREE.MeshStandardMaterial({ color: color2, roughness: 0.9 }));
+            const mesh1 = new THREE.Mesh(getSharedGeometry(`sm_awn_1_${w}_${d}_${color1}`, () => createMergedStrips(true)), mat1);
+            const mesh2 = new THREE.Mesh(getSharedGeometry(`sm_awn_2_${w}_${d}_${color2}`, () => createMergedStrips(false)), mat2);
+            subGroup.add(mesh1, mesh2);
+            return sm_finalizeMesh(subGroup, group, config);
+        }
+
+        function sm_createShelf(config, group) {
+            const { w = 2.5, h = 3, d = 0.8, levels = 5, color = 0xdddddd } = config;
+            const subGroup = new THREE.Group();
+            const mat = getSharedMaterial(`sm_shelf_mat_${color}`, () => new THREE.MeshStandardMaterial({ color: color, roughness: 0.7 }));
+            const geoKey = `sm_shelf_geo_${w}_${h}_${d}_${levels}`;
+            const geometry = getSharedGeometry(geoKey, () => {
+                const geos = [];
+                const back = new THREE.BoxGeometry(w, h, 0.1);
+                back.translate(0, h/2, -d/2);
+                geos.push(back);
+                for(let i = 0; i <= levels; i++) {
+                    const shelf = new THREE.BoxGeometry(w, 0.08, d);
+                    shelf.translate(0, (i / levels) * (h - 0.2) + 0.1, 0);
+                    geos.push(shelf);
+                }
+                return THREE.BufferGeometryUtils.mergeBufferGeometries(geos);
+            });
+            subGroup.add(new THREE.Mesh(geometry, mat));
+            return sm_finalizeMesh(subGroup, group, config);
+        }
+
+        function sm_createLight(config, group) {
+            const bulbGeo = getSharedGeometry('sm_bulb', () => new THREE.SphereGeometry(0.1, 16, 16));
+            const bulbMat = getSharedMaterial('sm_bulb_mat', () => new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffaa, emissiveIntensity: 2 }));
+            const bulb = new THREE.Mesh(bulbGeo, bulbMat);
+            return sm_finalizeMesh(bulb, group, config);
+        }
+
+        function sm_createBeamSet(config, group) {
+            const { w = 0.3, h = 4, dist = 5, isCircle = false, count = 4, style = 'default' } = config;
+            const subGroup = new THREE.Group();
+            const mat = getSharedMaterial('sm_beam_mat', () => new THREE.MeshStandardMaterial({ color: 0xdddddd }));
+            const geoKey = `sm_beam_geo_${w}_${h}_${dist}_${isCircle}_${count}_${style}`;
+            const geometry = getSharedGeometry(geoKey, () => {
+                const geos = [];
+                let positions = [];
+                if (style === 'X' || style === 'x') {
+                    for (let i = 0; i < count; i++) {
+                        const px = count === 1 ? 0 : -dist / 2 + (i / (count - 1)) * dist;
+                        positions.push({ px: px, pz: 0 });
+                    }
+                } else if (style === 'Y' || style === 'y' || style === 'Z' || style === 'z') {
+                    for (let i = 0; i < count; i++) {
+                        const pz = count === 1 ? 0 : -dist / 2 + (i / (count - 1)) * dist;
+                        positions.push({ px: 0, pz: pz });
+                    }
+                } else if (count === 4) {
+                    positions = [{ px: -dist / 2, pz: -dist / 2 }, { px: dist / 2, pz: -dist / 2 }, { px: -dist / 2, pz: dist / 2 }, { px: dist / 2, pz: dist / 2 }];
+                } else {
+                    for (let i = 0; i < count; i++) {
+                        const angle = (i / count) * Math.PI * 2;
+                        positions.push({ px: Math.cos(angle) * (dist / 2), pz: Math.sin(angle) * (dist / 2) });
+                    }
+                }
+                positions.forEach(pos => {
+                    const g = isCircle ? new THREE.CylinderGeometry(w / 2, w / 2, h, 16) : new THREE.BoxGeometry(w, h, w);
+                    g.translate(pos.px, h / 2, pos.pz);
+                    geos.push(g);
+                });
+                return THREE.BufferGeometryUtils.mergeBufferGeometries(geos);
+            });
+            subGroup.add(new THREE.Mesh(geometry, mat));
+            return sm_finalizeMesh(subGroup, group, config);
+        }
+
+        function sm_createRoof(config, group) {
+            const { w = 6, d = 8, h = 2, style = 'pitched', color = 0xACAD99 } = config;
+            const subGroup = new THREE.Group();
+            const matKey = `sm_roof_mat_${color}`;
+            const roofMat = getSharedMaterial(matKey, () => new THREE.MeshStandardMaterial({ color: color, roughness: 0.5, metalness: 0.3 }));
+            const geoKey = `sm_roof_geo_${w}_${d}_${h}_${style}`;
+            const geometry = getSharedGeometry(geoKey, () => {
+                if (style === 'pitched') {
+                    const geos = [];
+                    const createS = (rz, ox, w_val, d_val) => {
+                        const b = new THREE.BoxGeometry(w_val / 2 + 0.5, 0.1, d_val);
+                        b.rotateZ(rz);
+                        b.translate(ox, 0, 0);
+                        return b;
+                    };
+                    geos.push(createS(Math.PI / 6, -w / 4, w, d));
+                    geos.push(createS(-Math.PI / 6, w / 4, w, d));
+                    return THREE.BufferGeometryUtils.mergeBufferGeometries(geos);
+                } else {
+                    const b = new THREE.BoxGeometry(w, 0.2, d);
+                    return b;
+                }
+            });
+            subGroup.add(new THREE.Mesh(geometry, roofMat));
+            return sm_finalizeMesh(subGroup, group, config);
+        }
+        function sm_createStaticPerson(config, group) {
+            const { type = 'A' } = config;
+            const subGroup = new THREE.Group();
+
+            const skinColor = type === 'A' ? 0xffdbac : 0xe0ac69;
+            const shirtColor = type === 'A' ? 0xef4444 : 0x3b82f6;
+            const pantsColor = type === 'A' ? 0x222222 : 0x111111;
+
+            const skinMat = getSharedMaterial(`sm_person_skin_${type}`, () => new THREE.MeshStandardMaterial({ color: skinColor, roughness: 0.6 }));
+            const shirtMat = getSharedMaterial(`sm_person_shirt_${type}`, () => new THREE.MeshStandardMaterial({ color: shirtColor, roughness: 0.8 }));
+            const pantsMat = getSharedMaterial(`sm_person_pants_${type}`, () => new THREE.MeshStandardMaterial({ color: pantsColor, roughness: 0.9 }));
+
+            const headGeo = getSharedGeometry('sm_person_head', () => {
+                const g = new THREE.BoxGeometry(0.3, 0.35, 0.3);
+                g.translate(0, 1.7, 0);
+                return g;
+            });
+            const bodyGeo = getSharedGeometry('sm_person_body', () => {
+                const g = new THREE.BoxGeometry(0.45, 0.6, 0.25);
+                g.translate(0, 1.2, 0);
+                return g;
+            });
+            const legsGeo = getSharedGeometry('sm_person_legs', () => {
+                const g1 = new THREE.BoxGeometry(0.18, 0.9, 0.2);
+                g1.translate(-0.12, 0.45, 0);
+                const g2 = new THREE.BoxGeometry(0.18, 0.9, 0.2);
+                g2.translate(0.12, 0.45, 0);
+                return THREE.BufferGeometryUtils.mergeBufferGeometries([g1, g2]);
+            });
+
+            subGroup.add(new THREE.Mesh(headGeo, skinMat));
+            subGroup.add(new THREE.Mesh(bodyGeo, shirtMat));
+            subGroup.add(new THREE.Mesh(legsGeo, pantsMat));
+
+            return sm_finalizeMesh(subGroup, group, config);
+        }
+
+        function createShopMarket(options = {}) {
+            const {
+                posX = 0, posY = 0, posZ = 0,
+                rotY = 0, scale = 1,
+                shopW = 6,
+                shopConfigs = [
+                    { text: 'PHARMACY', color: 0x10b981, accent: 0x059669 },
+                    { text: 'BAKERY', color: 0xf59e0b, accent: 0xd97706 },
+                    { text: 'CAFE', color: 0x6366f1, accent: 0x4f46e5 },
+                    { text: 'GROCERY', color: 0xef4444, accent: 0xdc2626 },
+                    { text: 'FASHION', color: 0xec4899, accent: 0xdb2777 },
+                    { text: 'GADGETS', color: 0x3b82f6, accent: 0x2563eb }
+                ]
+            } = options;
+
+            const group = new THREE.Group();
+            group.position.set(posX, posY, posZ);
+            group.rotation.y = rotY * (Math.PI / 180);
+            group.scale.set(scale, scale, scale);
+
+            const complexLength = shopConfigs.length * shopW;
+            const startZ = -(complexLength / 2) + shopW / 2;
+
+            sm_createFloor({ x: 0, z: 0, y: 0.01, w: complexLength + 4, d: 10, color: 0x444444, ry: Math.PI / 2 }, group);
+            sm_createWall({ x: -3, z: 0, w: complexLength + 2, h: 5, ry: Math.PI / 2, color: 0xdddddd }, group);
+            sm_createWall({ x: 0, y: 0, z: complexLength / 2 + 1, w: 6, h: 5, color: 0xcccccc }, group);
+            sm_createWall({ x: 0, y: 0, z: -complexLength / 2 - 1, w: 6, h: 5, color: 0xcccccc }, group);
+            sm_createRoof({ x: 0, z: 0, y: 5, w: complexLength + 4, d: 8, ry: Math.PI / 2, style: 'flat', color: 0x222222 }, group);
+            sm_createSignboard({ x: 4.5, y: 5.2, z: 0, w: 18, h: 2.5, text: 'CITY SQUARE MARKET', color: 0x111111, ry: Math.PI / 2, fontSize: 40, intensity: 0.7 }, group);
+            sm_createBeamSet({ x: 4.2, y: 5, z: -7, dist: 0, h: 1.2, w: 0.25, count: 1 }, group);
+            sm_createBeamSet({ x: 4.2, y: 5, z: 7, dist: 0, h: 1.2, w: 0.25, count: 1 }, group);
+
+            shopConfigs.forEach((sConfig, i) => {
+                const sz = startZ + i * shopW;
+                sm_createStoreFront({ x: 3, y: 0, z: sz, w: shopW - 0.8, h: 4, ry: Math.PI / 2 }, group);
+                sm_createSignboard({ x: 3.3, y: 4, z: sz, w: shopW - 1, h: 0.8, text: sConfig.text, color: sConfig.color, ry: Math.PI / 2 }, group);
+                sm_createAwning({ x: 3.5, y: 4, z: sz, w: shopW - 0.5, d: 2, color1: sConfig.accent, color2: 0xffffff, ry: Math.PI / 2 }, group);
+                sm_createShelf({ x: -1, y: 0, z: sz, w: shopW - 2, h: 3, ry: Math.PI / 2 }, group);
+                sm_createLight({ x: 0, y: 4.5, z: sz }, group);
+                if (i < shopConfigs.length) {
+                    sm_createBeamSet({ x: 3, y: 0, z: sz + shopW/2, dist: 0, h: 5, w: 0.3, count: 1 }, group);
+                }
+
+                // Add 1-2 people standing in front of the shop
+                const peopleCount = (i % 2 === 0) ? 2 : 1;
+                for (let p = 0; p < peopleCount; p++) {
+                    const px = 5 + (Math.sin(i * 3 + p) * 1.5); // Randomize depth (x: 3.5 to 6.5)
+                    const pz = sz + (Math.cos(i * 2 + p) * 2); // Randomize position along shop width
+                    const rotY = (Math.PI / 2) + (Math.sin(i + p) * 0.5); // Randomly face the shop
+                    const type = (i + p) % 2 === 0 ? 'A' : 'B';
+                    sm_createStaticPerson({ x: px, y: 0, z: pz, ry: rotY, type: type }, group);
+                }
+            });
+
+            scene.add(group);
+            return group;
+        }
+
         // --- METRO TRAIN BUILDER ---
         function createTrain(config) {
             const trainGroup = new THREE.Group();
@@ -7400,385 +7832,9 @@
                 camera.aspect = window.innerWidth / window.innerHeight;
                 camera.updateProjectionMatrix();
                 renderer.setSize(window.innerWidth, window.innerHeight);
-                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1));
+                renderer.setPixelRatio(1);
             }, 100); // Throttle to 100ms
         });
-
-
-        // --- Day/Night Mode Feature Implementation ---
-        (function () {
-            const style = document.createElement('style');
-            style.textContent = `
-                @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600&display=swap');
-                
-                #day-night-switch {
-                    position: fixed;
-                    top: 30px;
-                    right: 30px;
-                    z-index: 10000;
-                    background: rgba(255, 255, 255, 0.1);
-                    backdrop-filter: blur(15px) saturate(160%);
-                    -webkit-backdrop-filter: blur(15px) saturate(160%);
-                    border: 1px solid rgba(255, 255, 255, 0.2);
-                    padding: 8px 12px;
-                    border-radius: 100px;
-                    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
-                    display: flex;
-                    align-items: center;
-                    gap: 15px;
-                    cursor: pointer;
-                    font-family: 'Outfit', sans-serif;
-                    transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
-                    user-select: none;
-                    color: white;
-                }
-                
-                #day-night-switch:hover {
-                    box-shadow: 0 15px 50px rgba(0,0,0,0.25);
-                    transform: translateY(-5px);
-                    background: rgba(255, 255, 255, 0.15);
-                }
-                
-                .switch-track {
-                    width: 64px;
-                    height: 32px;
-                    background: rgba(255, 255, 255, 0.2);
-                    border-radius: 50px;
-                    position: relative;
-                    transition: background 0.5s;
-                    border: 1.5px solid rgba(255,255,255,0.3);
-                }
-                
-                .switch-thumb {
-                    width: 24px;
-                    height: 24px;
-                    background: #FFD700;
-                    border-radius: 50%;
-                    position: absolute;
-                    top: 2.5px;
-                    left: 2.5px;
-                    transition: all 0.5s cubic-bezier(0.68, -0.6, 0.32, 1.6);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
-                }
-                
-                .switch-thumb i {
-                    font-size: 14px;
-                }
-                
-                .mode-text {
-                    font-size: 14px;
-                    font-weight: 600;
-                    letter-spacing: 1.5px;
-                    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-                }
-                
-                /* Night State */
-                .night-active #day-night-switch {
-                    background: rgba(15, 23, 42, 0.4);
-                    border-color: rgba(255, 255, 255, 0.1);
-                }
-                
-                .night-active .switch-track {
-                    background: rgba(0, 0, 0, 0.4);
-                    border-color: rgba(69, 78, 122, 0.5);
-                }
-                
-                .night-active .switch-thumb {
-                    left: 34.5px;
-                    background: #E2E8F0;
-                    box-shadow: 0 0 20px rgba(226, 232, 240, 0.4), inset 4px -2px 0 #CBD5E1;
-                }
-                
-                .icon-sun { opacity: 1; transition: opacity 0.5s; }
-                .icon-moon { opacity: 0; position: absolute; transition: opacity 0.5s; }
-                
-                .night-active .icon-sun { opacity: 0; }
-                .night-active .icon-moon { opacity: 1; }
-
-                #city-tour-btn { display: none; } /* Removed Drone Tour */
-
-                /* Walking Mode Button */
-                #walking-mode-btn {
-                    position: fixed;
-                    top: 100px;
-                    right: 30px;
-                    z-index: 10000;
-                    background: rgba(255, 255, 255, 0.1);
-                    backdrop-filter: blur(15px) saturate(160%);
-                    -webkit-backdrop-filter: blur(15px) saturate(160%);
-                    border: 1px solid rgba(255, 255, 255, 0.2);
-                    padding: 8px 12px;
-                    border-radius: 100px;
-                    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
-                    display: flex;
-                    align-items: center;
-                    gap: 12px;
-                    cursor: pointer;
-                    font-family: 'Outfit', sans-serif;
-                    transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
-                    user-select: none;
-                    color: white;
-                }
-                #walking-mode-btn:hover {
-                    box-shadow: 0 15px 50px rgba(255, 255, 255, 0.2);
-                    transform: translateY(-5px);
-                    background: rgba(255, 255, 255, 0.2);
-                }
-                #walking-mode-btn.active {
-                    background: rgba(34, 197, 94, 0.3);
-                    border-color: rgba(34, 197, 94, 0.5);
-                    box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
-                }
-                #walking-mode-btn .controls-hint {
-                    position: absolute;
-                    top: 100%;
-                    right: 0;
-                    font-size: 10px;
-                    margin-top: 10px;
-                    background: rgba(0,0,0,0.5);
-                    padding: 4px 8px;
-                    border-radius: 4px;
-                    opacity: 0;
-                    transition: 0.3s;
-                    pointer-events: none;
-                    white-space: nowrap;
-                }
-                #walking-mode-btn.active .controls-hint { opacity: 1; }
-
-                /* Camera button removed */
-            `;
-            document.head.appendChild(style);
-
-            const toggle = document.createElement('div');
-            toggle.id = 'day-night-switch';
-            toggle.innerHTML = `
-                <span class="mode-text">Day View</span>
-                <div class="switch-track">
-                    <div class="switch-thumb">
-                        <span class="icon-sun">☀️</span>
-                        <span class="icon-moon">🌙</span>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(toggle);
-
-            const walkingBtn = document.createElement('div');
-            walkingBtn.id = 'walking-mode-btn';
-            walkingBtn.innerHTML = `
-                <div class="tour-icon">🚶</div>
-                <span class="mode-text">Walking Tour</span>
-                <div class="controls-hint">USE W, A, S, D TO WALK</div>
-            `;
-            document.body.appendChild(walkingBtn);
-
-            /* View toggle button removed */
-
-            walkingBtn.addEventListener('click', () => {
-                isWalkingMode = !isWalkingMode;
-                walkingBtn.classList.toggle('active', isWalkingMode);
-                walkingBtn.querySelector('.mode-text').textContent = isWalkingMode ? 'Exit Walking' : 'Walking Tour';
-                walkingBtn.querySelector('.controls-hint').textContent = isWalkingMode ? 'USE ARROWS OR WASD TO WALK' : '';
-
-                if (agent) {
-                    agent.visible = isWalkingMode;
-                }
-
-                if (isWalkingMode) {
-                    // Standard Game Mode: Request Pointer Lock for true mouse look if clicked again
-                    renderer.domElement.requestPointerLock = renderer.domElement.requestPointerLock || renderer.domElement.mozRequestPointerLock;
-                    const requestLock = () => {
-                        if (isWalkingMode) renderer.domElement.requestPointerLock();
-                    };
-                    renderer.domElement.addEventListener('mousedown', requestLock);
-                    walkingBtn._lockHandler = requestLock;
-                    // Set walk-friendly controls
-                    controls.maxDistance = 12; // Standard close 3rd person (was 30)
-                    controls.minDistance = 3;  // Prevent clipping into character
-                    controls.enablePan = false;
-                    controls.maxPolarAngle = Math.PI / 2.05; // Prevent going underground
-
-                    // Teleport agent to current view instantly
-                    if (agent && controls.target) {
-                        agent.position.set(controls.target.x, 0.5, controls.target.z);
-                        // Orient agent to face current camera forward direction
-                        const forward = new THREE.Vector3();
-                        camera.getWorldDirection(forward);
-                        forward.y = 0;
-                        forward.normalize();
-                        agent.rotation.y = Math.atan2(forward.x, forward.z);
-
-                        // Teleport camera instantly
-                        const distance = (walkingCameraMode === 'behind' ? -5.5 : 5.5);
-                        const eyePos = agent.position.clone()
-                            .add(forward.multiplyScalar(distance))
-                            .add(new THREE.Vector3(0, 2.5, 0));
-                        camera.position.copy(eyePos);
-                        controls.target.copy(agent.position.clone().add(new THREE.Vector3(0, 1.8, 0)));
-                        controls.update();
-                    }
-                } else {
-                    agent.visible = false;
-                    currentWalkingSpeed = 0;
-                    document.exitPointerLock();
-                    renderer.domElement.removeEventListener('mousedown', walkingBtn._lockHandler);
-
-                    // Restore original controls
-                    controls.maxDistance = 3200;
-                    controls.minDistance = 0.1;
-                    controls.enablePan = true;
-                    controls.maxPolarAngle = Math.PI / 2.05;
-                }
-            });
-
-
-
-            toggle.addEventListener('click', () => {
-                isNight = !isNight;
-                document.body.classList.toggle('night-active', isNight);
-                toggle.querySelector('.mode-text').textContent = isNight ? 'Night View' : 'Day View';
-
-                // --- Scene Updates ---
-                const skyColor = isNight ? 0x050816 : 0x87ceeb; // Modern deep midnight navy
-                const fogColor = isNight ? 0x050816 : 0x87ceeb;
-                const ambientIntensity = isNight ? 0.65 : 0.7; // Significantly brighter night
-                const directionalIntensity = isNight ? 0.75 : 0.8; // Stronger moon light
-
-                // Update Sky & Fog
-                if (isNight) {
-                    // Smooth transition would be better but background.set is instant
-                    scene.background.setHex(skyColor);
-                } else {
-                    scene.background.setHex(0x87ceeb);
-                }
-
-                // Fade Sky Elements
-                if (stars) {
-                    if (stars.material.uniforms) {
-                        stars.material.uniforms.uOpacity.value = isNight ? 1 : 0;
-                    }
-                    if (stars.userData.cloudGroup) {
-                        stars.userData.cloudGroup.children.forEach(c => {
-                            c.material.opacity = isNight ? 0.3 : 0;
-                        });
-                    }
-                }
-                if (moon) {
-                    moon.material.opacity = isNight ? 1 : 0;
-                    moon.material.emissiveIntensity = isNight ? 1.5 : 0;
-                    if (moon.userData.glow) moon.userData.glow.material.opacity = isNight ? 0.8 : 0;
-                }
-                if (scene.fog) {
-                    scene.fog.color.setHex(fogColor);
-                    if (scene.fog.isFogExp2) {
-                        scene.fog.density = isNight ? 0.0008 : 0.0005;
-                    }
-
-                    // Update Lights
-                    scene.traverse(child => {
-                        if (child.isAmbientLight) {
-                            child.intensity = ambientIntensity;
-                            if (isNight) child.color.setHex(0xb0c4de); // Light Steel Blue (Moonlight)
-                            else child.color.setHex(0xffffff);
-                        }
-                        if (child.isDirectionalLight) {
-                            child.intensity = directionalIntensity;
-                            if (isNight) child.color.setHex(0xdcefff); // Cold white/blue moonlight
-                            else child.color.setHex(0xffffff);
-                        }
-
-                        // Grounds and Plots
-                        if (child.isMesh && (child.geometry.type === 'PlaneGeometry' || child.geometry.type === 'BoxGeometry')) {
-                            if (child.material && child.material.color) {
-                                const hex = child.material.color.getHex();
-                                // If it's the green ground/land
-                                if (hex === 0x008000 || hex === 0xA9DA3F || hex === 0xc1d86c) {
-                                    // Dynamic darkening handled by light intensity, 
-                                    // but we can add a subtle tint if needed
-                                }
-                            }
-                        }
-                    });
-
-                    // Update Materials
-                    if (typeof materialCache !== 'undefined') {
-                        const houseWin = materialCache['houseWin'];
-                        if (houseWin) {
-                            houseWin.emissive.setHex(isNight ? 0xffdd44 : 0x111111);
-                            houseWin.emissiveIntensity = isNight ? 8.0 : 1.0; // Brighter windows
-                        }
-
-                        const houseBody = materialCache['houseBody'];
-                        if (houseBody) {
-                            // Dampen body color slightly
-                            // houseBody.color.setHex(isNight ? 0x777777 : 0xe8e4d9);
-                        }
-                    }
-
-                    // Update Metro Glass
-                    if (typeof skyGlassMat !== 'undefined') {
-                        skyGlassMat.emissive.setHex(isNight ? 0x3388ff : 0x224466);
-                        skyGlassMat.emissiveIntensity = isNight ? 5.0 : 0.2;
-                    }
-
-                    // Update River
-                    if (typeof river !== 'undefined' && river && river.shaderMaterial) {
-                        river.shaderMaterial.uniforms.uColor.value.setHex(isNight ? 0x002244 : 0x00ccff);
-                    }
-
-                    // Update Cartoon River (if any)
-                    scene.traverse(child => {
-                        if (child.isMesh && child.material && child.material.type === 'MeshPhongMaterial') {
-                            // This usually finds the CartoonRiver meshes
-                            if (child.material.color.getHex() === 0x33ccff) {
-                                child.material.emissive.setHex(isNight ? 0x001122 : 0x000000);
-                            }
-                        }
-
-                        // Update Lamp Posts
-                        if (child.name === 'lampBulb') {
-                            child.material.emissive.setHex(isNight ? 0xffffbb : 0x000000);
-                            child.material.emissiveIntensity = isNight ? 10.0 : 0; // Reduced for subtle light
-                        }
-                        if (child.name === 'lampCone') {
-                            child.material.opacity = isNight ? 0.2 : 0; // Requested opacity .2
-                        }
-
-                        if (child.name === 'parkLampLight') {
-                            child.intensity = isNight ? 2.0 : 0;
-                        }
-
-                        if (child.name === 'fountainWater') {
-                            child.material.emissive.setHex(isNight ? 0x0088ff : 0x000000);
-                            child.material.emissiveIntensity = isNight ? 0.4 : 0;
-                        }
-
-                        if (child.name === 'houseBulb') {
-                            child.material.emissive.setHex(isNight ? 0xffea55 : 0x000000);
-                            child.material.emissiveIntensity = isNight ? 25.0 : 0; // Clear porch light
-                        }
-
-                        // Update House Windows (individual traverse in case shared material isn't enough)
-                        if (child.name === 'houseWindow' || (child.material && child.material.name && child.material.name.includes('Win'))) {
-                            // child.material.emissive.setHex(isNight ? 0xffcc33 : 0x111111);
-                        }
-                    });
-
-                    // Update Cars
-                    // Usually lightMat is used for headlights
-                    scene.traverse(child => {
-                        if (child.material && child.material.name === 'carHeadlight') {
-                            // if we had names...
-                        }
-                    });
-
-                    // Add a cool stars effect if night?
-                    // For now, these basic changes already transform the scene significantly.
-                }
-            });
-        })();
 
         // --- Async Initialization for Smooth Loading ---
         window.onload = () => {
@@ -7828,22 +7884,25 @@
                 const initStartTime = performance.now();
                 init(); // Create the scene
                 
-                // Allow browser to breathe before heavy optimization
+                // Removed Lenis (Causes scroll conflicts and lag on pure 3D canvas)
+
+                // GSAP Camera Transition Helper removed
+
+
+                // Start render loop IMMEDIATELY
+                requestAnimationFrame(sceneRender);
+
+                // GUARANTEED Loader Removal (Independent of optimization)
                 setTimeout(() => {
-                    document.querySelector('#smooth-loader p').textContent = 'Finalizing GPU instances...';
-                    optimizeScene(); // Optimize the map
-                    
-                    // Start render loop immediately
-                    requestAnimationFrame(sceneRender);
-                    
-                    // Need one render frame before fading out
-                    setTimeout(() => {
+                    const loader = document.getElementById('smooth-loader');
+                    if (loader) {
                         loader.style.opacity = '0';
                         loader.style.visibility = 'hidden';
                         setTimeout(() => loader.remove(), 1200);
-                        console.log("Total Load Time: " + (performance.now() - initStartTime).toFixed(2) + "ms");
-                    }, 500); // 500ms grace period for textures to hit GPU
-                }, 100);
+                    }
+                    console.log("Website revealed. Starting background optimization...");
+                    optimizeScene(); 
+                }, 1500); 
             }, 50);
         }
     </script>
