@@ -13,7 +13,7 @@ let walkScrollableHeight = 0;
 
 // Easing value for smoothness (smaller value = smoother but laggy, 
 // 0.1 is a good balance for smooth scroll-jacking effects)
-const ease = 0.1; 
+const ease = 0.35; 
 
 // Global state to hold the animated values for smooth transition
 let targetOpacity = new Array(walkingItems.length).fill(0);
