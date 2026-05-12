@@ -1802,10 +1802,10 @@
             // Initialize with dense fog for reveal animation
             scene.fog = new THREE.FogExp2(0x87ceeb, initialFogDensity);
 
-            // Camera set to Drone View Height
+            // Camera set to Masterplan View (default)
             camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 20000);
-            camera.position.set(0, 1200, 1500);
-            camera.lookAt(0, 0, 0);
+            camera.position.set(-20, 296, -118);
+            camera.lookAt(-20, 184, -118);
             scene.add(camera)
 
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
@@ -1865,7 +1865,7 @@
                 RIGHT: THREE.MOUSE.PAN
             };
 
-            controls.target.set(0, 0, 0);
+            controls.target.set(-20, 184, -118);
             controls.update();
 
             // --- Update Debug Overlay on Change ---
