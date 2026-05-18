@@ -96,6 +96,10 @@ const handleScrollAnimation = () => {
     const singleItemScrollDuration = ITEM_SCROLL_HEIGHT_MULTIPLIER * window.innerHeight;
     const transitionPoint = singleItemScrollDuration * (1 - OVERLAP_PERCENTAGE); 
 
+    // Performance: Only process walking animations if section is in or near viewport
+    if (walkXDistance < -window.innerHeight || walkXDistance > walkScrollableHeight + window.innerHeight) {
+        return;
+    }
 
     if (walkXDistance >= 0 && walkXDistance <= walkScrollableHeight) {
         

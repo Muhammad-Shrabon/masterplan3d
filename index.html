@@ -5,10 +5,47 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bangla Bosoti - 3D Masterplan</title>
-
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <style>
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #87ceeb; touch-action: none; }
+        canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+        #smooth-loader {
+            position: fixed; inset: 0; z-index: 999999;
+            display: flex; justify-content: center; align-items: center;
+            background: #87ceeb; color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: opacity 0.55s ease-out, visibility 0.55s ease-out;
+        }
+        #smooth-loader.is-done { opacity: 0; visibility: hidden; pointer-events: none; }
+        .loader-content { text-align: center; min-width: 260px; }
+        .loader-spinner {
+            width: 52px; height: 52px; margin: 0 auto 18px;
+            border: 5px solid rgba(255,255,255,0.28); border-top-color: #fff;
+            border-radius: 50%; animation: loader-spin 0.75s linear infinite;
+            will-change: transform;
+        }
+        .loader-bar-wrap {
+            width: 220px; height: 6px; margin: 14px auto 0;
+            background: rgba(255,255,255,0.25); border-radius: 999px; overflow: hidden;
+        }
+        .loader-bar { height: 100%; width: 0%; background: #fff; border-radius: 999px; transition: width 0.15s ease-out; }
+        #smooth-loader h2 { margin: 0 0 8px; font-size: 22px; font-weight: 600; }
+        #smooth-loader p { margin: 0; font-size: 13px; opacity: 0.85; }
+        @keyframes loader-spin { to { transform: rotate(360deg); } }
+        body.night-active #smooth-loader { background: #050816; }
+    </style>
 </head>
 
 <body>
+    <div id="smooth-loader" aria-live="polite" aria-busy="true">
+        <div class="loader-content">
+            <div class="loader-spinner"></div>
+            <h2>Loading Bangla Bosoti</h2>
+            <p id="loader-status">Preparing 3D city...</p>
+            <div class="loader-bar-wrap"><div id="loader-bar" class="loader-bar"></div></div>
+        </div>
+    </div>
     <!-- Camera Debug Overlay -->
     <div id="camera-debug"
         style="position: fixed; top: 20px; right: 20px; z-index: 1000; background: rgba(0, 0, 0, 0.7); color: white; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 12px; pointer-events: none; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(4px);">
@@ -35,17 +72,14 @@
     </style>
 
 
-    <!-- Load Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
     <!-- Load Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <!-- Load OrbitControls -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <!-- Load BufferGeometryUtils -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/BufferGeometryUtils.js"></script>
-    <!-- GSAP for smooth camera transitions and UI animations -->
+    <!-- GSAP for smooth camera transitions -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
     <!-- Lenis for ultra-smooth scrolling (Removed: Conflicts with 3D OrbitControls and causes lag) -->
     <!-- <script src="https://cdn.jsdelivr.net/gh/studio-freight/lenis@1.0.19/bundled/lenis.min.js"></script> -->
     <script>
@@ -59,6 +93,137 @@
         const globalUniforms = {
             uTime: { value: 0 }
         };
+
+        const PERF = {
+            targetFps: 60,
+            flagAnimInterval: 2,
+            debugThrottleMs: 120,
+            optimizeBatchMs: 24,
+            removeChunkSize: 1200,
+            removeChunkDelayMs: 400
+        };
+
+        let renderFrame = 0;
+        let isPageVisible = true;
+        let animationLoopId = null;
+        let lastDebugUpdate = 0;
+        let isUserInteracting = false;
+        let isMapDragging = false;
+        let isWheelSmoothing = false;
+
+        const MAP_CTRL = {
+            dragDamping: 0.14,
+            wheelDamping: 0.2,
+            wheelSmoothMs: 100
+        };
+
+        /** Instant stop on release — no glide after pointer up */
+        function stopMapInertia() {
+            if (!controls) return;
+            controls.enableDamping = false;
+            if (controls.sphericalDelta && controls.sphericalDelta.set) {
+                controls.sphericalDelta.set(0, 0, 0);
+            }
+            if (controls.panOffset && controls.panOffset.set) {
+                controls.panOffset.set(0, 0, 0);
+            }
+            controls.update();
+        }
+
+        function setupMapControls() {
+            const canvas = renderer.domElement;
+            canvas.style.cursor = 'grab';
+            canvas.style.touchAction = 'none';
+
+            controls.enableDamping = false;
+            controls.dampingFactor = 0;
+            controls.enablePan = true;
+            controls.enableZoom = true;
+            controls.enableRotate = true;
+            controls.rotateSpeed = 0.42;
+            controls.zoomSpeed = 0.65;
+            controls.panSpeed = 0.72;
+            controls.screenSpacePanning = true;
+            controls.maxPolarAngle = Math.PI * 0.49;
+            controls.mouseButtons = {
+                LEFT: THREE.MOUSE.PAN,
+                MIDDLE: THREE.MOUSE.DOLLY,
+                RIGHT: THREE.MOUSE.ROTATE
+            };
+
+            function onDragStart() {
+                if (isMapDragging) return;
+                isMapDragging = true;
+                isUserInteracting = true;
+                canvas.style.cursor = 'grabbing';
+                controls.enableDamping = true;
+                controls.dampingFactor = MAP_CTRL.dragDamping;
+            }
+
+            function onDragEnd() {
+                if (!isMapDragging) return;
+                isMapDragging = false;
+                isUserInteracting = false;
+                canvas.style.cursor = 'grab';
+                stopMapInertia();
+            }
+
+            controls.addEventListener('start', onDragStart);
+            controls.addEventListener('end', onDragEnd);
+
+            canvas.addEventListener('pointerdown', (e) => {
+                if (e.button === 0 || e.button === 1 || e.button === 2) {
+                    onDragStart();
+                }
+            }, { passive: true });
+
+            window.addEventListener('pointerup', onDragEnd);
+            window.addEventListener('pointercancel', onDragEnd);
+            window.addEventListener('blur', onDragEnd);
+
+            canvas.addEventListener('pointerleave', (e) => {
+                if (isMapDragging && e.buttons === 0) onDragEnd();
+            });
+
+            canvas.addEventListener('wheel', () => {
+                isUserInteracting = true;
+                isWheelSmoothing = true;
+                controls.enableDamping = true;
+                controls.dampingFactor = MAP_CTRL.wheelDamping;
+                clearTimeout(canvas._wheelIdle);
+                canvas._wheelIdle = setTimeout(() => {
+                    isWheelSmoothing = false;
+                    isUserInteracting = false;
+                    stopMapInertia();
+                }, MAP_CTRL.wheelSmoothMs);
+            }, { passive: true });
+
+            canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+        }
+
+        function setLoaderProgress(percent, message) {
+            const bar = document.getElementById('loader-bar');
+            const status = document.getElementById('loader-status');
+            const clamped = Math.max(0, Math.min(100, percent));
+            if (bar) bar.style.width = clamped + '%';
+            if (status && message) status.textContent = message;
+        }
+
+        function hideLoader() {
+            const loader = document.getElementById('smooth-loader');
+            if (!loader) return;
+            loader.classList.add('is-done');
+            loader.setAttribute('aria-busy', 'false');
+            setTimeout(() => loader.remove(), 600);
+        }
+
+        function nextFrame() {
+            return new Promise(resolve => requestAnimationFrame(resolve));
+        }
+
+        document.addEventListener('visibilitychange', () => {
+            isPageVisible = document.visibilityState === 'visible';
+        });
 
         // --- Walking Behavior Controller ---
         let walkingConfig = {
@@ -134,7 +299,11 @@
                 targetLookAt = { x: -86, y: 3, z: 12 };
             }
 
-            // Kill any ongoing camera tweens to prevent conflicts
+            stopMapInertia();
+            isMapDragging = false;
+            isUserInteracting = false;
+            isWheelSmoothing = false;
+
             gsap.killTweensOf(camera.position);
             gsap.killTweensOf(controls.target);
 
@@ -870,8 +1039,17 @@
             group.position.set(x, y, z);
             group.rotation.set(rx, ry, rz);
             group.scale.setScalar(scale);
+            group.updateMatrix();
+            group.matrixAutoUpdate = false;
             if (shadow) {
-                group.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
+                group.traverse(c => { 
+                    if (c.isMesh) { 
+                        c.castShadow = true; 
+                        c.receiveShadow = true; 
+                        c.updateMatrix();
+                        c.matrixAutoUpdate = false;
+                    } 
+                });
             }
             if (parent) parent.add(group);
             return group;
@@ -1028,7 +1206,7 @@
             },
             // Zone C Path
             {
-                width: 0,
+                width: 12,
                 points: [
                     new THREE.Vector3(0, 0, 0),
                     new THREE.Vector3(0, 0, -1),
@@ -1046,7 +1224,7 @@
             },
             // Zone D Path
             {
-                width: 0,
+                width: 12,
                 points: [
                     new THREE.Vector3(0, 0, 0),
                     new THREE.Vector3(5, 0, 10),
@@ -1640,10 +1818,10 @@
         function optimizeScene() {
             const startTime = performance.now();
             console.log("Starting Scene Optimization...");
+            setLoaderProgress(72, 'Merging city geometry...');
 
             const meshGroups = new Map();
             const toRemove = [];
-            const processedGeometries = new Set();
 
             scene.updateMatrixWorld(true);
             window.masterplanZones = {};
@@ -1676,7 +1854,6 @@
                 }
 
                 if (node.children) {
-                    // Clone children array to avoid modification issues during traversal
                     const children = [...node.children];
                     for (let i = 0; i < children.length; i++) {
                         collect(children[i], skip, nodeZone);
@@ -1686,16 +1863,20 @@
 
             collect(scene);
 
-            // 2. Create InstancedMeshes (Asynchronously to prevent hang)
             const keys = Array.from(meshGroups.keys());
             let currentKeyIndex = 0;
             let instanceCount = 0;
             let groupCount = 0;
 
+            renderer.domElement.addEventListener('mousedown', () => { isUserInteracting = true; });
+            window.addEventListener('mouseup', () => { isUserInteracting = false; });
+            renderer.domElement.addEventListener('touchstart', () => { isUserInteracting = true; }, { passive: true });
+            window.addEventListener('touchend', () => { isUserInteracting = false; });
+
             function processBatch() {
                 try {
                     const batchStartTime = performance.now();
-                    while (currentKeyIndex < keys.length && performance.now() - batchStartTime < 16) {
+                    while (currentKeyIndex < keys.length && performance.now() - batchStartTime < PERF.optimizeBatchMs) {
                         const key = keys[currentKeyIndex++];
                         const data = meshGroups.get(key);
                         if (!data || !data.geo || !data.mat) continue;
@@ -1712,13 +1893,17 @@
                                 }
                                 iMesh.name = data.isTree ? 'instancedTree_' + data.treeType : 'instancedObj';
                                 
+                                // Set position/rotation/scale for each instance
                                 for (let i = 0; i < count; i++) {
                                     iMesh.setMatrixAt(i, data.matrices[i]);
                                 }
 
-                                // Keep original meshes visible until the end of the batch
-                                // data.originalMeshes.forEach(m => { m.visible = false; });
+                                // Disabled frustum culling because shared geometries cause bounding box overwrites,
+                                // which makes long roads disappear when zoomed in.
+                                iMesh.frustumCulled = false; 
 
+                                // Hide original meshes immediately (much faster than removal)
+                                data.originalMeshes.forEach(m => { m.visible = false; });
                                 if (data.mat.userData && data.mat.userData.isLeaf) {
                                     const oldOnBefore = data.mat.onBeforeCompile;
                                     data.mat.onBeforeCompile = (shader) => {
@@ -1740,9 +1925,8 @@
                                     };
                                 }
 
-                                iMesh.frustumCulled = false; // MUST be false unless computeBoundingBox/Sphere is implemented for all instances
                                 iMesh.instanceMatrix.needsUpdate = true;
-                                iMesh.matrixAutoUpdate = false;
+                                iMesh.matrixAutoUpdate = false; 
                                 scene.add(iMesh);
 
                                 instanceCount += count;
@@ -1754,28 +1938,47 @@
                     }
 
                     if (currentKeyIndex < keys.length) {
-                        setTimeout(processBatch, 4); // Shorter delay for faster background optimization
+                        const pct = 72 + Math.floor((currentKeyIndex / keys.length) * 24);
+                        setLoaderProgress(pct, 'Optimizing city meshes...');
+                        requestAnimationFrame(processBatch);
                     } else {
                         finalizeOptimization();
                     }
                 } catch (e) {
                     console.error("Optimization batch failed:", e);
-                    finalizeOptimization(); // Try to finish anyway
+                    finalizeOptimization();
                 }
             }
 
             function finalizeOptimization() {
                 try {
-                    // 3. Selective Removal
-                    toRemove.forEach(mesh => {
-                        if (mesh.parent) mesh.parent.remove(mesh);
-                    });
+                    // Phase 1: Hide all originals instantly
+                    for (let i = 0; i < toRemove.length; i++) {
+                        toRemove[i].visible = false;
+                    }
 
                     houseMeshCache.clear();
                     if (typeof breathingObjects !== 'undefined') breathingObjects.length = 0;
                     window.isSceneOptimized = true;
+                    setLoaderProgress(100, 'Ready');
+                    console.log(`Optimization complete in ${Math.round(performance.now() - startTime)}ms.`);
 
-                    console.log(`Optimization complete. Draw calls: ${groupCount}, Meshes: ${instanceCount}`);
+                    // Phase 2: Remove hidden meshes from scene graph in background
+                    let removeIdx = 0;
+                    function removeChunk() {
+                        const end = Math.min(removeIdx + PERF.removeChunkSize, toRemove.length);
+                        for (; removeIdx < end; removeIdx++) {
+                            const m = toRemove[removeIdx];
+                            if (m.parent) m.parent.remove(m);
+                        }
+                        if (removeIdx < toRemove.length) {
+                            requestAnimationFrame(removeChunk);
+                        } else {
+                            console.log('Scene graph cleanup complete. All original meshes removed.');
+                        }
+                    }
+                    setTimeout(removeChunk, PERF.removeChunkDelayMs);
+
                     if (window.onOptimizationComplete) window.onOptimizationComplete();
                 } catch (e) {
                     console.error("Finalization failed:", e);
@@ -1786,8 +1989,9 @@
             processBatch();
         }
 
-        function init() {
+        function initBase() {
             console.log("Initializing 3D Masterplan...");
+            setLoaderProgress(8, 'Setting up scene...');
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x87ceeb);
             flagObj = createFlag(scene, { x: 10, y: 0, z: -5 });
@@ -1799,8 +2003,7 @@
             agent.position.set(10, 0.5, -5); // Start at the flag
 
             // scene.fog = new THREE.Fog( 0xcccccc, 10, 15 );
-            // Initialize with dense fog for reveal animation
-            scene.fog = new THREE.FogExp2(0x87ceeb, initialFogDensity);
+            scene.fog = new THREE.FogExp2(0x87ceeb, finalFogDensity);
 
             // Camera set to Masterplan View (default)
             camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 20000);
@@ -1813,59 +2016,30 @@
 
             const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
             directionalLight.position.set(2000, 4000, 2000);
-            directionalLight.castShadow = true;
-            directionalLight.shadow.bias = -0.001;
-            directionalLight.shadow.normalBias = 0.02;
-            directionalLight.shadow.mapSize.width = 2048;
-            directionalLight.shadow.mapSize.height = 2048;
-
-            // Proper shadow camera bounds for the city scale
-            const sCam = directionalLight.shadow.camera;
-            sCam.left = -2000;
-            sCam.right = 2000;
-            sCam.top = 2000;
-            sCam.bottom = -2000;
-            sCam.near = 100;
-            sCam.far = 15000;
-            sCam.updateProjectionMatrix(); // Essential!
+            directionalLight.castShadow = false;
 
             scene.add(directionalLight);
 
             renderer = new THREE.WebGLRenderer({
-                antialias: true,
-                logarithmicDepthBuffer: true, // RESTORED: Critical for massive cities to prevent roads from disappearing (Z-fighting)
+                antialias: false, // DISABLED: Saves ~30% GPU per frame
+                logarithmicDepthBuffer: true, // RESTORED: Crucial to stop "blinking" (Z-fighting) on distant elements like pools and roads
                 powerPreference: "high-performance"
             });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(1); // Performance: Cap at 1.0 to prevent hang on 4K screens
-            renderer.shadowMap.enabled = true;
-            renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Softer shadows than VSM for this style
-            renderer.shadowMap.autoUpdate = false;
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+            renderer.shadowMap.enabled = false;
+            renderer.sortObjects = false;
             document.body.appendChild(renderer.domElement);
 
             // Grid Helper
             // const grid = new THREE.GridHelper(1510, 80, 0x697565, 0x697565);
             // scene.add(grid);
 
-            // Orbit Controls (Drone View Enabled)
             controls = new THREE.OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = false; // NO inertia: map stops instantly when mouse is released
-            controls.dampingFactor = 0;
-            controls.enableRotate = true; // Enabled for Drone View
-            controls.zoomSpeed = 1.0;
-            controls.panSpeed = 0.8; // Precise 1:1 movement — drag distance = map movement
             controls.minDistance = 50;
             controls.maxDistance = 8000;
-            controls.screenSpacePanning = true;
-
-            // Remap Left Click to Pan
-            controls.mouseButtons = {
-                LEFT: THREE.MOUSE.PAN,
-                MIDDLE: THREE.MOUSE.DOLLY,
-                RIGHT: THREE.MOUSE.PAN
-            };
-
             controls.target.set(-20, 184, -118);
+            setupMapControls();
             controls.update();
 
             // --- Update Debug Overlay on Change ---
@@ -1873,6 +2047,9 @@
             const camTargetEl = document.getElementById('cam-target');
 
             function updateCameraDebug() {
+                const now = performance.now();
+                if (now - lastDebugUpdate < PERF.debugThrottleMs) return;
+                lastDebugUpdate = now;
                 const pos = camera.position;
                 const tar = controls.target;
                 camPosEl.innerText = `Position: (${Math.round(pos.x)}, ${Math.round(pos.y)}, ${Math.round(pos.z)})`;
@@ -2261,27 +2438,44 @@
             subGreenLandBA4.position.set(-20, 0, -411);
             cityBlocks.add(subGreenLandBA4);
 
+            cityBlocks.userData.lands = {
+                subGreenLand1, subGreenLand2, subGreenLand3, subGreenLand4, subGreenLand5, subGreenLand6,
+                subGreenLandCL1, subGreenLandCL2, subGreenLandCL3, subGreenLandCL4, subGreenLandCL5,
+                subGreenLandCL6, subGreenLandCL7, subGreenLandCL8, subGreenLandCL9, subGreenLandCL10,
+                subGreenLandCL11, subGreenLandCL12, subGreenLandCL13, subGreenLandCL14, subGreenLandCL15,
+                subGreenLandCL16, subGreenLandCL17,
+                subGreenLandBB1, subGreenLandBB2, subGreenLandBB3, subGreenLandBB4,
+                subGreenLandBA1, subGreenLandBA2, subGreenLandBA3, subGreenLandBA4
+            };
+            window.__cityBlocks = cityBlocks;
+        }
 
-            // Create House Bunches and Clusters synchronously for guaranteed visibility
-            createHouseBunch(subGreenLand6, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 30, startX: 0, startZ: 5, unitSpacing: 20, houseGap: 280, rowSpacing: 25, startId: 1, clusterName: "BUNCH-6", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
-            createHouseBunch(subGreenLand5, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 28, startX: 0, startZ: 60, unitSpacing: 20, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-5", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
-            createHouseBunch(subGreenLand4, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 24, startX: 0, startZ: 115, unitSpacing: 20, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-4", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
-            createHouseBunch(subGreenLand3, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 27, startX: 0, startZ: 170, unitSpacing: 20, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-3", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
-            createHouseBunch(subGreenLand2, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 28, startX: 0, startZ: 225, unitSpacing: 20, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-2", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
-            createHouseBunch(subGreenLand1, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 280, unitSpacing: 15.5, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-1", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
+        async function buildAllHousesAsync(cityBlocks) {
+            const L = cityBlocks.userData.lands;
+            setLoaderProgress(18, 'Building house bunches...');
+            createHouseBunch(L.subGreenLand6, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 30, startX: 0, startZ: 5, unitSpacing: 20, houseGap: 280, rowSpacing: 25, startId: 1, clusterName: "BUNCH-6", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
+            createHouseBunch(L.subGreenLand5, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 28, startX: 0, startZ: 60, unitSpacing: 20, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-5", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
+            createHouseBunch(L.subGreenLand4, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 24, startX: 0, startZ: 115, unitSpacing: 20, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-4", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
+            createHouseBunch(L.subGreenLand3, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 27, startX: 0, startZ: 170, unitSpacing: 20, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-3", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
+            createHouseBunch(L.subGreenLand2, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 28, startX: 0, startZ: 225, unitSpacing: 20, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-2", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
+            createHouseBunch(L.subGreenLand1, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 280, unitSpacing: 15.5, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-1", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
+            await nextFrame();
+            setLoaderProgress(28, 'Building clusters...');
 
-            createHouseCluster(subGreenLandCL1, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 23, startId: 2, clusterName: "CLUSTER-1", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
-            createHouseCluster(subGreenLandCL2, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 20, startId: 2, clusterName: "CLUSTER-2", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
-            createHouseCluster(subGreenLandCL3, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 20, startId: 2, clusterName: "CLUSTER-3", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
-            createHouseCluster(subGreenLandCL4, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 20, startId: 2, clusterName: "CLUSTER-4", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
-            createHouseCluster(subGreenLandCL5, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 20, startId: 2, clusterName: "CLUSTER-5", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
-            createHouseCluster(subGreenLandCL6, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-6", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
-            createHouseCluster(subGreenLandCL7, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-7", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
-            createHouseCluster(subGreenLandCL8, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 15.4, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-8", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
-            createHouseCluster(subGreenLandCL9, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 15.5, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-9", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
-            createHouseCluster(subGreenLandCL10, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 34, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-10", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
+            createHouseCluster(L.subGreenLandCL1, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 23, startId: 2, clusterName: "CLUSTER-1", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
+            createHouseCluster(L.subGreenLandCL2, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 20, startId: 2, clusterName: "CLUSTER-2", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
+            createHouseCluster(L.subGreenLandCL3, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 20, startId: 2, clusterName: "CLUSTER-3", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
+            createHouseCluster(L.subGreenLandCL4, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 20, startId: 2, clusterName: "CLUSTER-4", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
+            createHouseCluster(L.subGreenLandCL5, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 20, startId: 2, clusterName: "CLUSTER-5", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
+            createHouseCluster(L.subGreenLandCL6, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-6", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
+            createHouseCluster(L.subGreenLandCL7, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-7", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
+            createHouseCluster(L.subGreenLandCL8, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 15.4, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-8", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
+            createHouseCluster(L.subGreenLandCL9, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 15.5, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-9", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
+            createHouseCluster(L.subGreenLandCL10, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 34, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-10", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
+            await nextFrame();
+            setLoaderProgress(38, 'Building block zones...');
             // BLOCK B -1
-            createHouseCluster(subGreenLandBB1, {
+            createHouseCluster(L.subGreenLandBB1, {
                 serialCount: 36, startX: 3, startZ: 210, unitSpacing: 17.5, houseGap: 210, rowSpacing: 32, startId: 2,
                 clusterName: "BLOCK B - 1",
                 innerGapScale: { x: 1.25, y: 1.8 },
@@ -2290,10 +2484,10 @@
                 hasCarParking: true,
                 poolOX: -270,
                 poolOZ: -250,
-                hasPool: true, houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90
+                hasPool: false, houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90
             });
             // BLOCK B - 2
-            createHouseCluster(subGreenLandBB2, {
+            createHouseCluster(L.subGreenLandBB2, {
                 serialCount: 36, startX: 0, startZ: 210, unitSpacing: 17.5, houseGap: 210, rowSpacing: 32, startId: 2,
                 clusterName: "BLOCK B - 2", hScale: 4,
                 innerGapScale: { x: 1.25, y: 1.8 },
@@ -2302,10 +2496,10 @@
                 houseOZ: 200,
                 poolOX: -270,
                 poolOZ: -250,
-                hasPool: true, houseDesign: 'custom', houseOX: 80, houseOZ: 310, hRotate: 90
+                hasPool: false, houseDesign: 'custom', houseOX: 80, houseOZ: 310, hRotate: 90
             });
             // BLOCK B - 3
-            createHouseCluster(subGreenLandBB3, {
+            createHouseCluster(L.subGreenLandBB3, {
                 serialCount: 36, startX: 3, startZ: 210, unitSpacing: 17.5, houseGap: 210, rowSpacing: 32, startId: 2,
                 clusterName: "BLOCK B - 3",
                 innerGapScale: { x: 1.25, y: 1.8 },
@@ -2314,10 +2508,10 @@
                 hasCarParking: true,
                 poolOX: -270,
                 poolOZ: -250,
-                hasPool: true, houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90
+                hasPool: false, houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90
             });
             // BLOCK B - 4
-            createHouseCluster(subGreenLandBB4, {
+            createHouseCluster(L.subGreenLandBB4, {
                 serialCount: 36, startX: 3, startZ: 210, unitSpacing: 17.5, houseGap: 210, rowSpacing: 32, startId: 2,
                 clusterName: "BLOCK B - 4",
                 innerGapScale: { x: 1.25, y: 1.8 },
@@ -2326,17 +2520,17 @@
                 hasCarParking: true,
                 poolOX: -270,
                 poolOZ: -250,
-                hasPool: true, houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90
+                hasPool: false, houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90
             });
             // BLOCK A - 1
-            // createHouseCluster(subGreenLandBA1, {
+            // createHouseCluster(L.subGreenLandBA1, {
             //     serialCount: 10, startX: 0, startZ: 210, unitSpacing: 8.9, houseGap: 10, rowSpacing: 16, startId: 2,
             //     clusterName: "BLOCK A - 1", hScale: 2,
             //     innerGapScale: { x: 0.53, y: .8 },
             //     outerGapScale: 0.5
             // });
             // BLOCK A - 2
-            createHouseCluster(subGreenLandBA2, {
+            createHouseCluster(L.subGreenLandBA2, {
                 serialCount: 22, startX: 3, startZ: 210, unitSpacing: 17.5, houseGap: 210, rowSpacing: 32, startId: 2,
                 clusterName: "BLOCK A - 2",
                 innerGapScale: { x: 1.25, y: 1.8 },
@@ -2345,10 +2539,12 @@
                 hasCarParking: true,
                 poolOX: -270,
                 poolOZ: -250,
-                hasPool: true, houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90
+                hasPool: false, houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90
             });
+            await nextFrame();
+            setLoaderProgress(48, 'Building premium blocks...');
             // BLOCK A - 3
-            createHouseCluster(subGreenLandBA3, {
+            createHouseCluster(L.subGreenLandBA3, {
                 serialCount: 30, startX: 3, startZ: 210, unitSpacing: 17.5, houseGap: 210, rowSpacing: 32, startId: 2,
                 clusterName: "BLOCK A - 3",
                 innerGapScale: { x: 1.25, y: 1.8 },
@@ -2357,10 +2553,10 @@
                 hasCarParking: true,
                 poolOX: -270,
                 poolOZ: -250,
-                hasPool: true, houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90
+                hasPool: false, houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90
             });
             // BLOCK A - 4
-            createHouseCluster(subGreenLandBA4, {
+            createHouseCluster(L.subGreenLandBA4, {
                 serialCount: 20, startX: 3, startZ: 210, unitSpacing: 17.5, houseGap: 210, rowSpacing: 32, startId: 2,
                 clusterName: "BLOCK A - 4",
                 innerGapScale: { x: 1.25, y: 1.8 },
@@ -2369,11 +2565,12 @@
                 hasCarParking: true,
                 poolOX: -270,
                 poolOZ: -250,
-                hasPool: true, houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90
+                hasPool: false, houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90
             });
+            await nextFrame();
+            setLoaderProgress(55, 'Building lake-side estates...');
 
-
-            createHouseCluster(subGreenLandCL11, {
+            createHouseCluster(L.subGreenLandCL11, {
                 innerGapScale: { x: 1, y: .9 },
                 outerGapScale: 1.5,
                 serialCount: 8,
@@ -2407,7 +2604,7 @@
                 carW: 200,
                 carL: 460
             });
-            createHouseCluster(subGreenLandCL12, {
+            createHouseCluster(L.subGreenLandCL12, {
                 innerGapScale: { x: 1, y: .9 },
                 outerGapScale: 1.5,
                 serialCount: 8,
@@ -2441,7 +2638,7 @@
                 hRotate: 0,
                 houseOX: -450, houseOZ: 900,
             });
-            createHouseCluster(subGreenLandCL13, {
+            createHouseCluster(L.subGreenLandCL13, {
                 serialCount: 12,
                 startX: 0,
                 startZ: 190,
@@ -2476,7 +2673,7 @@
                 AreaRotation: 93,
                 houseOX: 80, houseOZ: 500,
             });
-            createHouseCluster(subGreenLandCL14, {
+            createHouseCluster(L.subGreenLandCL14, {
                 innerGapScale: { x: 1, y: .5 },
                 outerGapScale: 1.5,
                 serialCount: 5,
@@ -2513,7 +2710,7 @@
                 hRotate: 0,
                 houseOX: -450, houseOZ: 900,
             });
-            createHouseCluster(subGreenLandCL15, {
+            createHouseCluster(L.subGreenLandCL15, {
                 innerGapScale: { x: 1, y: .5 },
                 outerGapScale: 1.5,
                 serialCount: 7,
@@ -2550,7 +2747,7 @@
                 hRotate: 0,
                 houseOX: -450, houseOZ: 900,
             });
-            createHouseCluster(subGreenLandCL16, {
+            createHouseCluster(L.subGreenLandCL16, {
                 innerGapScale: { x: 1, y: .5 },
                 outerGapScale: 1.5,
                 serialCount: 7,
@@ -2588,7 +2785,7 @@
                 houseOX: -450, houseOZ: 900,
                 houseAreaRotation: 54,
             });
-            createHouseCluster(subGreenLandCL17, {
+            createHouseCluster(L.subGreenLandCL17, {
                 innerGapScale: { x: 1, y: .5 },
                 outerGapScale: 1.5,
                 serialCount: 7,
@@ -2626,6 +2823,12 @@
                 houseOX: -450, houseOZ: 900,
                 houseAreaRotation: 90,
             });
+            setLoaderProgress(62, 'City blocks complete');
+            await nextFrame();
+        }
+
+        function initRoadsAndExtras() {
+            setLoaderProgress(65, 'Building roads and landmarks...');
 
             // ADDING THE CUSTOM BUILDING FROM customeHouseBuilding.html
             const customBuildingGroup = new THREE.Group();
@@ -2960,6 +3163,7 @@
         }
 
         /**
+
          * Creates a custom road with 3D thickness using THREE.BufferGeometry
          * @param {THREE.Scene} scene - The scene to add the road to
          * @param {Object} options - { points: [], width: 4, thickness: 0.5, segments: 128, style: 'dashed' }
@@ -3416,14 +3620,15 @@
 
 
         function sceneRender(time) {
+            if (!isPageVisible) return;
+
+            renderFrame++;
             const t = time * 0.001;
             globalUniforms.uTime.value = t;
 
-            // Only update controls if damping is enabled (performance)
-            // Always update controls when not in walking mode for smooth interaction
-            // Removed redundant controls.update() call
-
-            flagObj.animateFlag(time);
+            if (flagObj && flagObj.animateFlag && renderFrame % PERF.flagAnimInterval === 0) {
+                flagObj.animateFlag(time);
+            }
 
             // --- Fog Reveal Animation (Disabled as per request) ---
             if (false && !fogRevealComplete) {
@@ -3503,13 +3708,24 @@
                 }
             }
 
-            if (controls && !isWalkingMode) {
+            if (controls && !isWalkingMode && (isMapDragging || isWheelSmoothing)) {
                 controls.update();
-                // camera.position.y = 6.0; // Removed height lock for Drone View
             }
-            scene.fog.density = finalFogDensity; // Ensure clear fog
-            renderer.render(scene, camera);
-            requestAnimationFrame(sceneRender);
+
+            if (window.isSceneOptimized && renderer && scene && camera) {
+                renderer.render(scene, camera);
+            }
+        }
+
+        function startRenderLoop() {
+            if (animationLoopId !== null) return;
+            renderer.setAnimationLoop(sceneRender);
+            animationLoopId = true;
+        }
+
+        function stopRenderLoop() {
+            if (renderer) renderer.setAnimationLoop(null);
+            animationLoopId = null;
         }
 
 
@@ -3896,6 +4112,14 @@
             tree.rotation.copy(rotation);
             const s = scale / 27.5;
             tree.scale.set(s, s, s);
+            tree.updateMatrix();
+            tree.matrixAutoUpdate = false;
+            tree.traverse(c => {
+                if (c.isMesh) {
+                    c.updateMatrix();
+                    c.matrixAutoUpdate = false;
+                }
+            });
             scene.add(tree);
             return tree;
         }
@@ -5878,9 +6102,11 @@
 
         function createHouse(id, plotW = 500, plotD = 600, skipWall = null, hasPool = false, carCount = 0, hasPlayground = false, hDepth = 280, hWidth = 220, hasWing = true, hFloorH = 100, houseOX = 0, houseOZ = 0, poolOX = 0, poolOZ = 0, carOX = 0, carOZ = 0, playOX = 0, playOZ = 0, carW = 80, carL = 160, innerGapScale = 1, isTerrace = false, hasCarParking = true, houseDesign = 'standard', hScale = 1, hRotate = 0) {
 
+            const addPool = hasPool === true;
+
             // Create a cache key for identical houses
             const cacheKey = JSON.stringify({
-                plotW, plotD, skipWall, hasPool, carCount, hasPlayground,
+                plotW, plotD, skipWall, hasPool: addPool, carCount, hasPlayground,
                 hDepth, hWidth, hasWing, hFloorH, houseOX, houseOZ,
                 poolOX, poolOZ, carOX, carOZ, playOX, playOZ,
                 carW, carL, innerGapScale, isTerrace, hasCarParking,
@@ -5985,7 +6211,7 @@
             if (houseDesign === 'custom') {
                 createFancyBuilding(building, hScale);
                 // Also add pool if requested as modular components might not have it
-                if (hasPool) {
+                if (addPool) {
                     // Pool logic remains exactly same as standard
                     const poolGroup = new THREE.Group();
                     const poolW_c = Math.max(200, plotW * 0.3), poolD_c = Math.max(350, plotD * 0.3), poolH_c = 10;
@@ -6025,7 +6251,7 @@
             } else if (houseDesign === 'customV2') {
                 createFancyBuildingV2(building, hScale);
                 // Also add pool if requested
-                if (hasPool) {
+                if (addPool) {
                     const poolGroup = new THREE.Group();
                     const poolW_c = Math.max(200, plotW * 0.3), poolD_c = Math.max(350, plotD * 0.3), poolH_c = 10;
                     const poolKey_c = `poolWater_${poolW_c}_${poolD_c}`;
@@ -6043,7 +6269,7 @@
                 }
             } else if (houseDesign === 'customV3') {
                 createFancyBuildingV3(building, hScale);
-                if (hasPool) {
+                if (addPool) {
                     const poolGroup = new THREE.Group();
                     const poolW_c = Math.max(200, plotW * 0.3), poolD_c = Math.max(350, plotD * 0.3), poolH_c = 10;
                     const poolKey_c = `poolWater_${poolW_c}_${poolD_c}`;
@@ -6155,7 +6381,7 @@
                 // Swimming Pool
 
                 // --- ADDED SWIMMING POOL ---
-                if (hasPool) {
+                if (addPool) {
                     const poolGroup = new THREE.Group();
                     const poolW = Math.max(200, plotW * 0.3), poolD = Math.max(350, plotD * 0.3), poolH = 10;
                     const poolKey = `poolWater_${poolW}_${poolD}`;
@@ -6709,7 +6935,6 @@
                 basePlotD = options.basePlotD || 1000,
                 startId = 1,
                 clusterName = "CLUSTER-6",
-                hasPool = false,
                 carCount = 1,
                 hasCarParking = false,
                 hasPlayground = false,
@@ -6717,6 +6942,10 @@
                 hFloorH = (options.hFloorH || 100) * hScale,
                 rotation = 0
             } = options;
+
+            const wantsPool = options.hasPool === true;
+            const poolPassX = wantsPool ? (options.poolOX || 0) : 0;
+            const poolPassZ = wantsPool ? (options.poolOZ || 0) : 0;
 
             // Decouple building scale from area scale for custom designs
             const areaHScale = (options.houseDesign === 'custom' || options.houseDesign === 'customV2') ? 1 : hScale;
@@ -6825,7 +7054,7 @@
                 // 'rotation' is legacy alias for houseRotation in createHouseCluster
                 const unitRot = options.houseRotation !== undefined ? options.houseRotation : (rotation || 0);
                 const unitRotRad = unitRot * (Math.PI / 180);
-                const house = createHouse(formattedId, plotWidth, plotDepth, null, hasPool, carCount, hasPlayground, hDepthNominal * areaHScale, hWidthNominal * areaHScale, options.hasWing !== undefined ? options.hasWing : true, hFloorH, (options.houseOX || 0), (options.houseOZ || 0), (options.poolOX || 0), (options.poolOZ || 0), (options.carOX || 0), (options.carOZ || 0), (options.playOX || 0), (options.playOZ || 0), (options.carW !== undefined ? options.carW : 80) * hScale, (options.carL !== undefined ? options.carL : 160) * hScale, options.innerGapScale || options.paddingScale || 1, false, hasCarParking, options.houseDesign || 'standard', hScale, hRotateVal);
+                const house = createHouse(formattedId, plotWidth, plotDepth, null, wantsPool, carCount, hasPlayground, hDepthNominal * areaHScale, hWidthNominal * areaHScale, options.hasWing !== undefined ? options.hasWing : true, hFloorH, (options.houseOX || 0), (options.houseOZ || 0), poolPassX, poolPassZ, (options.carOX || 0), (options.carOZ || 0), (options.playOX || 0), (options.playOZ || 0), (options.carW !== undefined ? options.carW : 80) * hScale, (options.carL !== undefined ? options.carL : 160) * hScale, options.innerGapScale || options.paddingScale || 1, false, hasCarParking, options.houseDesign || 'standard', hScale, hRotateVal);
 
                 unitGroup.add(house);
 
@@ -6917,6 +7146,8 @@
             const { x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0 } = config;
             mesh.position.set(x, y, z);
             mesh.rotation.set(rx, ry, rz);
+            mesh.updateMatrix();
+            mesh.matrixAutoUpdate = false;
             mesh.castShadow = true;
             mesh.receiveShadow = true;
             group.add(mesh);
@@ -7250,19 +7481,19 @@
             for (let i = 0; i < config.count; i++) {
                 const carriage = new THREE.Group();
 
-                const body = new THREE.Mesh(new THREE.BoxGeometry(6, 1.5, 3.0), mRoofMat); // Increased height and depth
-                body.position.y = 0.9; // Adjusted position
+                const body = new THREE.Mesh(new THREE.BoxGeometry(6, 1.5, 3.0), mRoofMat); 
+                body.position.y = 0.9;
                 carriage.add(body);
 
                 const roofL = new THREE.Mesh(new THREE.BoxGeometry(6, 0.4, 0.8), mRoofMat);
-                roofL.position.set(0, 1.5, -1.0); // Adjusted for new depth
+                roofL.position.set(0, 1.5, -1.0); 
                 carriage.add(roofL);
 
                 const roofR = roofL.clone();
-                roofR.position.z = 1.0; // Adjusted for new depth
+                roofR.position.z = 1.0; 
                 carriage.add(roofR);
 
-                const front = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1.5, 3.0), mRoofMat); // Increased height and depth
+                const front = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1.5, 3.0), mRoofMat); 
                 front.position.x = 3.2;
                 carriage.add(front);
 
@@ -7270,25 +7501,25 @@
                 back.position.x = -3.2;
                 carriage.add(back);
 
-                const greenChassis = new THREE.Mesh(new THREE.BoxGeometry(6.4, 0.4, 3.2), greenMat); // Increased depth
+                const greenChassis = new THREE.Mesh(new THREE.BoxGeometry(6.4, 0.4, 3.2), greenMat); 
                 greenChassis.position.y = -0.2;
                 carriage.add(greenChassis);
 
                 const redGlass = new THREE.Mesh(new THREE.BoxGeometry(6.4, 0.8, 0.1), redGlassMat);
-                redGlass.position.set(0, 0.9, -1.55); // Adjusted for new depth
+                redGlass.position.set(0, 0.9, -1.55); 
                 carriage.add(redGlass);
 
                 const skyGlass = new THREE.Mesh(new THREE.BoxGeometry(6.4, 0.8, 0.1), skyGlassMat);
-                skyGlass.position.set(0, 1.5, 0); // Adjusted for new height
+                skyGlass.position.set(0, 1.5, 0); 
                 carriage.add(skyGlass);
 
                 const wheel1 = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.2), wheelMat);
                 wheel1.rotation.z = Math.PI / 2;
-                wheel1.position.set(-2.5, -0.4, -1.6); // Adjusted for new depth
+                wheel1.position.set(-2.5, -0.4, -1.6); 
                 carriage.add(wheel1);
 
                 const wheel2 = wheel1.clone();
-                wheel2.position.z = 1.6; // Adjusted for new depth
+                wheel2.position.z = 1.6;
                 carriage.add(wheel2);
 
                 const wheel3 = wheel1.clone();
@@ -7296,8 +7527,15 @@
                 carriage.add(wheel3);
 
                 const wheel4 = wheel3.clone();
-                wheel4.position.z = 1.6; // Adjusted for new depth
+                wheel4.position.z = 1.6;
                 carriage.add(wheel4);
+
+                carriage.traverse(c => {
+                    if (c.isMesh) {
+                        c.updateMatrix();
+                        c.matrixAutoUpdate = false;
+                    }
+                });
 
                 carriage.position.x = i * 7;
                 trainGroup.add(carriage);
@@ -7305,6 +7543,10 @@
 
             trainGroup.position.set(config.posX, config.posY, config.posZ);
             trainGroup.rotation.y = config.rotY * Math.PI / 180;
+            trainGroup.traverse(c => {
+                c.updateMatrix();
+                c.matrixAutoUpdate = false;
+            });
             scene.add(trainGroup);
         }
 
@@ -7865,78 +8107,61 @@
                 camera.aspect = window.innerWidth / window.innerHeight;
                 camera.updateProjectionMatrix();
                 renderer.setSize(window.innerWidth, window.innerHeight);
-                renderer.setPixelRatio(1);
-            }, 100); // Throttle to 100ms
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+            }, 100);
         });
 
-        // --- Async Initialization for Smooth Loading ---
-        window.onload = () => {
-            // Create loading screen
-            const loader = document.createElement('div');
-            loader.id = 'smooth-loader';
-            loader.innerHTML = `
-                <div class="loader-content">
-                    <div class="loader-spinner"></div>
-                    <h2>Generating 3D Masterplan</h2>
-                    <p>Optimizing procedural geometry...</p>
-                </div>
-            `;
-            const style = document.createElement('style');
-            style.innerHTML = `
-                #smooth-loader {
-                    position: fixed;
-                    top: 0; left: 0; width: 100%; height: 100%;
-                    background: #87ceeb; /* Sky color matching init */
-                    z-index: 999999;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                    color: white;
-                    transition: opacity 1.2s ease-out, visibility 1.2s ease-out;
+        async function bootstrapApp() {
+            setLoaderProgress(2, 'Loading engine...');
+            await nextFrame();
+            await nextFrame();
+
+            const loadWatchdog = setTimeout(() => {
+                if (!window.isSceneOptimized) {
+                    console.warn('Load watchdog: revealing scene after timeout.');
+                    window.isSceneOptimized = true;
+                    hideLoader();
                 }
-                .loader-content { text-align: center; }
-                .loader-spinner {
-                    width: 60px; height: 60px;
-                    border: 6px solid rgba(255,255,255,0.3);
-                    border-top-color: white;
-                    border-radius: 50%;
-                    animation: spin 1s linear infinite;
-                    margin: 0 auto 20px auto;
+            }, 120000);
+
+            window.onOptimizationComplete = () => {
+                clearTimeout(loadWatchdog);
+                hideLoader();
+                console.log('City ready. GPU instancing complete.');
+            };
+
+            try {
+                initBase();
+                startRenderLoop();
+
+                if (window.__cityBlocks) {
+                    await buildAllHousesAsync(window.__cityBlocks);
                 }
-                #smooth-loader h2 { margin: 0 0 10px 0; font-size: 24px; font-weight: 600; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-                #smooth-loader p { margin: 0; font-size: 14px; opacity: 0.8; }
-                @keyframes spin { 100% { transform: rotate(360deg); } }
-                body.night-active #smooth-loader { background: #050816; }
-            `;
-            document.head.appendChild(style);
-            document.body.appendChild(loader);
 
-            // Yield to browser to paint the loading screen
-            setTimeout(() => {
-                const initStartTime = performance.now();
-                init(); // Create the scene
+                initRoadsAndExtras();
+            } catch (e) {
+                console.error('INIT CRASHED:', e);
+                setLoaderProgress(0, 'Load error — check console (F12)');
+            }
 
-                // Removed Lenis (Causes scroll conflicts and lag on pure 3D canvas)
-
-                // GSAP Camera Transition Helper removed
-
-
-                // Start render loop IMMEDIATELY
-                requestAnimationFrame(sceneRender);
-
-                // GUARANTEED Loader Removal (Independent of optimization)
-                setTimeout(() => {
-                    const loader = document.getElementById('smooth-loader');
-                    if (loader) {
-                        loader.style.opacity = '0';
-                        loader.style.visibility = 'hidden';
-                        setTimeout(() => loader.remove(), 1200);
-                    }
-                    console.log("Website revealed. Starting background optimization...");
+            if (scene) {
+                try {
                     optimizeScene();
-                }, 1500);
-            }, 50);
+                } catch (e) {
+                    console.error('OPTIMIZE CRASHED:', e);
+                    window.isSceneOptimized = true;
+                    window.onOptimizationComplete();
+                }
+            } else {
+                window.isSceneOptimized = true;
+                window.onOptimizationComplete();
+            }
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', bootstrapApp);
+        } else {
+            bootstrapApp();
         }
     </script>
 
