@@ -7,6 +7,8 @@
     <title>Bangla Bosoti - 3D Masterplan</title>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" as="script">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" as="script">
     <style>
         html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #87ceeb; touch-action: none; }
         canvas { display: block; width: 100%; height: 100%; touch-action: none; }
@@ -47,7 +49,7 @@
         </div>
     </div>
     <!-- Camera Debug Overlay -->
-    <div id="camera-debug"
+    <div id="camera-debug" hidden
         style="position: fixed; top: 20px; right: 20px; z-index: 1000; background: rgba(0, 0, 0, 0.7); color: white; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 12px; pointer-events: none; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(4px);">
         <div style="font-weight: bold; color: #fbbf24; margin-bottom: 5px; font-size: 14px;">Camera Perspective</div>
         <div id="cam-pos">Position: (0, 0, 0)</div>
@@ -55,12 +57,12 @@
     </div>
     
     <!-- Camera Mode Switcher -->
-    <div id="camera-controls" style="position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; gap: 15px; background: rgba(0, 0, 0, 0.6); padding: 10px 20px; border-radius: 50px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
-        <button id="btn-masterplan" onclick="switchCameraMode('masterplan')" class="cam-btn active" style="color: white; border: none; background: none; cursor: pointer; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-weight: 600; font-size: 14px; transition: all 0.3s; padding: 10px 24px; border-radius: 25px; display: flex; align-items: center; gap: 8px;">
+    <div id="camera-controls" style="position: fixed; bottom: 30px; right: 24px; left: auto; transform: none; z-index: 1000; display: flex; flex-direction: column; gap: 10px; background: rgba(0, 0, 0, 0.72); padding: 10px 12px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
+        <button id="btn-masterplan" onclick="switchCameraMode('masterplan')" class="cam-btn" style="color: white; border: none; background: none; cursor: pointer; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-weight: 600; font-size: 14px; transition: all 0.3s; padding: 10px 20px; border-radius: 25px; display: flex; align-items: center; gap: 8px; white-space: nowrap;">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
             Masterplan View
         </button>
-        <button id="btn-street" onclick="switchCameraMode('street')" class="cam-btn" style="color: white; border: none; background: none; cursor: pointer; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-weight: 600; font-size: 14px; transition: all 0.3s; padding: 10px 24px; border-radius: 25px; display: flex; align-items: center; gap: 8px;">
+        <button id="btn-street" onclick="switchCameraMode('street')" class="cam-btn active" style="color: white; border: none; background: none; cursor: pointer; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-weight: 600; font-size: 14px; transition: all 0.3s; padding: 10px 20px; border-radius: 25px; display: flex; align-items: center; gap: 8px; white-space: nowrap;">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"></path><circle cx="7" cy="17" r="2"></circle><path d="M9 17h6"></path><circle cx="17" cy="17" r="2"></circle></svg>
             Street View
         </button>
@@ -74,11 +76,8 @@
 
     <!-- Load Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <!-- Load OrbitControls -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <!-- Load BufferGeometryUtils -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/BufferGeometryUtils.js"></script>
-    <!-- GSAP for smooth camera transitions -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <!-- Lenis for ultra-smooth scrolling (Removed: Conflicts with 3D OrbitControls and causes lag) -->
     <!-- <script src="https://cdn.jsdelivr.net/gh/studio-freight/lenis@1.0.19/bundled/lenis.min.js"></script> -->
@@ -95,27 +94,59 @@
         };
 
         const PERF = {
-            targetFps: 60,
-            flagAnimInterval: 2,
-            debugThrottleMs: 120,
-            optimizeBatchMs: 24,
-            removeChunkSize: 1200,
-            removeChunkDelayMs: 400
+            flagAnimInterval: 4,
+            debugThrottleMs: 350,
+            optimizeBatchMs: 48,
+            removeChunkSize: 2500,
+            removeChunkDelayMs: 80,
+            idlePixelRatio: 1.15,
+            interactPixelRatio: 0.8,
+            qualityRestoreMs: 450
         };
 
         let renderFrame = 0;
+        let currentPixelRatio = 1;
         let isPageVisible = true;
         let animationLoopId = null;
         let lastDebugUpdate = 0;
         let isUserInteracting = false;
         let isMapDragging = false;
-        let isWheelSmoothing = false;
+        let mapInteractionIdleTimer = null;
 
         const MAP_CTRL = {
-            dragDamping: 0.14,
-            wheelDamping: 0.2,
-            wheelSmoothMs: 100
+            dragDamping: 0.1,
+            panSpeed: 1.1,
+            zoomSpeed: 0.95,
+            rotateSpeed: 0.5
         };
+
+        function getIdlePixelRatio() {
+            return Math.min(window.devicePixelRatio || 1, PERF.idlePixelRatio);
+        }
+
+        function applyRendererPixelRatio(next) {
+            if (!renderer) return;
+            if (next === undefined) next = isUserInteracting ? PERF.interactPixelRatio : getIdlePixelRatio();
+            if (Math.abs(next - currentPixelRatio) < 0.01) return;
+            currentPixelRatio = next;
+            renderer.setPixelRatio(next);
+        }
+
+        function beginMapInteraction() {
+            clearTimeout(mapInteractionIdleTimer);
+            if (!isUserInteracting) {
+                isUserInteracting = true;
+                applyRendererPixelRatio(PERF.interactPixelRatio);
+            }
+        }
+
+        function scheduleMapInteractionEnd() {
+            clearTimeout(mapInteractionIdleTimer);
+            mapInteractionIdleTimer = setTimeout(() => {
+                isUserInteracting = false;
+                applyRendererPixelRatio(getIdlePixelRatio());
+            }, PERF.qualityRestoreMs);
+        }
 
         /** Instant stop on release — no glide after pointer up */
         function stopMapInertia() {
@@ -140,9 +171,9 @@
             controls.enablePan = true;
             controls.enableZoom = true;
             controls.enableRotate = true;
-            controls.rotateSpeed = 0.42;
-            controls.zoomSpeed = 0.65;
-            controls.panSpeed = 0.72;
+            controls.rotateSpeed = MAP_CTRL.rotateSpeed;
+            controls.zoomSpeed = MAP_CTRL.zoomSpeed;
+            controls.panSpeed = MAP_CTRL.panSpeed;
             controls.screenSpacePanning = true;
             controls.maxPolarAngle = Math.PI * 0.49;
             controls.mouseButtons = {
@@ -152,9 +183,10 @@
             };
 
             function onDragStart() {
+                if (introActive) return;
                 if (isMapDragging) return;
                 isMapDragging = true;
-                isUserInteracting = true;
+                beginMapInteraction();
                 canvas.style.cursor = 'grabbing';
                 controls.enableDamping = true;
                 controls.dampingFactor = MAP_CTRL.dragDamping;
@@ -163,19 +195,13 @@
             function onDragEnd() {
                 if (!isMapDragging) return;
                 isMapDragging = false;
-                isUserInteracting = false;
                 canvas.style.cursor = 'grab';
                 stopMapInertia();
+                scheduleMapInteractionEnd();
             }
 
             controls.addEventListener('start', onDragStart);
             controls.addEventListener('end', onDragEnd);
-
-            canvas.addEventListener('pointerdown', (e) => {
-                if (e.button === 0 || e.button === 1 || e.button === 2) {
-                    onDragStart();
-                }
-            }, { passive: true });
 
             window.addEventListener('pointerup', onDragEnd);
             window.addEventListener('pointercancel', onDragEnd);
@@ -186,16 +212,9 @@
             });
 
             canvas.addEventListener('wheel', () => {
-                isUserInteracting = true;
-                isWheelSmoothing = true;
-                controls.enableDamping = true;
-                controls.dampingFactor = MAP_CTRL.wheelDamping;
-                clearTimeout(canvas._wheelIdle);
-                canvas._wheelIdle = setTimeout(() => {
-                    isWheelSmoothing = false;
-                    isUserInteracting = false;
-                    stopMapInertia();
-                }, MAP_CTRL.wheelSmoothMs);
+                if (introActive) return;
+                beginMapInteraction();
+                scheduleMapInteractionEnd();
             }, { passive: true });
 
             canvas.addEventListener('contextmenu', (e) => e.preventDefault());
@@ -270,66 +289,123 @@
             console.log("Walking controller updated:", walkingConfig);
         }
 
+        // --- Cinematic intro (fog reveal + master → street → master) ---
+        const CAMERA_VIEWS = {
+            masterplan: {
+                position: { x: -20, y: 296, z: -118 },
+                target: { x: -20, y: 184, z: -118 }
+            },
+            street: {
+                position: { x: -163, y: 5, z: 47 },
+                target: { x: -86, y: 3, z: 12 }
+            }
+        };
+
+        const INTRO = {
+            fogDurationMs: 4000,
+            toStreetDuration: 3,
+            streetHoldMs: 1400,
+            fogDensityStart: 0.008,
+            fogDensityEnd: 0.0005
+        };
+
+        let introActive = false;
+        let introPhase = 'idle'; // idle | fog | toStreet | done
+        let fogRevealStartTime = null;
+        let fogRevealComplete = false;
+
+        function setCameraModeUI(mode) {
+            document.querySelectorAll('.cam-btn').forEach(btn => btn.classList.remove('active'));
+            const btnId = mode === 'masterplan' ? 'btn-masterplan' : 'btn-street';
+            const btn = document.getElementById(btnId);
+            if (btn) btn.classList.add('active');
+        }
+
+        function animateCameraView(mode, opts = {}) {
+            if (!controls || !camera) return;
+            const view = CAMERA_VIEWS[mode];
+            if (!view) return;
+
+            const duration = opts.duration ?? 2;
+            const ease = opts.ease ?? 'expo.inOut';
+
+            if (!opts.skipInertiaReset) {
+                stopMapInertia();
+                isMapDragging = false;
+                clearTimeout(mapInteractionIdleTimer);
+                applyRendererPixelRatio(getIdlePixelRatio());
+            }
+
+            if (!opts.skipUI) setCameraModeUI(mode);
+
+            gsap.killTweensOf(camera.position);
+            gsap.killTweensOf(controls.target);
+
+            gsap.to(camera.position, {
+                x: view.position.x,
+                y: view.position.y,
+                z: view.position.z,
+                duration,
+                ease
+            });
+
+            gsap.to(controls.target, {
+                x: view.target.x,
+                y: view.target.y,
+                z: view.target.z,
+                duration,
+                ease,
+                onUpdate: () => controls.update(),
+                onComplete: opts.onComplete
+            });
+        }
+
+        function finishCinematicIntro() {
+            introPhase = 'done';
+            introActive = false;
+            fogRevealComplete = true;
+            if (scene && scene.fog) scene.fog.density = INTRO.fogDensityEnd;
+            setCameraModeUI('street');
+            controls.update();
+        }
+
+        function onIntroFogComplete() {
+            if (introPhase !== 'fog') return;
+            introPhase = 'toStreet';
+            setTimeout(() => {
+                animateCameraView('street', {
+                    duration: INTRO.toStreetDuration,
+                    ease: 'power3.inOut',
+                    onComplete: () => {
+                        setTimeout(finishCinematicIntro, INTRO.streetHoldMs);
+                    }
+                });
+            }, 500);
+        }
+
+        function startCinematicIntro() {
+            if (introPhase !== 'idle') return;
+            introActive = true;
+            introPhase = 'fog';
+            fogRevealComplete = false;
+            fogRevealStartTime = null;
+
+            if (scene && scene.fog) scene.fog.density = INTRO.fogDensityStart;
+            camera.position.set(CAMERA_VIEWS.masterplan.position.x, CAMERA_VIEWS.masterplan.position.y, CAMERA_VIEWS.masterplan.position.z);
+            controls.target.set(CAMERA_VIEWS.masterplan.target.x, CAMERA_VIEWS.masterplan.target.y, CAMERA_VIEWS.masterplan.target.z);
+            controls.update();
+            setCameraModeUI('street');
+
+            hideLoader();
+        }
+
         /**
          * Switches the camera between Masterplan and Street View
          * Uses GSAP for ultra-smooth transitions
          */
         function switchCameraMode(mode) {
-            if (!controls || !camera) return;
-
-            // Update UI button states
-            document.querySelectorAll('.cam-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            if (mode === 'masterplan') {
-                document.getElementById('btn-masterplan').classList.add('active');
-            } else {
-                document.getElementById('btn-street').classList.add('active');
-            }
-
-            let targetPos, targetLookAt;
-
-            if (mode === 'masterplan') {
-                // Values derived from User Image 1
-                targetPos = { x: -20, y: 296, z: -118 };
-                targetLookAt = { x: -20, y: 184, z: -118 };
-            } else {
-                // Values derived from User Image 2
-                targetPos = { x: -163, y: 5, z: 47 };
-                targetLookAt = { x: -86, y: 3, z: 12 };
-            }
-
-            stopMapInertia();
-            isMapDragging = false;
-            isUserInteracting = false;
-            isWheelSmoothing = false;
-
-            gsap.killTweensOf(camera.position);
-            gsap.killTweensOf(controls.target);
-
-            // Animate Camera Position
-            gsap.to(camera.position, {
-                x: targetPos.x,
-                y: targetPos.y,
-                z: targetPos.z,
-                duration: 2,
-                ease: "expo.inOut",
-                onUpdate: () => {
-                    // camera.lookAt(controls.target); // Keep looking at moving target
-                }
-            });
-
-            // Animate Controls Target (Look-at point)
-            gsap.to(controls.target, {
-                x: targetLookAt.x,
-                y: targetLookAt.y,
-                z: targetLookAt.z,
-                duration: 2,
-                ease: "expo.inOut",
-                onUpdate: () => {
-                    controls.update(); // Required for OrbitControls to recognize target change
-                }
-            });
+            if (!controls || !camera || introActive) return;
+            animateCameraView(mode);
         }
         // --- Tree Height Controls ---
 
@@ -389,6 +465,69 @@
         }
 
         const CITY_BOUNDS = { minX: -700, maxX: 700, minZ: -1600, maxZ: 1600 };
+
+        /** Rectangular forest zones for empty land west of the main housing grid */
+        const LEFT_FOREST_ZONES = [
+            {
+                // Upper-left free plot (west of vertical road, below top forest strip)
+                minX: -720, maxX: -505, minZ: -640, maxZ: -280,
+                density: 0.92,
+                exclude: [
+                    { minX: -530, maxX: -490, minZ: -640, maxZ: -280 }
+                ]
+            },
+            {
+                // Middle-left free plot (between horizontal branch roads)
+                minX: -720, maxX: -505, minZ: -250, maxZ: 120,
+                density: 0.93,
+                exclude: [
+                    { minX: -530, maxX: -490, minZ: -250, maxZ: 120 },
+                    { minX: -720, maxX: -490, minZ: -30, maxZ: 25 }
+                ]
+            },
+            {
+                // Lower-left free plot + bottom-left open land
+                minX: -720, maxX: -430, minZ: 150, maxZ: 720,
+                density: 0.9,
+                exclude: [
+                    { minX: -530, maxX: -490, minZ: 150, maxZ: 720 },
+                    { minX: -700, maxX: -660, minZ: 960, maxZ: 1040 }
+                ]
+            }
+        ];
+
+        function isInsideRect(x, z, rect) {
+            return x >= rect.minX && x <= rect.maxX && z >= rect.minZ && z <= rect.maxZ;
+        }
+
+        function generateLeftForestPositions(zones, options = {}) {
+            const spacingX = options.spacingX || 42;
+            const spacingZ = options.spacingZ || 40;
+            const minScale = options.minScale || 13;
+            const maxScale = options.maxScale || 17;
+            const jitter = options.jitter || 14;
+            const positions = [];
+
+            zones.forEach(zone => {
+                const excludes = zone.exclude || [];
+                for (let x = zone.minX; x <= zone.maxX; x += spacingX) {
+                    for (let z = zone.minZ; z <= zone.maxZ; z += spacingZ) {
+                        const px = x + (Math.random() - 0.5) * jitter;
+                        const pz = z + (Math.random() - 0.5) * jitter;
+                        if (excludes.some(ex => isInsideRect(px, pz, ex))) continue;
+                        if (Math.random() > (zone.density || 0.85)) continue;
+                        positions.push({
+                            x: px,
+                            y: 0.1,
+                            z: pz,
+                            scale: minScale + Math.random() * (maxScale - minScale)
+                        });
+                    }
+                }
+            });
+            return positions;
+        }
+
         const customTreePositions = [
             // Add your tree positions here. x/z = world position, y = height offset, scale = tree height in world units
             // Serial 2 (Removed roadside rows)
@@ -1077,15 +1216,7 @@
             if (obj.parent) obj.parent.remove(obj);
         }
 
-        // --- Fog Reveal Animation Variables (Aggressively Optimized) ---
-        let fogRevealStartTime = null;
-        let fogRevealDuration = 3000;
-        let initialFogDensity = 0.005;
-        let finalFogDensity = 0.0005;
-        let fogRevealComplete = false;
-        let initialCameraY = null;
-
-
+        // --- Fog Reveal Animation Variables ---
 
         // --- Performance Optimization: Animation Lists ---
         const breathingObjects = [];
@@ -1204,9 +1335,9 @@
                 rotation: { x: 0, y: 0, z: 0 },
                 skipLamps: true
             },
-            // Zone C Path
+            // Zone C Path (width 0 — path only for house layout, no visible center road)
             {
-                width: 12,
+                width: 0,
                 points: [
                     new THREE.Vector3(0, 0, 0),
                     new THREE.Vector3(0, 0, -1),
@@ -1222,9 +1353,9 @@
                 rotation: { x: 0, y: -11.5, z: 0 },
                 skipLamps: true
             },
-            // Zone D Path
+            // Zone D Path (width 0 — path only for house layout, no visible center road)
             {
-                width: 12,
+                width: 0,
                 points: [
                     new THREE.Vector3(0, 0, 0),
                     new THREE.Vector3(5, 0, 10),
@@ -1867,11 +1998,7 @@
             let currentKeyIndex = 0;
             let instanceCount = 0;
             let groupCount = 0;
-
-            renderer.domElement.addEventListener('mousedown', () => { isUserInteracting = true; });
-            window.addEventListener('mouseup', () => { isUserInteracting = false; });
-            renderer.domElement.addEventListener('touchstart', () => { isUserInteracting = true; }, { passive: true });
-            window.addEventListener('touchend', () => { isUserInteracting = false; });
+            const successfullyInstanced = new Set();
 
             function processBatch() {
                 try {
@@ -1898,12 +2025,12 @@
                                     iMesh.setMatrixAt(i, data.matrices[i]);
                                 }
 
-                                // Disabled frustum culling because shared geometries cause bounding box overwrites,
-                                // which makes long roads disappear when zoomed in.
-                                iMesh.frustumCulled = false; 
+                                iMesh.frustumCulled = false;
 
-                                // Hide original meshes immediately (much faster than removal)
-                                data.originalMeshes.forEach(m => { m.visible = false; });
+                                data.originalMeshes.forEach(m => {
+                                    m.visible = false;
+                                    successfullyInstanced.add(m);
+                                });
                                 if (data.mat.userData && data.mat.userData.isLeaf) {
                                     const oldOnBefore = data.mat.onBeforeCompile;
                                     data.mat.onBeforeCompile = (shader) => {
@@ -1952,9 +2079,11 @@
 
             function finalizeOptimization() {
                 try {
-                    // Phase 1: Hide all originals instantly
+                    // Phase 1: Hide only meshes that were successfully replaced by instancing
                     for (let i = 0; i < toRemove.length; i++) {
-                        toRemove[i].visible = false;
+                        if (successfullyInstanced.has(toRemove[i])) {
+                            toRemove[i].visible = false;
+                        }
                     }
 
                     houseMeshCache.clear();
@@ -1963,15 +2092,16 @@
                     setLoaderProgress(100, 'Ready');
                     console.log(`Optimization complete in ${Math.round(performance.now() - startTime)}ms.`);
 
-                    // Phase 2: Remove hidden meshes from scene graph in background
+                    // Phase 2: Remove successfully instanced meshes from scene graph in background
+                    const toRemoveFromGraph = toRemove.filter(m => successfullyInstanced.has(m));
                     let removeIdx = 0;
                     function removeChunk() {
-                        const end = Math.min(removeIdx + PERF.removeChunkSize, toRemove.length);
+                        const end = Math.min(removeIdx + PERF.removeChunkSize, toRemoveFromGraph.length);
                         for (; removeIdx < end; removeIdx++) {
-                            const m = toRemove[removeIdx];
+                            const m = toRemoveFromGraph[removeIdx];
                             if (m.parent) m.parent.remove(m);
                         }
-                        if (removeIdx < toRemove.length) {
+                        if (removeIdx < toRemoveFromGraph.length) {
                             requestAnimationFrame(removeChunk);
                         } else {
                             console.log('Scene graph cleanup complete. All original meshes removed.');
@@ -2003,7 +2133,7 @@
             agent.position.set(10, 0.5, -5); // Start at the flag
 
             // scene.fog = new THREE.Fog( 0xcccccc, 10, 15 );
-            scene.fog = new THREE.FogExp2(0x87ceeb, finalFogDensity);
+            scene.fog = new THREE.FogExp2(0x87ceeb, INTRO.fogDensityStart);
 
             // Camera set to Masterplan View (default)
             camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 20000);
@@ -2026,7 +2156,8 @@
                 powerPreference: "high-performance"
             });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+            currentPixelRatio = getIdlePixelRatio();
+            renderer.setPixelRatio(currentPixelRatio);
             renderer.shadowMap.enabled = false;
             renderer.sortObjects = false;
             document.body.appendChild(renderer.domElement);
@@ -2450,17 +2581,16 @@
             window.__cityBlocks = cityBlocks;
         }
 
-        async function buildAllHousesAsync(cityBlocks) {
+        function buildAllHouses(cityBlocks) {
             const L = cityBlocks.userData.lands;
-            setLoaderProgress(18, 'Building house bunches...');
+            setLoaderProgress(18, 'Building city blocks...');
             createHouseBunch(L.subGreenLand6, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 30, startX: 0, startZ: 5, unitSpacing: 20, houseGap: 280, rowSpacing: 25, startId: 1, clusterName: "BUNCH-6", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
             createHouseBunch(L.subGreenLand5, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 28, startX: 0, startZ: 60, unitSpacing: 20, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-5", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
             createHouseBunch(L.subGreenLand4, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 24, startX: 0, startZ: 115, unitSpacing: 20, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-4", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
             createHouseBunch(L.subGreenLand3, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 27, startX: 0, startZ: 170, unitSpacing: 20, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-3", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
             createHouseBunch(L.subGreenLand2, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 28, startX: 0, startZ: 225, unitSpacing: 20, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-2", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
             createHouseBunch(L.subGreenLand1, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 280, unitSpacing: 15.5, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-1", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
-            await nextFrame();
-            setLoaderProgress(28, 'Building clusters...');
+            setLoaderProgress(32, 'Building clusters...');
 
             createHouseCluster(L.subGreenLandCL1, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 23, startId: 2, clusterName: "CLUSTER-1", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
             createHouseCluster(L.subGreenLandCL2, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 20, startId: 2, clusterName: "CLUSTER-2", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
@@ -2472,8 +2602,7 @@
             createHouseCluster(L.subGreenLandCL8, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 15.4, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-8", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
             createHouseCluster(L.subGreenLandCL9, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 15.5, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-9", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
             createHouseCluster(L.subGreenLandCL10, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 34, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-10", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
-            await nextFrame();
-            setLoaderProgress(38, 'Building block zones...');
+            setLoaderProgress(42, 'Building block zones...');
             // BLOCK B -1
             createHouseCluster(L.subGreenLandBB1, {
                 serialCount: 36, startX: 3, startZ: 210, unitSpacing: 17.5, houseGap: 210, rowSpacing: 32, startId: 2,
@@ -2522,6 +2651,7 @@
                 poolOZ: -250,
                 hasPool: false, houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90
             });
+            addInterBlockRoads([L.subGreenLandBB1, L.subGreenLandBB2, L.subGreenLandBB3, L.subGreenLandBB4]);
             // BLOCK A - 1
             // createHouseCluster(L.subGreenLandBA1, {
             //     serialCount: 10, startX: 0, startZ: 210, unitSpacing: 8.9, houseGap: 10, rowSpacing: 16, startId: 2,
@@ -2541,8 +2671,7 @@
                 poolOZ: -250,
                 hasPool: false, houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90
             });
-            await nextFrame();
-            setLoaderProgress(48, 'Building premium blocks...');
+            setLoaderProgress(52, 'Building premium blocks...');
             // BLOCK A - 3
             createHouseCluster(L.subGreenLandBA3, {
                 serialCount: 30, startX: 3, startZ: 210, unitSpacing: 17.5, houseGap: 210, rowSpacing: 32, startId: 2,
@@ -2567,8 +2696,8 @@
                 poolOZ: -250,
                 hasPool: false, houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90
             });
-            await nextFrame();
-            setLoaderProgress(55, 'Building lake-side estates...');
+            addInterBlockRoads([L.subGreenLandBA4, L.subGreenLandBA3, L.subGreenLandBA2]);
+            setLoaderProgress(58, 'Building lake-side estates...');
 
             createHouseCluster(L.subGreenLandCL11, {
                 innerGapScale: { x: 1, y: .9 },
@@ -2824,7 +2953,6 @@
                 houseAreaRotation: 90,
             });
             setLoaderProgress(62, 'City blocks complete');
-            await nextFrame();
         }
 
         function initRoadsAndExtras() {
@@ -2881,12 +3009,13 @@
             const markingsMat = getSharedMaterial('roadMarkings', () => new THREE.MeshStandardMaterial({ map: createMarkingsTexture(), transparent: true, depthWrite: false, blending: THREE.NormalBlending, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
 
             ROAD_CONFIGS.forEach(config => {
+                if (config.hidden) return;
                 const curve = new THREE.CatmullRomCurve3(config.points);
                 const roadGeo = createRoadGeometry(curve, config.width, config.segments);
 
                 // Create a group for each road to handle position and rotation together
                 const roadGroup = new THREE.Group();
-                roadGroup.userData.noOptimize = false; // Allow lamp posts and roads to be instanced for massive performance boost
+                roadGroup.userData.noOptimize = true;
                 scene.add(roadGroup);
 
                 // Check if elevated
@@ -3150,12 +3279,12 @@
             // });
 
             // --- Create Custom Animated Trees ---
-
-            customTreePositions.forEach(pos => {
+            const leftForestPositions = generateLeftForestPositions(LEFT_FOREST_ZONES);
+            [...customTreePositions, ...leftForestPositions].forEach(pos => {
                 createAnimatedTree(
                     new THREE.Vector3(pos.x, pos.y, pos.z),
                     new THREE.Euler(0, Math.random() * Math.PI * 2, 0),
-                    pos.scale || 5.0  // optional per-tree scale, default 5 world units tall
+                    pos.scale || 5.0
                 );
             });
 
@@ -3625,55 +3754,34 @@
             renderFrame++;
             const t = time * 0.001;
             globalUniforms.uTime.value = t;
+            const interacting = isMapDragging || isUserInteracting || introActive;
 
-            if (flagObj && flagObj.animateFlag && renderFrame % PERF.flagAnimInterval === 0) {
+            if (!interacting && flagObj && flagObj.animateFlag && renderFrame % PERF.flagAnimInterval === 0) {
                 flagObj.animateFlag(time);
             }
 
-            // --- Fog Reveal Animation (Disabled as per request) ---
-            if (false && !fogRevealComplete) {
-                const currentTime = time;
+            // --- Cinematic fog reveal (intro phase 1) ---
+            if (introPhase === 'fog' && !fogRevealComplete && scene && scene.fog) {
+                if (fogRevealStartTime === null) fogRevealStartTime = time;
 
-                if (fogRevealStartTime === null) {
-                    fogRevealStartTime = currentTime;
-                    // fogRevealStartTime = currentTime - 5000; // Start 5 seconds earlier for testing
-                    initialCameraY = camera.position.y; // Store initial Y position
-                }
-
-                const elapsed = currentTime - fogRevealStartTime;
-                const progress = Math.min(elapsed / fogRevealDuration, 1.0);
-
-                // Improved easing function for ultra-smooth transition (ease-in-out-cubic)
-                const easedProgress = progress < 0.5
+                const elapsed = time - fogRevealStartTime;
+                const progress = Math.min(elapsed / INTRO.fogDurationMs, 1);
+                const eased = progress < 0.5
                     ? 4 * progress * progress * progress
-                    : 1 - Math.pow(-2 * progress + 2, 3) / 2; // unchanged but clarified
+                    : 1 - Math.pow(-2 * progress + 2, 3) / 2;
 
-                // Interpolate fog density with smooth curve
-                // const currentDensity = initialFogDensity - (initialFogDensity - finalFogDensity) * (easedProgress + 0.020) ;
-                const currentDensity = initialFogDensity - (initialFogDensity - finalFogDensity) * easedProgress;
-                scene.fog.density = currentDensity; // Slight offset to avoid zero density
+                scene.fog.density = INTRO.fogDensityStart - (INTRO.fogDensityStart - INTRO.fogDensityEnd) * eased;
 
-                // Cinematic Drone Descent: Start high and gracefully drop to ground level
-                // Camera movement disabled during fog reveal as per user request
-                // const finalCameraY = 30;
-                // const descentProgress = Math.pow(easedProgress, 1.2); // Slower start, faster middle for impact
-                // camera.position.y = initialCameraY - (initialCameraY - finalCameraY) * descentProgress;
-
-                // Subtle camera X/Z drift during descent for realism (Disabled to keep fixed view)
-                // camera.position.z = 500 - (400 * easedProgress);
-                // camera.position.x = 10 + Math.sin(easedProgress * Math.PI) * 20;
-
-                if (progress >= 1.0) {
+                if (progress >= 1) {
                     fogRevealComplete = true;
-                    // Fog reveal complete
-                    // Update shadows once after fog reveal (performance)
-                    renderer.shadowMap.needsUpdate = true;
+                    scene.fog.density = INTRO.fogDensityEnd;
+                    onIntroFogComplete();
                 }
             }
 
             // Update River animation
 
-            if (river) river.update(time);
+            if (!interacting && river && renderFrame % 2 === 0) river.update(time);
 
             // Animate Sky
             if (isNight && stars) {
@@ -3688,14 +3796,16 @@
             }
 
             // Small river texture animation (optimized)
-            if (sr_waterTexture) {
-                sr_waterTexture.offset.y -= 0.00278; // 6-second flow cycle
+            if (!interacting && sr_waterTexture && renderFrame % 2 === 0) {
+                sr_waterTexture.offset.y -= 0.00556;
             }
 
 
-            // --- Final Safety Check ---
-            if (camera.position.y < 2.0) camera.position.y = 2.0;
-            if (controls.target.y < 0) controls.target.y = 0;
+            // --- Final Safety Check (skip during cinematic intro — street view is near ground) ---
+            if (!introActive) {
+                if (camera.position.y < 2.0) camera.position.y = 2.0;
+                if (controls.target.y < 0) controls.target.y = 0;
+            }
 
             // --- Optimized Breathing Animation (Skip if GPU-optimized) ---
             if (!window.isSceneOptimized && typeof breathingObjects !== 'undefined') {
@@ -3708,7 +3818,7 @@
                 }
             }
 
-            if (controls && !isWalkingMode && (isMapDragging || isWheelSmoothing)) {
+            if (controls && !isWalkingMode) {
                 controls.update();
             }
 
@@ -6768,6 +6878,34 @@
         }
 
 
+        /** Horizontal connector roads between stacked block groups (south → north). */
+        function addInterBlockRoads(blockGroups) {
+            if (!blockGroups || blockGroups.length < 2 || !scene) return;
+            const asphaltMat = getSharedMaterial('asphaltBase', () => new THREE.MeshStandardMaterial({
+                color: 0x222222,
+                roughness: 0.9,
+                polygonOffset: true,
+                polygonOffsetFactor: -1,
+                polygonOffsetUnits: -1
+            }));
+            for (let i = 0; i < blockGroups.length - 1; i++) {
+                const southBlock = blockGroups[i];
+                const northBlock = blockGroups[i + 1];
+                southBlock.updateMatrixWorld(true);
+                northBlock.updateMatrixWorld(true);
+                const southBox = new THREE.Box3().setFromObject(southBlock);
+                const northBox = new THREE.Box3().setFromObject(northBlock);
+                const midZ = (southBox.min.z + northBox.max.z) * 0.5;
+                const width = Math.max(southBox.max.x - southBox.min.x, northBox.max.x - northBox.min.x);
+                const midX = (southBox.min.x + southBox.max.x + northBox.min.x + northBox.max.x) * 0.25;
+                const road = new THREE.Mesh(new THREE.BoxGeometry(width, 0.12, 4.5), asphaltMat);
+                road.position.set(midX, 0.16, midZ);
+                road.receiveShadow = true;
+                road.userData.noOptimize = true;
+                scene.add(road);
+            }
+        }
+
         /**
          * Creates a bunch of houses organized in two serial blocks (Odd & Even).
          * Each serial comes in a pair (A & B).
@@ -8107,27 +8245,25 @@
                 camera.aspect = window.innerWidth / window.innerHeight;
                 camera.updateProjectionMatrix();
                 renderer.setSize(window.innerWidth, window.innerHeight);
-                renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+                applyRendererPixelRatio(getIdlePixelRatio());
             }, 100);
         });
 
-        async function bootstrapApp() {
+        function bootstrapApp() {
             setLoaderProgress(2, 'Loading engine...');
-            await nextFrame();
-            await nextFrame();
 
             const loadWatchdog = setTimeout(() => {
                 if (!window.isSceneOptimized) {
                     console.warn('Load watchdog: revealing scene after timeout.');
                     window.isSceneOptimized = true;
-                    hideLoader();
+                    startCinematicIntro();
                 }
             }, 120000);
 
             window.onOptimizationComplete = () => {
                 clearTimeout(loadWatchdog);
-                hideLoader();
-                console.log('City ready. GPU instancing complete.');
+                console.log('City ready. Starting cinematic intro...');
+                startCinematicIntro();
             };
 
             try {
@@ -8135,7 +8271,7 @@
                 startRenderLoop();
 
                 if (window.__cityBlocks) {
-                    await buildAllHousesAsync(window.__cityBlocks);
+                    buildAllHouses(window.__cityBlocks);
                 }
 
                 initRoadsAndExtras();
