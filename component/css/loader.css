@@ -1,0 +1,26 @@
+html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #87ceeb; touch-action: none; }
+        canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+        #smooth-loader {
+            position: fixed; inset: 0; z-index: 999999;
+            display: flex; justify-content: center; align-items: center;
+            background: #87ceeb; color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: opacity 0.55s ease-out, visibility 0.55s ease-out;
+        }
+        #smooth-loader.is-done { opacity: 0; visibility: hidden; pointer-events: none; }
+        .loader-content { text-align: center; min-width: 260px; }
+        .loader-spinner {
+            width: 52px; height: 52px; margin: 0 auto 18px;
+            border: 5px solid rgba(255,255,255,0.28); border-top-color: #fff;
+            border-radius: 50%; animation: loader-spin 0.75s linear infinite;
+            will-change: transform;
+        }
+        .loader-bar-wrap {
+            width: 220px; height: 6px; margin: 14px auto 0;
+            background: rgba(255,255,255,0.25); border-radius: 999px; overflow: hidden;
+        }
+        .loader-bar { height: 100%; width: 0%; background: #fff; border-radius: 999px; transition: width 0.15s ease-out; }
+        #smooth-loader h2 { margin: 0 0 8px; font-size: 22px; font-weight: 600; }
+        #smooth-loader p { margin: 0; font-size: 13px; opacity: 0.85; }
+        @keyframes loader-spin { to { transform: rotate(360deg); } }
+        body.night-active #smooth-loader { background: #050816; }
