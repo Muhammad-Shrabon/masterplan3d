@@ -23,7 +23,7 @@
 /* ================================================================
    DREAM CITY — index.html style + modular architecture
    addToScene() → createRoad / Tree / Shop / School / Playground /
-                  Park / Building / DuplexHouse → buildDreamCity()
+                  Park / Helipad / PumpStation / FoodVenues / Building / DuplexHouse → buildDreamCity()
 ================================================================ */
 
 const HS = 0.015; // same house scale as index.html
@@ -120,12 +120,36 @@ function createRoadGeometry(curve, width, segments) {
     return geo;
 }
 
-/** BASE FUNCTION — position + rotation (rotX/rotY/rotZ or rotateX/rotateY/rotateZ) */
+/** Map face/facing/direction to Y rotation (building front faces +Z by default) */
+function resolveFaceRotation(transform = {}) {
+    const face = transform.face ?? transform.facing ?? transform.direction ?? transform.orient;
+    if (face == null) return transform;
+
+    const faceMap = {
+        front: 0,
+        back: Math.PI,
+        left: Math.PI / 2,
+        right: -Math.PI / 2,
+        north: 0,
+        south: Math.PI,
+        west: Math.PI / 2,
+        east: -Math.PI / 2
+    };
+    const key = String(face).toLowerCase();
+    if (!Object.prototype.hasOwnProperty.call(faceMap, key)) return transform;
+
+    const offset = transform.rotateOffset ?? transform.faceOffset ?? transform.rotOffset ?? 0;
+    const rotY = faceMap[key] + offset;
+    return { ...transform, rotateY: rotY, rotY };
+}
+
+/** BASE FUNCTION — position + rotation (rotX/rotY/rotZ or rotateX/rotateY/rotateZ, face: front|back|left|right) */
 function addToScene(object, creatorName, transform = {}) {
-    const { x = 0, y = 0, z = 0 } = transform;
-    const rotX = transform.rotX ?? transform.rotateX ?? 0;
-    const rotY = transform.rotY ?? transform.rotateY ?? 0;
-    const rotZ = transform.rotZ ?? transform.rotateZ ?? 0;
+    const resolved = resolveFaceRotation(transform);
+    const { x = 0, y = 0, z = 0 } = resolved;
+    const rotX = resolved.rotX ?? resolved.rotateX ?? 0;
+    const rotY = resolved.rotY ?? resolved.rotateY ?? 0;
+    const rotZ = resolved.rotZ ?? resolved.rotateZ ?? 0;
     object.position.set(x, y, z);
     object.rotation.set(rotX, rotY, rotZ);
     scene.add(object);
@@ -879,7 +903,7 @@ function createCustomHouse(transform = {}) {
     return addToScene(group, 'createCustomHouse', transform);
 }
 
-function createDreamTree(transform = {}) {
+function buildDreamTreeGroup(transform = {}) {
     const group = new THREE.Group();
     const type = transform.type ?? 1; // 1: Pine, 2: Oak, 3: Palm, 4: Sakura
     const scale = transform.scale ?? 1;
@@ -970,7 +994,7 @@ function createDreamTree(transform = {}) {
 
         // Get absolute top position for leaves
         const leavesGroup = new THREE.Group();
-        leavesGroup.position.set(0.35, 2.2, 0); 
+        leavesGroup.position.set(0, 2.1, 0); 
         group.add(leavesGroup);
 
         // 8 radiating palm leaves
@@ -1029,7 +1053,17 @@ function createDreamTree(transform = {}) {
 
     if (scale !== 1) group.scale.multiplyScalar(scale);
 
-    return addToScene(group, 'createDreamTree', transform);
+    return group;
+}
+
+/** One or many trees: createDreamTree({...}) or createDreamTree({...}, {...}, {...}) */
+function createDreamTree(...transforms) {
+    const list = transforms.length ? transforms : [{}];
+    const placed = list.map(transform => {
+        const group = buildDreamTreeGroup(transform);
+        return addToScene(group, 'createDreamTree', transform);
+    });
+    return placed.length === 1 ? placed[0] : placed;
 }
 
 function createEmptyLand(transform = {}) {
@@ -1081,6 +1115,784 @@ function createEmptyLand(transform = {}) {
     if (scale !== 1) group.scale.multiplyScalar(scale);
 
     return addToScene(group, 'createEmptyLand', transform);
+}
+
+/* --- Helicopter landing pad (ICAO-style H marking) ---
+   transform: x, y, z, scale, rotateX/Y/Z,
+              size | radius | diameter, width, depth, shape: 'circle'|'square',
+              padColor, borderColor, markColor, padHeight,
+              showH, showLights, lightColor, label --- */
+function createHelipadMarkTexture(borderColor, markColor) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#2b2b2b';
+    ctx.fillRect(0, 0, 512, 512);
+
+    const border = '#' + new THREE.Color(borderColor).getHexString();
+    const mark = '#' + new THREE.Color(markColor).getHexString();
+
+    ctx.strokeStyle = border;
+    ctx.lineWidth = 28;
+    ctx.beginPath();
+    ctx.arc(256, 256, 218, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.lineWidth = 10;
+    ctx.beginPath();
+    ctx.arc(256, 256, 175, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.fillStyle = mark;
+    ctx.font = 'bold 210px Arial Black, Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('H', 256, 268);
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.anisotropy = 4;
+    return tex;
+}
+
+function createHelipad(transform = {}) {
+    const group = new THREE.Group();
+
+    const shape = transform.shape ?? 'circle';
+    const size = transform.size ?? transform.diameter ?? (transform.radius != null ? transform.radius * 2 : 12);
+    const radius = transform.radius ?? size / 2;
+    const width = transform.width ?? size;
+    const depth = transform.depth ?? transform.length ?? transform.d ?? size;
+    const padHeight = transform.padHeight ?? transform.thickness ?? 0.12;
+    const padColor = transform.padColor ?? transform.color ?? 0x3a3a3a;
+    const borderColor = transform.borderColor ?? 0xf1c40f;
+    const markColor = transform.markColor ?? 0xffffff;
+    const showH = transform.showH ?? transform.showMark !== false;
+    const showLights = transform.showLights !== false;
+    const lightColor = transform.lightColor ?? 0x66ff66;
+    const baseExtend = transform.baseExtend ?? 1.6;
+    const scale = transform.scale ?? 1;
+
+    const padMat = getMat('helipadBase', () => new THREE.MeshStandardMaterial({
+        color: padColor, roughness: 0.85, metalness: 0.05
+    }));
+    const curbMat = getMat('helipadCurb', () => new THREE.MeshStandardMaterial({
+        color: borderColor, roughness: 0.7, emissive: 0x332200, emissiveIntensity: 0.15
+    }));
+    const lightMat = getMat('helipadLight', () => new THREE.MeshStandardMaterial({
+        color: lightColor, emissive: lightColor, emissiveIntensity: 0.85, roughness: 0.3
+    }));
+
+    const padSpan = shape === 'square' ? Math.max(width, depth) : size;
+    const baseSize = padSpan + baseExtend * 2;
+
+    part(group, new THREE.Mesh(new THREE.BoxGeometry(baseSize, 0.08, baseSize), getMat('helipadGround', () =>
+        new THREE.MeshStandardMaterial({ color: INDEX.plotLand, roughness: 0.95 }))), { y: 0.04 });
+
+    if (shape === 'square') {
+        part(group, new THREE.Mesh(new THREE.BoxGeometry(width, padHeight, depth), padMat), { y: padHeight / 2 + 0.08 });
+    } else {
+        part(group, new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, padHeight, 48), padMat),
+            { y: padHeight / 2 + 0.08 });
+    }
+
+    if (showH) {
+        const markTex = createHelipadMarkTexture(borderColor, markColor);
+        const markMat = new THREE.MeshStandardMaterial({
+            map: markTex, roughness: 0.6, transparent: true, depthWrite: false,
+            polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1
+        });
+        const markY = padHeight + 0.09;
+        if (shape === 'square') {
+            part(group, new THREE.Mesh(new THREE.PlaneGeometry(width * 0.92, depth * 0.92), markMat),
+                { y: markY, rx: -Math.PI / 2 });
+        } else {
+            part(group, new THREE.Mesh(new THREE.CircleGeometry(radius * 0.92, 48), markMat),
+                { y: markY, rx: -Math.PI / 2 });
+        }
+    }
+
+    const curbH = 0.22;
+    const curbW = transform.borderWidth ?? 0.35;
+    if (shape === 'square') {
+        part(group, new THREE.Mesh(new THREE.BoxGeometry(width + curbW * 2, curbH, curbW), curbMat),
+            { y: curbH / 2 + 0.08, z: depth / 2 + curbW / 2 });
+        part(group, new THREE.Mesh(new THREE.BoxGeometry(width + curbW * 2, curbH, curbW), curbMat),
+            { y: curbH / 2 + 0.08, z: -(depth / 2 + curbW / 2) });
+        part(group, new THREE.Mesh(new THREE.BoxGeometry(curbW, curbH, depth), curbMat),
+            { y: curbH / 2 + 0.08, x: -(width / 2 + curbW / 2) });
+        part(group, new THREE.Mesh(new THREE.BoxGeometry(curbW, curbH, depth), curbMat),
+            { y: curbH / 2 + 0.08, x: width / 2 + curbW / 2 });
+    } else {
+        part(group, new THREE.Mesh(new THREE.TorusGeometry(radius + curbW * 0.35, curbW * 0.45, 8, 48), curbMat),
+            { y: curbH / 2 + 0.08, rx: Math.PI / 2 });
+    }
+
+    if (showLights) {
+        const lightY = 0.18;
+        const lightR = 0.18;
+        const lightH = 0.35;
+        const offsets = shape === 'square'
+            ? [
+                { x: -width / 2 + 0.6, z: -depth / 2 + 0.6 },
+                { x: width / 2 - 0.6, z: -depth / 2 + 0.6 },
+                { x: -width / 2 + 0.6, z: depth / 2 - 0.6 },
+                { x: width / 2 - 0.6, z: depth / 2 - 0.6 }
+            ]
+            : [
+                { x: -radius * 0.72, z: -radius * 0.72 },
+                { x: radius * 0.72, z: -radius * 0.72 },
+                { x: -radius * 0.72, z: radius * 0.72 },
+                { x: radius * 0.72, z: radius * 0.72 }
+            ];
+        offsets.forEach(({ x, z }) => {
+            part(group, new THREE.Mesh(new THREE.CylinderGeometry(lightR, lightR, lightH, 8), lightMat), { x, y: lightY, z });
+            part(group, new THREE.Mesh(new THREE.SphereGeometry(lightR * 0.85, 8, 8), lightMat), { x, y: lightY + lightH / 2 + lightR * 0.5, z });
+        });
+    }
+
+    if (scale !== 1) group.scale.multiplyScalar(scale);
+    return addToScene(group, 'createHelipad', transform);
+}
+
+/* --- Petrol / Fuel Pump Station ---
+   transform: x, y, z, scale, rotateX/Y/Z,
+              width | w, depth | d, pumpCount,
+              signText | stationName, showShop, showPlot,
+              plotColor, borderColor, borderWidth,
+              canopyColor, buildingColor, accentColor, asphaltColor, signColor --- */
+function createPumpSignTexture(text, bgColor, textColor) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 640;
+    canvas.height = 160;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#' + new THREE.Color(bgColor).getHexString();
+    ctx.fillRect(0, 0, 640, 160);
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 8;
+    ctx.strokeRect(6, 6, 628, 148);
+    ctx.fillStyle = '#' + new THREE.Color(textColor).getHexString();
+    ctx.font = 'bold 58px Segoe UI, Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, 320, 82);
+    return new THREE.CanvasTexture(canvas);
+}
+
+function buildFuelPump(parent, x, z, accentColor) {
+    const pump = new THREE.Group();
+    pump.position.set(x, 0, z);
+
+    const bodyMat = getMat('pumpBody', () => new THREE.MeshStandardMaterial({ color: 0xdde3ea, roughness: 0.5, metalness: 0.35 }));
+    const accentMat = getMat('pumpAccent_' + accentColor, () => new THREE.MeshStandardMaterial({ color: accentColor, roughness: 0.4, metalness: 0.5 }));
+    const screenMat = getMat('pumpScreen', () => new THREE.MeshStandardMaterial({ color: 0x1a2530, emissive: 0x224466, emissiveIntensity: 0.4 }));
+
+    part(pump, new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.7, 0.55), bodyMat), { y: 0.85 });
+    part(pump, new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.18, 0.6), accentMat), { y: 1.72 });
+    part(pump, new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.28), screenMat), { y: 1.25, z: 0.28 });
+
+    const hose = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.9, 6), accentMat);
+    hose.position.set(0.32, 0.95, 0.12);
+    hose.rotation.z = 0.55;
+    pump.add(hose);
+
+    const nozzle = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.22, 0.12), accentMat);
+    nozzle.position.set(0.48, 0.55, 0.18);
+    pump.add(nozzle);
+
+    parent.add(pump);
+}
+
+function createPumpStation(transform = {}) {
+    const group = new THREE.Group();
+
+    const plotW = transform.width ?? transform.w ?? 21;
+    const plotD = transform.depth ?? transform.d ?? transform.length ?? transform.l ?? 26;
+    const pumpCount = Math.max(1, Math.min(4, transform.pumpCount ?? 2));
+    const showShop = transform.showShop !== false;
+    const showPlot = transform.showPlot !== false;
+    const scale = transform.scale ?? 1;
+
+    const plotColor = transform.plotColor ?? transform.color ?? 0xBCC4CD;
+    const borderColor = transform.borderColor ?? 0xBFA590;
+    const borderWidth = transform.borderWidth ?? 1;
+    const asphaltColor = transform.asphaltColor ?? 0x2a2a2a;
+    const canopyColor = transform.canopyColor ?? 0xe74c3c;
+    const buildingColor = transform.buildingColor ?? 0xf2f4f6;
+    const accentColor = transform.accentColor ?? 0xf39c12;
+    const signColor = transform.signColor ?? 0xc0392b;
+    const signText = transform.signText ?? transform.stationName ?? 'BANGLA FUEL';
+    const signTextColor = transform.signTextColor ?? 0xffffff;
+
+    const asphaltMat = getMat('pumpAsphalt', () => new THREE.MeshStandardMaterial({ color: asphaltColor, roughness: 0.95 }));
+    const canopyMat = getMat('pumpCanopy', () => new THREE.MeshStandardMaterial({ color: canopyColor, roughness: 0.55, metalness: 0.2 }));
+    const buildingMat = getMat('pumpBuilding', () => new THREE.MeshStandardMaterial({ color: buildingColor, roughness: 0.85 }));
+    const accentMat = getMat('pumpAccent', () => new THREE.MeshStandardMaterial({ color: accentColor, roughness: 0.45, metalness: 0.35 }));
+    const frameMat = getMat('pumpFrame', () => new THREE.MeshStandardMaterial({ color: 0x34495e, roughness: 0.6 }));
+    const glassMat = getMat('pumpGlass', () => new THREE.MeshStandardMaterial({ color: 0x88ccff, transparent: true, opacity: 0.45, metalness: 0.4 }));
+    const borderMat = getMat('pumpBorder', () => new THREE.MeshStandardMaterial({ color: borderColor, roughness: 0.9 }));
+
+    if (showPlot) {
+        part(group, new THREE.Mesh(new THREE.BoxGeometry(plotW, 0.1, plotD), getMat('pumpPlot', () =>
+            new THREE.MeshStandardMaterial({ color: plotColor, roughness: 0.92 }))), { y: 0.05 });
+        const curbH = 0.25;
+        part(group, new THREE.Mesh(new THREE.BoxGeometry(plotW + borderWidth * 2, curbH, borderWidth), borderMat),
+            { y: curbH / 2, z: plotD / 2 + borderWidth / 2 });
+        part(group, new THREE.Mesh(new THREE.BoxGeometry(plotW + borderWidth * 2, curbH, borderWidth), borderMat),
+            { y: curbH / 2, z: -plotD / 2 - borderWidth / 2 });
+        part(group, new THREE.Mesh(new THREE.BoxGeometry(borderWidth, curbH, plotD), borderMat),
+            { y: curbH / 2, x: -plotW / 2 - borderWidth / 2 });
+        part(group, new THREE.Mesh(new THREE.BoxGeometry(borderWidth, curbH, plotD), borderMat),
+            { y: curbH / 2, x: plotW / 2 + borderWidth / 2 });
+    }
+
+    const forecourtW = plotW * 0.82;
+    const forecourtD = plotD * 0.55;
+    part(group, new THREE.Mesh(new THREE.BoxGeometry(forecourtW, 0.06, forecourtD), asphaltMat),
+        { y: 0.13, z: plotD * 0.08 });
+
+    const canopyW = forecourtW * 0.92;
+    const canopyD = forecourtD * 0.88;
+    const canopyH = 4.2;
+    const canopyY = canopyH;
+    const canopyZ = plotD * 0.08;
+
+    const pillarPositions = [
+        [-canopyW / 2 + 0.4, canopyZ - canopyD / 2 + 0.4],
+        [canopyW / 2 - 0.4, canopyZ - canopyD / 2 + 0.4],
+        [-canopyW / 2 + 0.4, canopyZ + canopyD / 2 - 0.4],
+        [canopyW / 2 - 0.4, canopyZ + canopyD / 2 - 0.4]
+    ];
+    pillarPositions.forEach(([px, pz]) => {
+        part(group, new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.16, canopyH, 8), frameMat), { x: px, y: canopyH / 2 + 0.1, z: pz });
+    });
+
+    part(group, new THREE.Mesh(new THREE.BoxGeometry(canopyW, 0.22, canopyD), canopyMat), { y: canopyY + 0.1, z: canopyZ });
+    for (let i = 0; i < 6; i++) {
+        const stripeColor = i % 2 === 0 ? accentColor : 0xffffff;
+        part(group, new THREE.Mesh(new THREE.BoxGeometry(canopyW / 6, 0.08, canopyD + 0.05),
+            new THREE.MeshStandardMaterial({ color: stripeColor })),
+            { x: -canopyW / 2 + (i + 0.5) * (canopyW / 6), y: canopyY + 0.24, z: canopyZ });
+    }
+
+    const signTex = createPumpSignTexture(signText, signColor, signTextColor);
+    const signMat = new THREE.MeshStandardMaterial({ map: signTex, emissive: 0xffffff, emissiveMap: signTex, emissiveIntensity: 0.35 });
+    part(group, new THREE.Mesh(new THREE.PlaneGeometry(4.2, 1.05), signMat), { y: canopyY + 0.85, z: canopyZ + canopyD / 2 + 0.06 });
+
+    const pumpSpacing = Math.min(3.2, (canopyW - 2) / pumpCount);
+    const pumpStartX = -((pumpCount - 1) * pumpSpacing) / 2;
+    for (let i = 0; i < pumpCount; i++) {
+        buildFuelPump(group, pumpStartX + i * pumpSpacing, canopyZ + 0.5, accentColor);
+    }
+
+    if (showShop) {
+        const shopW = 5.5;
+        const shopD = 4.2;
+        const shopH = 3.2;
+        const shopZ = -plotD / 2 + shopD / 2 + 1.2;
+        part(group, new THREE.Mesh(new THREE.BoxGeometry(shopW, shopH, shopD), buildingMat), { y: shopH / 2 + 0.1, z: shopZ });
+        part(group, new THREE.Mesh(new THREE.BoxGeometry(shopW + 0.2, 0.25, shopD + 0.2), accentMat), { y: shopH + 0.22, z: shopZ });
+        part(group, new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.6, 0.1), glassMat), { y: 1.5, z: shopZ + shopD / 2 + 0.05 });
+        part(group, new THREE.Mesh(new THREE.BoxGeometry(1.0, 2.1, 0.12), frameMat), { x: -1.4, y: 1.2, z: shopZ + shopD / 2 + 0.04 });
+        part(group, new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.5, 0.08), frameMat), { x: 1.5, y: 2.3, z: shopZ + shopD / 2 + 0.05 });
+    }
+
+    const priceBoardMat = getMat('pumpPriceBoard', () => new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.8 }));
+    part(group, new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.9, 0.08), priceBoardMat), { x: plotW / 2 - 1.4, y: 1.2, z: plotD * 0.08 });
+    part(group, new THREE.Mesh(new THREE.PlaneGeometry(1.1, 0.55),
+        new THREE.MeshStandardMaterial({ color: 0x22c55e, emissive: 0x115522, emissiveIntensity: 0.5 })),
+        { x: plotW / 2 - 1.4, y: 1.25, z: plotD * 0.08 + 0.05 });
+
+    if (scale !== 1) group.scale.multiplyScalar(scale);
+    return addToScene(group, 'createPumpStation', transform);
+}
+
+/* --- Police Station (low-poly civic building) ---
+   transform: x, y, z, w, d, scale,
+              face | facing | direction: front | back | left | right (+ rotateOffset),
+              rotateX/Y/Z (used when face is omitted),
+              plotColor, borderColor, borderWidth,
+              wallColor, accentColor, columnColor, stepColor,
+              signText, showHelipad, showAntenna, showTrees --- */
+function createPoliceShieldTexture(accentColor) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 280;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#' + new THREE.Color(accentColor).getHexString();
+    ctx.beginPath();
+    ctx.moveTo(128, 16);
+    ctx.lineTo(228, 72);
+    ctx.lineTo(196, 248);
+    ctx.quadraticCurveTo(128, 272, 60, 248);
+    ctx.lineTo(28, 72);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    const starR = 58;
+    for (let i = 0; i < 10; i++) {
+        const r = i % 2 === 0 ? starR : starR * 0.42;
+        const a = (i * Math.PI) / 5 - Math.PI / 2;
+        const px = 128 + Math.cos(a) * r;
+        const py = 138 + Math.sin(a) * r;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.fill();
+    return new THREE.CanvasTexture(canvas);
+}
+
+function createPoliceLabelTexture(text, textColor, bgColor) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#' + new THREE.Color(bgColor).getHexString();
+    ctx.fillRect(0, 0, 512, 128);
+    ctx.fillStyle = '#' + new THREE.Color(textColor).getHexString();
+    ctx.font = 'bold 72px Arial Black, Segoe UI, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, 256, 68);
+    return new THREE.CanvasTexture(canvas);
+}
+
+function addPoliceGridWindow(parent, x, y, z, frameMat, paneMat, w = 1.05, h = 1.15) {
+    part(parent, new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.1), frameMat), { x, y, z });
+    part(parent, new THREE.Mesh(new THREE.BoxGeometry(w * 0.82, 0.06, 0.04), paneMat), { x, y, z: z + 0.06 });
+    part(parent, new THREE.Mesh(new THREE.BoxGeometry(0.06, h * 0.82, 0.04), paneMat), { x, y, z: z + 0.06 });
+}
+
+function addPoliceQuoins(parent, x, yBase, z, side, accentMat, rows = 6, size = 0.28) {
+    for (let i = 0; i < rows; i++) {
+        const offset = (i % 2) * size * 0.5;
+        part(parent, new THREE.Mesh(new THREE.BoxGeometry(size, size, size * 0.65), accentMat),
+            { x: x + side * offset, y: yBase + i * size, z });
+    }
+}
+
+function addPoliceShield(parent, x, y, z, size, accentColor) {
+    const tex = createPoliceShieldTexture(accentColor);
+    const mat = new THREE.MeshStandardMaterial({ map: tex, transparent: true, emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: 0.15 });
+    part(parent, new THREE.Mesh(new THREE.PlaneGeometry(size * 0.72, size), mat), { x, y, z });
+}
+
+function addPoliceHelipadRoof(parent, x, y, z, radius, accentMat) {
+    part(parent, new THREE.Mesh(new THREE.BoxGeometry(radius * 2.2, 0.18, radius * 2.2), accentMat), { x, y, z });
+    const markTex = createHelipadMarkTexture(0xffffff, 0xffffff);
+    const markMat = new THREE.MeshStandardMaterial({
+        map: markTex, roughness: 0.65, transparent: true, depthWrite: false,
+        polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1
+    });
+    part(parent, new THREE.Mesh(new THREE.CircleGeometry(radius, 32), markMat), { x, y: y + 0.1, z, rx: -Math.PI / 2 });
+}
+
+function addPoliceSteps(parent, x, topY, doorFrontZ, w, stepMat, count = 3) {
+    const groundY = 0.11;
+    const stepD = 0.36;
+    const stepH = (topY - groundY) / count;
+
+    for (let i = 0; i < count; i++) {
+        const y = groundY + i * stepH + stepH / 2;
+        const z = doorFrontZ + (count - 1 - i) * stepD;
+        part(parent, new THREE.Mesh(new THREE.BoxGeometry(w, stepH, stepD), stepMat), { x, y, z });
+    }
+
+    part(parent, new THREE.Mesh(new THREE.BoxGeometry(w, 0.1, stepD * 0.7), stepMat),
+        { x, y: topY - 0.05, z: doorFrontZ - stepD * 0.12 });
+}
+
+function addPoliceDoors(parent, x, y, z, totalW, frameMat, glassMat, count = 4) {
+    const doorW = totalW / count;
+    for (let i = 0; i < count; i++) {
+        const dx = x - totalW / 2 + (i + 0.5) * doorW;
+        part(parent, new THREE.Mesh(new THREE.BoxGeometry(doorW * 0.88, 1.55, 0.12), frameMat), { x: dx, y, z });
+        part(parent, new THREE.Mesh(new THREE.BoxGeometry(doorW * 0.68, 1.25, 0.05), glassMat), { x: dx, y, z: z + 0.07 });
+    }
+}
+
+function addPoliceAntenna(parent, x, y, z, accentMat) {
+    part(parent, new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.1, 4.8, 8), new THREE.MeshStandardMaterial({ color: 0xf8fafc })),
+        { x, y: y + 2.4, z });
+    for (let i = 0; i < 5; i++) {
+        part(parent, new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.28, 8),
+            new THREE.MeshStandardMaterial({ color: i % 2 === 0 ? 0xef4444 : 0xffffff })),
+            { x, y: y + 0.6 + i * 0.85, z });
+    }
+    [[-1.4, -1.1], [1.4, -1.1], [-1.4, 1.1], [1.4, 1.1]].forEach(([ox, oz]) => {
+        const wire = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 2.6, 4),
+            new THREE.MeshStandardMaterial({ color: 0x111827 }));
+        wire.position.set(x + ox * 0.5, y + 1.8, z + oz * 0.5);
+        wire.rotation.x = oz > 0 ? 0.55 : -0.35;
+        wire.rotation.z = ox > 0 ? -0.45 : 0.45;
+        parent.add(wire);
+    });
+}
+
+function addPoliceLollipopTree(parent, x, z, scale = 1) {
+    const trunkMat = getMat('policeTreeTrunk', () => new THREE.MeshStandardMaterial({ color: 0x8d6e63, roughness: 0.9 }));
+    const leafMat = getMat('policeTreeLeaf', () => new THREE.MeshStandardMaterial({ color: 0x4caf50, roughness: 0.85, flatShading: true }));
+    part(parent, new THREE.Mesh(new THREE.CylinderGeometry(0.12 * scale, 0.16 * scale, 0.9 * scale, 6), trunkMat),
+        { x, y: 0.45 * scale, z });
+    part(parent, new THREE.Mesh(new THREE.IcosahedronGeometry(0.55 * scale, 0), leafMat),
+        { x, y: 1.15 * scale, z });
+}
+
+function addPolicePlanter(parent, x, z, w, d) {
+    const borderMat = getMat('policePlanterBorder', () => new THREE.MeshStandardMaterial({ color: 0xd64545, roughness: 0.8 }));
+    const grassMat = getMat('policePlanterGrass', () => new THREE.MeshStandardMaterial({ color: 0x66bb6a, roughness: 0.9 }));
+    part(parent, new THREE.Mesh(new THREE.BoxGeometry(w, 0.1, d), borderMat), { x, y: 0.12, z });
+    part(parent, new THREE.Mesh(new THREE.BoxGeometry(w * 0.82, 0.08, d * 0.72), grassMat), { x, y: 0.18, z });
+}
+
+function createPoliceStation(transform = {}) {
+    const group = new THREE.Group();
+
+    const plotW = transform.width ?? transform.w ?? 21;
+    const plotD = transform.depth ?? transform.d ?? transform.length ?? transform.l ?? 30;
+    const scale = transform.scale ?? 1;
+    const showPlot = transform.showPlot !== false;
+    const showHelipad = transform.showHelipad !== false;
+    const showAntenna = transform.showAntenna !== false;
+    const showTrees = transform.showTrees !== false;
+
+    const plotColor = transform.plotColor ?? transform.color ?? 0xc4c8ce;
+    const borderColor = transform.borderColor ?? 0x333333;
+    const borderWidth = transform.borderWidth ?? 1;
+    const wallColor = transform.wallColor ?? transform.buildingColor ?? 0xc5cad3;
+    const accentColor = transform.accentColor ?? 0x1e3a8a;
+    const columnColor = transform.columnColor ?? 0xffffff;
+    const stepColor = transform.stepColor ?? 0x9ca3af;
+    const signText = transform.signText ?? transform.stationName ?? 'POLICE';
+    const signTextColor = transform.signTextColor ?? accentColor;
+    const signBgColor = transform.signBgColor ?? 0xffffff;
+    const doorFrameColor = transform.doorFrameColor ?? 0x6d4c41;
+    const glassColor = transform.glassColor ?? 0xa8c4d9;
+
+    const wallMat = getMat('policeWall', () => new THREE.MeshStandardMaterial({ color: wallColor, roughness: 0.88, flatShading: true }));
+    const accentMat = getMat('policeAccent', () => new THREE.MeshStandardMaterial({ color: accentColor, roughness: 0.65, flatShading: true }));
+    const columnMat = getMat('policeColumn', () => new THREE.MeshStandardMaterial({ color: columnColor, roughness: 0.75, flatShading: true }));
+    const stepMat = getMat('policeStep', () => new THREE.MeshStandardMaterial({ color: stepColor, roughness: 0.9 }));
+    const frameMat = getMat('policeDoorFrame', () => new THREE.MeshStandardMaterial({ color: doorFrameColor, roughness: 0.85 }));
+    const glassMat = getMat('policeGlass', () => new THREE.MeshStandardMaterial({ color: glassColor, transparent: true, opacity: 0.55, roughness: 0.35 }));
+    const paneMat = getMat('policePane', () => new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.7 }));
+
+    if (showPlot) addPlotBase(group, plotW, plotD, plotColor, borderColor, borderWidth);
+
+    const wingW = 5.4;
+    const wingD = 8.2;
+    const wingH = 4.4;
+    const centerW = 7.6;
+    const centerD = 9.0;
+    const centerH = 6.6;
+    const frontZ = plotD * 0.14;
+    const baseH = 0.55;
+
+    const leftX = -(centerW / 2 + wingW / 2);
+    const centerX = 0;
+    const rightX = centerW / 2 + wingW / 2;
+
+    function buildWing(x, z, opts = {}) {
+        const { sideWindows = 4, frontDoor = false, smallBadge = false, side = 'right' } = opts;
+        part(group, new THREE.Mesh(new THREE.BoxGeometry(wingW, wingH, wingD), wallMat), { x, y: baseH + wingH / 2, z });
+        part(group, new THREE.Mesh(new THREE.BoxGeometry(wingW + 0.08, 0.24, wingD + 0.08), accentMat), { x, y: baseH + wingH + 0.12, z });
+        part(group, new THREE.Mesh(new THREE.BoxGeometry(wingW + 0.04, baseH, wingD + 0.04), accentMat), { x, y: baseH / 2, z });
+
+        const quoinX = x + (side === 'left' ? -wingW / 2 : wingW / 2);
+        addPoliceQuoins(group, quoinX, baseH, z + wingD / 2 - 0.35, side === 'left' ? -1 : 1, accentMat);
+
+        const cols = sideWindows === 4 ? 2 : 1;
+        const rows = sideWindows === 4 ? 2 : 2;
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                addPoliceGridWindow(group, x - 1.1 + c * 2.2, baseH + 2.35 + r * 1.45, z + wingD / 2 + 0.05, accentMat, paneMat);
+            }
+        }
+
+        if (frontDoor) {
+            part(group, new THREE.Mesh(new THREE.BoxGeometry(1.15, 1.65, 0.12), frameMat), { x, y: baseH + 1.05, z: z + wingD / 2 + 0.06 });
+            part(group, new THREE.Mesh(new THREE.BoxGeometry(0.82, 1.3, 0.05), glassMat), { x, y: baseH + 1.05, z: z + wingD / 2 + 0.12 });
+            if (smallBadge) addPoliceShield(group, x, baseH + 2.55, z + wingD / 2 + 0.12, 1.05, accentColor);
+            addPolicePlanter(group, x - 1.35, z + wingD / 2 + 0.95, 1.15, 0.55);
+            addPolicePlanter(group, x + 1.35, z + wingD / 2 + 0.95, 1.15, 0.55);
+            if (showTrees) {
+                addPoliceLollipopTree(group, x - 1.35, z + wingD / 2 + 0.95, 0.75);
+                addPoliceLollipopTree(group, x + 1.35, z + wingD / 2 + 0.95, 0.65);
+            }
+        }
+    }
+
+    buildWing(leftX, frontZ - 0.35, { sideWindows: 4, side: 'left' });
+    buildWing(rightX, frontZ - 0.35, { sideWindows: 2, frontDoor: true, smallBadge: true, side: 'right' });
+
+    part(group, new THREE.Mesh(new THREE.BoxGeometry(centerW, centerH, centerD), wallMat), { x: centerX, y: baseH + centerH / 2, z: frontZ });
+    part(group, new THREE.Mesh(new THREE.BoxGeometry(centerW + 0.08, 0.24, centerD + 0.08), accentMat), { x: centerX, y: baseH + centerH + 0.12, z: frontZ });
+    part(group, new THREE.Mesh(new THREE.BoxGeometry(centerW + 0.04, baseH, centerD + 0.04), accentMat), { x: centerX, y: baseH / 2, z: frontZ });
+
+    const centerFrontZ = frontZ + centerD / 2;
+    [-2.35, 2.35].forEach(cx => {
+        part(group, new THREE.Mesh(new THREE.BoxGeometry(0.55, centerH - 0.35, 0.55), columnMat), { x: cx, y: baseH + (centerH - 0.35) / 2, z: centerFrontZ + 0.18 });
+        part(group, new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.22, 0.68), accentMat), { x: cx, y: baseH + 0.11, z: centerFrontZ + 0.18 });
+        part(group, new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.18, 0.68), accentMat), { x: cx, y: baseH + centerH - 0.08, z: centerFrontZ + 0.18 });
+    });
+
+    for (let r = 0; r < 2; r++) {
+        for (let c = 0; c < 2; c++) {
+            addPoliceGridWindow(group, centerX - 1.15 + c * 2.3, baseH + 3.15 + r * 1.45, centerFrontZ + 0.06, accentMat, paneMat, 1.15, 1.2);
+        }
+    }
+
+    addPoliceShield(group, centerX, baseH + 4.95, centerFrontZ + 0.12, 1.85, accentColor);
+
+    const signTex = createPoliceLabelTexture(signText, signTextColor, signBgColor);
+    const signMat = new THREE.MeshStandardMaterial({ map: signTex, emissive: 0xffffff, emissiveMap: signTex, emissiveIntensity: 0.2 });
+    part(group, new THREE.Mesh(new THREE.PlaneGeometry(3.8, 0.95), signMat), { x: centerX, y: baseH + centerH - 0.15, z: centerFrontZ + 0.14 });
+
+    addPoliceDoors(group, centerX, baseH + 0.82, centerFrontZ + 0.08, 4.8, frameMat, glassMat, 4);
+    addPoliceSteps(group, centerX, baseH, centerFrontZ + 0.55, 4.9, stepMat, 3);
+
+    if (showHelipad) addPoliceHelipadRoof(group, centerX, baseH + centerH + 0.22, frontZ, 2.15, accentMat);
+    if (showAntenna) addPoliceAntenna(group, rightX, baseH + wingH + 0.24, frontZ - 0.35, accentMat);
+
+    addPolicePlanter(group, leftX - 0.2, centerFrontZ + 1.55, wingW * 0.95, 0.65);
+    addPolicePlanter(group, centerX, centerFrontZ + 2.05, centerW * 0.88, 0.65);
+    addPolicePlanter(group, rightX + 0.2, centerFrontZ + 1.55, wingW * 0.95, 0.65);
+
+    if (showTrees) {
+        addPoliceLollipopTree(group, leftX - 2.35, centerFrontZ + 2.0, 1.0);
+    }
+
+    if (scale !== 1) group.scale.multiplyScalar(scale);
+    return addToScene(group, 'createPoliceStation', transform);
+}
+
+/* --- Tea Stall / Coffee Shop / Restaurant --- */
+function createVenueSignTexture(text, bgColor, textColor) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#' + new THREE.Color(bgColor).getHexString();
+    ctx.fillRect(0, 0, 512, 128);
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 6;
+    ctx.strokeRect(4, 4, 504, 120);
+    ctx.fillStyle = '#' + new THREE.Color(textColor).getHexString();
+    ctx.font = 'bold 46px Segoe UI, Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, 256, 66);
+    return new THREE.CanvasTexture(canvas);
+}
+
+function addVenueSign(parent, text, bgColor, textColor, y, z, w = 3.2) {
+    const tex = createVenueSignTexture(text, bgColor, textColor);
+    const mat = new THREE.MeshStandardMaterial({ map: tex, emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: 0.4 });
+    part(parent, new THREE.Mesh(new THREE.PlaneGeometry(w, w * 0.28), mat), { y, z });
+}
+
+function buildTeaStallGroup(cfg = {}) {
+    const g = new THREE.Group();
+    const w = cfg.width ?? cfg.w ?? 9.5;
+    const d = cfg.depth ?? cfg.d ?? 7.5;
+    const signText = cfg.signText ?? 'TEA STALL';
+    const woodMat = getMat('teaWood', () => new THREE.MeshStandardMaterial({ color: 0x8d6e63, roughness: 0.85 }));
+    const stallMat = getMat('teaStall', () => new THREE.MeshStandardMaterial({ color: 0xf5e6c8, roughness: 0.9 }));
+    const accentMat = getMat('teaAccent', () => new THREE.MeshStandardMaterial({ color: 0x27ae60, roughness: 0.7 }));
+
+    part(g, new THREE.Mesh(new THREE.BoxGeometry(w, 0.08, d), stallMat), { y: 0.14, z: 0 });
+    part(g, new THREE.Mesh(new THREE.BoxGeometry(w * 0.88, 1.05, 0.55), woodMat), { y: 0.6, z: d / 2 - 0.35 });
+    part(g, new THREE.Mesh(new THREE.BoxGeometry(w * 0.88, 0.12, 0.55), accentMat), { y: 1.18, z: d / 2 - 0.35 });
+
+    for (let i = 0; i < 7; i++) {
+        const c = i % 2 === 0 ? 0x27ae60 : 0xf1c40f;
+        part(g, new THREE.Mesh(new THREE.BoxGeometry(w / 7, 0.06, 1.4), new THREE.MeshStandardMaterial({ color: c })),
+            { x: -w / 2 + (i + 0.5) * (w / 7), y: 2.05, z: d / 2 - 0.2, rx: -0.22 });
+    }
+    part(g, new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 2.1, 6), woodMat), { x: -w / 2 + 0.35, y: 1.05, z: d / 2 - 0.55 });
+    part(g, new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 2.1, 6), woodMat), { x: w / 2 - 0.35, y: 1.05, z: d / 2 - 0.55 });
+
+    part(g, new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.18, 0.35, 10), getMat('teaPot', () =>
+        new THREE.MeshStandardMaterial({ color: 0xb0bec5, metalness: 0.7, roughness: 0.35 }))), { y: 1.05, z: d / 2 - 0.35 });
+    part(g, new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.35, 0.35), woodMat), { x: -1.2, y: 0.35, z: d / 2 - 0.35 });
+
+    addVenueSign(g, signText, 0x27ae60, 0xffffff, 2.45, d / 2 + 0.08, w * 0.55);
+    return g;
+}
+
+function buildCoffeeShopGroup(cfg = {}) {
+    const g = new THREE.Group();
+    const w = cfg.width ?? cfg.w ?? 9.5;
+    const d = cfg.depth ?? cfg.d ?? 7.5;
+    const signText = cfg.signText ?? 'COFFEE SHOP';
+    const wallMat = getMat('coffeeWall', () => new THREE.MeshStandardMaterial({ color: 0xefebe9, roughness: 0.85 }));
+    const woodMat = getMat('coffeeWood', () => new THREE.MeshStandardMaterial({ color: 0x6d4c41, roughness: 0.8 }));
+    const accentMat = getMat('coffeeAccent', () => new THREE.MeshStandardMaterial({ color: 0x795548, roughness: 0.6 }));
+    const glassMat = getMat('coffeeGlass', () => new THREE.MeshStandardMaterial({ color: 0x88ccff, transparent: true, opacity: 0.4, metalness: 0.5 }));
+
+    part(g, new THREE.Mesh(new THREE.BoxGeometry(w, 2.4, d), wallMat), { y: 1.25, z: 0 });
+    part(g, new THREE.Mesh(new THREE.BoxGeometry(w + 0.15, 0.2, d + 0.15), accentMat), { y: 2.55, z: 0 });
+    part(g, new THREE.Mesh(new THREE.BoxGeometry(w * 0.55, 1.5, 0.08), glassMat), { y: 1.35, z: d / 2 + 0.04 });
+    part(g, new THREE.Mesh(new THREE.BoxGeometry(1.0, 2.0, 0.12), woodMat), { x: -1.8, y: 1.15, z: d / 2 + 0.05 });
+
+    for (let i = 0; i < 6; i++) {
+        const c = i % 2 === 0 ? 0x6d4c41 : 0xffffff;
+        part(g, new THREE.Mesh(new THREE.BoxGeometry(w / 6, 0.05, 1.1), new THREE.MeshStandardMaterial({ color: c })),
+            { x: -w / 2 + (i + 0.5) * (w / 6), y: 2.75, z: d / 2 + 0.45, rx: -0.18 });
+    }
+
+    part(g, new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.06, 12), woodMat), { x: 1.4, y: 0.35, z: d / 2 + 0.9 });
+    part(g, new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.06, 12), woodMat), { x: -1.4, y: 0.35, z: d / 2 + 0.9 });
+    part(g, new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.06, 0.5), accentMat), { x: 1.4, y: 0.65, z: d / 2 + 0.9 });
+    part(g, new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.06, 0.5), accentMat), { x: -1.4, y: 0.65, z: d / 2 + 0.9 });
+
+    addVenueSign(g, signText, 0x6d4c41, 0xffffff, 3.05, d / 2 + 0.08, w * 0.58);
+    return g;
+}
+
+function buildRestaurantGroup(cfg = {}) {
+    const g = new THREE.Group();
+    const w = cfg.width ?? cfg.w ?? 9.5;
+    const d = cfg.depth ?? cfg.d ?? 7.5;
+    const signText = cfg.signText ?? 'RESTAURANT';
+    const wallMat = getMat('restWall', () => new THREE.MeshStandardMaterial({ color: 0xfff8e1, roughness: 0.85 }));
+    const accentMat = getMat('restAccent', () => new THREE.MeshStandardMaterial({ color: 0xc0392b, roughness: 0.65 }));
+    const roofMat = getMat('restRoof', () => new THREE.MeshStandardMaterial({ color: 0x8d6e63, roughness: 0.8 }));
+    const glassMat = getMat('restGlass', () => new THREE.MeshStandardMaterial({ color: 0xadd8e6, transparent: true, opacity: 0.45 }));
+    const frameMat = getMat('restFrame', () => new THREE.MeshStandardMaterial({ color: 0x37474f, roughness: 0.55 }));
+
+    part(g, new THREE.Mesh(new THREE.BoxGeometry(w, 2.8, d), wallMat), { y: 1.45, z: 0 });
+    part(g, new THREE.Mesh(new THREE.BoxGeometry(w + 0.25, 0.25, d + 0.25), roofMat), { y: 2.95, z: 0 });
+    part(g, new THREE.Mesh(new THREE.BoxGeometry(w + 0.1, 0.18, 0.18), accentMat), { y: 2.1, z: d / 2 + 0.02 });
+
+    [-2.2, 0, 2.2].forEach(wx => {
+        part(g, new THREE.Mesh(new THREE.BoxGeometry(1.3, 1.2, 0.1), frameMat), { x: wx, y: 1.55, z: d / 2 + 0.01 });
+        part(g, new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.95, 0.06), glassMat), { x: wx, y: 1.55, z: d / 2 + 0.07 });
+    });
+    part(g, new THREE.Mesh(new THREE.BoxGeometry(1.4, 2.1, 0.14), frameMat), { x: -3.2, y: 1.15, z: d / 2 + 0.04 });
+    part(g, new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.6, 0.08), glassMat), { x: -3.2, y: 1.15, z: d / 2 + 0.1 });
+
+    part(g, new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.6, 0.5), accentMat), { x: w / 2 - 0.8, y: 3.75, z: -0.5 });
+    part(g, new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.5, 0.35), getMat('restChimneyTop', () =>
+        new THREE.MeshStandardMaterial({ color: 0x455a64 }))), { x: w / 2 - 0.8, y: 4.65, z: -0.5 });
+
+    for (let i = 0; i < 3; i++) {
+        part(g, new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.06, 0.9), accentMat),
+            { x: -2 + i * 2, y: 0.35, z: d / 2 + 1.0 });
+        part(g, new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.55, 6), frameMat),
+            { x: -2 + i * 2, y: 0.62, z: d / 2 + 1.0 });
+    }
+
+    addVenueSign(g, signText, 0xc0392b, 0xffffff, 3.35, d / 2 + 0.08, w * 0.62);
+    return g;
+}
+
+function addPlotBase(group, plotW, plotD, plotColor, borderColor, borderWidth) {
+    part(group, new THREE.Mesh(new THREE.BoxGeometry(plotW, 0.1, plotD),
+        new THREE.MeshStandardMaterial({ color: plotColor, roughness: 0.92 })), { y: 0.05 });
+    const borderMat = new THREE.MeshStandardMaterial({ color: borderColor });
+    const borderH = 0.25;
+    part(group, new THREE.Mesh(new THREE.BoxGeometry(plotW + borderWidth * 2, borderH, borderWidth), borderMat),
+        { y: borderH / 2, z: plotD / 2 + borderWidth / 2 });
+    part(group, new THREE.Mesh(new THREE.BoxGeometry(plotW + borderWidth * 2, borderH, borderWidth), borderMat),
+        { y: borderH / 2, z: -plotD / 2 - borderWidth / 2 });
+    part(group, new THREE.Mesh(new THREE.BoxGeometry(borderWidth, borderH, plotD), borderMat),
+        { y: borderH / 2, x: -plotW / 2 - borderWidth / 2 });
+    part(group, new THREE.Mesh(new THREE.BoxGeometry(borderWidth, borderH, plotD), borderMat),
+        { y: borderH / 2, x: plotW / 2 + borderWidth / 2 });
+}
+
+function createTeaStall(transform = {}) {
+    const g = buildTeaStallGroup(transform);
+    const s = transform.scale ?? 1;
+    if (s !== 1) g.scale.multiplyScalar(s);
+    return addToScene(g, 'createTeaStall', transform);
+}
+
+function createCoffeeShop(transform = {}) {
+    const g = buildCoffeeShopGroup(transform);
+    const s = transform.scale ?? 1;
+    if (s !== 1) g.scale.multiplyScalar(s);
+    return addToScene(g, 'createCoffeeShop', transform);
+}
+
+function createRestaurant(transform = {}) {
+    const g = buildRestaurantGroup(transform);
+    const s = transform.scale ?? 1;
+    if (s !== 1) g.scale.multiplyScalar(s);
+    return addToScene(g, 'createRestaurant', transform);
+}
+
+/** Plot + tea stall + coffee shop + restaurant in one strip
+   spacing: shopGap | gap | spacing, shopDepth | venueDepth, shopPadding | padding,
+   per shop (tea/coffee/restaurant): z | offsetZ, d | depth, w | width, signText --- */
+function createFoodVenueStrip(transform = {}) {
+    const group = new THREE.Group();
+    const plotW = transform.width ?? transform.w ?? 11;
+    const plotD = transform.depth ?? transform.d ?? 26;
+    const plotColor = transform.plotColor ?? transform.color ?? 0xD6D0CD;
+    const borderColor = transform.borderColor ?? 0xF75F60;
+    const borderWidth = transform.borderWidth ?? 1;
+    const scale = transform.scale ?? 1;
+
+    const shopGap = transform.shopGap ?? transform.gap ?? transform.spacing ?? 0.6;
+    const edgePad = transform.shopPadding ?? transform.padding ?? 0.5;
+    const defaultVenueW = transform.shopWidth ?? transform.venueWidth ?? plotW * 0.92;
+
+    addPlotBase(group, plotW, plotD, plotColor, borderColor, borderWidth);
+
+    const teaCfg = transform.tea || {};
+    const coffeeCfg = transform.coffee || {};
+    const restCfg = transform.restaurant || {};
+
+    const hasManualZ = [teaCfg, coffeeCfg, restCfg].some(c => c.z != null || c.offsetZ != null);
+
+    let teaZ, coffeeZ, restZ;
+    let teaD, coffeeD, restD;
+
+    if (hasManualZ) {
+        teaZ = teaCfg.z ?? teaCfg.offsetZ ?? 0;
+        coffeeZ = coffeeCfg.z ?? coffeeCfg.offsetZ ?? 0;
+        restZ = restCfg.z ?? restCfg.offsetZ ?? 0;
+        const fallbackD = transform.shopDepth ?? transform.venueDepth ?? (plotD - edgePad * 2) / 3;
+        teaD = teaCfg.d ?? teaCfg.depth ?? fallbackD;
+        coffeeD = coffeeCfg.d ?? coffeeCfg.depth ?? fallbackD;
+        restD = restCfg.d ?? restCfg.depth ?? fallbackD;
+    } else {
+        const uniformD = transform.shopDepth ?? transform.venueDepth
+            ?? (plotD - edgePad * 2 - shopGap * 2) / 3;
+        teaD = teaCfg.d ?? teaCfg.depth ?? uniformD;
+        coffeeD = coffeeCfg.d ?? coffeeCfg.depth ?? uniformD;
+        restD = restCfg.d ?? restCfg.depth ?? uniformD;
+
+        const totalSpan = teaD + coffeeD + restD + shopGap * 2;
+        const startZ = -totalSpan / 2 + teaD / 2;
+
+        teaZ = teaCfg.z ?? teaCfg.offsetZ ?? startZ;
+        coffeeZ = coffeeCfg.z ?? coffeeCfg.offsetZ ?? (startZ + teaD / 2 + shopGap + coffeeD / 2);
+        restZ = restCfg.z ?? restCfg.offsetZ ?? (coffeeZ + coffeeD / 2 + shopGap + restD / 2);
+    }
+
+    const teaW = teaCfg.w ?? teaCfg.width ?? defaultVenueW;
+    const coffeeW = coffeeCfg.w ?? coffeeCfg.width ?? defaultVenueW;
+    const restW = restCfg.w ?? restCfg.width ?? defaultVenueW;
+
+    const tea = buildTeaStallGroup({ w: teaW, d: teaD, ...teaCfg });
+    tea.position.set(teaCfg.x ?? 0, teaCfg.y ?? 0.1, teaZ);
+    group.add(tea);
+
+    const coffee = buildCoffeeShopGroup({ w: coffeeW, d: coffeeD, ...coffeeCfg });
+    coffee.position.set(coffeeCfg.x ?? 0, coffeeCfg.y ?? 0.1, coffeeZ);
+    group.add(coffee);
+
+    const restaurant = buildRestaurantGroup({ w: restW, d: restD, ...restCfg });
+    restaurant.position.set(restCfg.x ?? 0, restCfg.y ?? 0.1, restZ);
+    group.add(restaurant);
+
+    if (scale !== 1) group.scale.multiplyScalar(scale);
+    return addToScene(group, 'createFoodVenueStrip', transform);
 }
 
 function createStylishApartment(transform = {}) {
@@ -1665,7 +2477,12 @@ function buildDreamCity() {
     createRoad({ x:  10, z: 38, rotateY: Math.PI /1, length: 64, width: 4, label: 'Main Road N-S' });
     createRoad({ x:  32, z: -35, rotateY: Math.PI /1, length: 70, width: 4, label: 'Main Road N-S' });
     createRoad({ x: 50, z: -26, length: 40, rotateY:  Math.PI /2, width: 4, label: 'Main Road N-S' });
-
+    // School near road
+    createRoad({ x: -30, z: -35.5, length: 69, rotateY:  Math.PI /1, width: 4, label: 'Main Road N-S' });
+    createRoad({ x: 0, z: -20.8, length: 40, rotateY:  Math.PI /1, width: 4, label: 'Main Road N-S' });
+    createRoad({ x: 1, z: -42.8, length: 58, rotateY:  Math.PI /2, width: 4, label: 'Main Road N-S' });
+    //  Petrol Pump
+    createRoad({ x: 16, z: -26, length: 28, rotateY:  Math.PI /2, width: 4, label: 'Main Road N-S' });
 
     // Trees — index std tree
     // createTree({ x: -24, z: -20, scale: 1.1, label: 'Tree 1' });
@@ -1689,11 +2506,10 @@ function buildDreamCity() {
     // Playground
     createPlayground({ x: -40, z: -55, rotY: Math.PI / 2, label: 'Playground' });
     // Cantine
-    createBuilding({ x: -60, z: -52, rotY: Math.PI / -2, label: 'House A' });
     // End School Part
 
     // Cartoon Park (full park2.html scene)
-    createPark({ x: 52, y: -.55, z: -45, rotateY: -Math.PI /4, scale: 0.18, label: 'Children Park' });
+    createPark({ x: 52, y: -.55, z: -45, rotateY: -Math.PI /4, scale: 0.16, label: 'Children Park' });
 
     // // Houses — index standard house
     // createBuilding({ x: 10, z: -20, hasWing: true, label: 'House B' });
@@ -1702,6 +2518,136 @@ function buildDreamCity() {
     // // Duplex — two index houses sharing wall
     // createDuplexHouse({ x: -20, z: 20, rotY: Math.PI, label: 'Duplex North' });
     // createDuplexHouse({ x: 14, z: 22, rotY: -Math.PI / 2, label: 'Duplex East' });
+
+    // School Near Houses
+    createCustomHouse({
+        x: -24,
+        y: 0.05,
+        z: -34.5,
+        // rotateY: Math.PI / 2,
+        landBorderColor: 0x374951,    // Sleek premium blue border for the plot curb
+        landBorderWidth: 1,        // realistic thickness for the plot curb
+        windowBorderColor: 0x1e293b,  // elegant charcoal color for windows
+        windowBorderWidth: 0.1,       // fine borders for window frames
+        doorBorderColor: 0x4d2a1a,    // warm wood color for door frames
+        doorBorderWidth: 0.15,        // slightly wider frame for doors
+        scale: 0.6,
+        label: 'Architectural Custom House'
+    });
+    createCustomHouse({
+        x: -24,
+        y: 0.05,
+        z: -24.5,
+        // rotateY: Math.PI / 2,
+        landBorderColor: 0x374951,    // Sleek premium blue border for the plot curb
+        landBorderWidth: 1,        // realistic thickness for the plot curb
+        windowBorderColor: 0x1e293b,  // elegant charcoal color for windows
+        windowBorderWidth: 0.1,       // fine borders for window frames
+        doorBorderColor: 0x4d2a1a,    // warm wood color for door frames
+        doorBorderWidth: 0.15,        // slightly wider frame for doors
+        scale: 0.6,
+        label: 'Architectural Custom House'
+    });
+    createCustomHouse({
+        x: -24,
+        y: 0.05,
+        z: -14.5,
+        // rotateY: Math.PI / 2,
+        landBorderColor: 0x374951,    // Sleek premium blue border for the plot curb
+        landBorderWidth: 1,        // realistic thickness for the plot curb
+        windowBorderColor: 0x1e293b,  // elegant charcoal color for windows
+        windowBorderWidth: 0.1,       // fine borders for window frames
+        doorBorderColor: 0x4d2a1a,    // warm wood color for door frames
+        doorBorderWidth: 0.15,        // slightly wider frame for doors
+        scale: 0.6,
+        label: 'Architectural Custom House'
+    });
+    createCustomHouse({
+        x: -24,
+        y: 0.05,
+        z: -4.8,
+        // rotateY: Math.PI / 2,
+        landBorderColor: 0x374951,    // Sleek premium blue border for the plot curb
+        landBorderWidth: 1,        // realistic thickness for the plot curb
+        windowBorderColor: 0x1e293b,  // elegant charcoal color for windows
+        windowBorderWidth: 0.1,       // fine borders for window frames
+        doorBorderColor: 0x4d2a1a,    // warm wood color for door frames
+        doorBorderWidth: 0.15,        // slightly wider frame for doors
+        scale: 0.6,
+        label: 'Architectural Custom House'
+    });
+    
+    createCustomHouse({
+        x: -6,
+        y: 0.05,
+        z: -7.2,
+        rotateY: Math.PI / 1,
+        landBorderColor: 0x374951,    // Sleek premium blue border for the plot curb
+        landBorderWidth: 1,        // realistic thickness for the plot curb
+        windowBorderColor: 0x1e293b,  // elegant charcoal color for windows
+        windowBorderWidth: 0.1,       // fine borders for window frames
+        doorBorderColor: 0x4d2a1a,    // warm wood color for door frames
+        doorBorderWidth: 0.15,        // slightly wider frame for doors
+        scale: 0.6,
+        label: 'Architectural Custom House'
+    });
+    createCustomHouse({
+        x: -6,
+        y: 0.05,
+        z: -17.2,
+        rotateY: Math.PI / 1,
+        landBorderColor: 0x374951,    // Sleek premium blue border for the plot curb
+        landBorderWidth: 1,        // realistic thickness for the plot curb
+        windowBorderColor: 0x1e293b,  // elegant charcoal color for windows
+        windowBorderWidth: 0.1,       // fine borders for window frames
+        doorBorderColor: 0x4d2a1a,    // warm wood color for door frames
+        doorBorderWidth: 0.15,        // slightly wider frame for doors
+        scale: 0.6,
+        label: 'Architectural Custom House'
+    });
+    createCustomHouse({
+        x: -6,
+        y: 0.05,
+        z: -27.2,
+        rotateY: Math.PI / 1,
+        landBorderColor: 0x374951,    // Sleek premium blue border for the plot curb
+        landBorderWidth: 1,        // realistic thickness for the plot curb
+        windowBorderColor: 0x1e293b,  // elegant charcoal color for windows
+        windowBorderWidth: 0.1,       // fine borders for window frames
+        doorBorderColor: 0x4d2a1a,    // warm wood color for door frames
+        doorBorderWidth: 0.15,        // slightly wider frame for doors
+        scale: 0.6,
+        label: 'Architectural Custom House'
+    });
+    createCustomHouse({
+        x: -6,
+        y: 0.05,
+        z: -36.9,
+        rotateY: Math.PI / 1,
+        landBorderColor: 0x374951,    // Sleek premium blue border for the plot curb
+        landBorderWidth: 1,        // realistic thickness for the plot curb
+        windowBorderColor: 0x1e293b,  // elegant charcoal color for windows
+        windowBorderWidth: 0.1,       // fine borders for window frames
+        doorBorderColor: 0x4d2a1a,    // warm wood color for door frames
+        doorBorderWidth: 0.15,        // slightly wider frame for doors
+        scale: 0.6,
+        label: 'Architectural Custom House'
+    });
+   
+    createCustomHouse({
+        x: -16,
+        y: 0.05,
+        z: -36.6,
+        rotateY: -Math.PI / 2,
+        landBorderColor: 0x374951,    // Sleek premium blue border for the plot curb
+        landBorderWidth: 1,        // realistic thickness for the plot curb
+        windowBorderColor: 0x1e293b,  // elegant charcoal color for windows
+        windowBorderWidth: 0.1,       // fine borders for window frames
+        doorBorderColor: 0x4d2a1a,    // warm wood color for door frames
+        doorBorderWidth: 0.15,        // slightly wider frame for doors
+        scale: 0.6,
+        label: 'Architectural Custom House'
+    });
 
     // Group - 1 
     createCustomHouse({
@@ -1763,7 +2709,7 @@ function buildDreamCity() {
 
     // Group - 2
     createCustomHouse({
-        x: -46,
+        x: -36,
         y: 0.05,
         z: 63.5,
         rotateY: Math.PI / 2,
@@ -1777,7 +2723,7 @@ function buildDreamCity() {
         label: 'Architectural Custom House'
     }); 
     createCustomHouse({
-        x: -34,
+        x: -24,
         y: 0.05,
         z: 63.5,
         rotateY: Math.PI / 2,
@@ -1791,7 +2737,7 @@ function buildDreamCity() {
         label: 'Architectural Custom House'
     }); 
     createCustomHouse({
-        x: -22,
+        x: -12,
         y: 0.05,
         z: 63.5,
         rotateY: Math.PI / 2,
@@ -1805,7 +2751,7 @@ function buildDreamCity() {
         label: 'Architectural Custom House'
     }); 
     createCustomHouse({
-        x: -10,
+        x: 0,
         y: 0.05,
         z: 63.5,
         rotateY: Math.PI / 2,
@@ -1818,33 +2764,324 @@ function buildDreamCity() {
         scale: 0.8,
         label: 'Architectural Custom House'
     }); 
-
-    // Four standalone custom trees of different types
+    
+    createCustomHouse({
+        x: -36,
+        y: 0.05,
+        z: 43.5,
+        rotateY: Math.PI / 2,
+        landBorderColor: 0x374951,    // Sleek premium blue border for the plot curb
+        landBorderWidth: 1,        // realistic thickness for the plot curb
+        windowBorderColor: 0x1e293b,  // elegant charcoal color for windows
+        windowBorderWidth: 0.1,       // fine borders for window frames
+        doorBorderColor: 0x4d2a1a,    // warm wood color for door frames
+        doorBorderWidth: 0.15,        // slightly wider frame for doors
+        scale: 0.8,
+        label: 'Architectural Custom House'
+    }); 
+    createCustomHouse({
+        x: -24,
+        y: 0.05,
+        z: 43.5,
+        rotateY: Math.PI / 2,
+        landBorderColor: 0x374951,    // Sleek premium blue border for the plot curb
+        landBorderWidth: 1,        // realistic thickness for the plot curb
+        windowBorderColor: 0x1e293b,  // elegant charcoal color for windows
+        windowBorderWidth: 0.1,       // fine borders for window frames
+        doorBorderColor: 0x4d2a1a,    // warm wood color for door frames
+        doorBorderWidth: 0.15,        // slightly wider frame for doors
+        scale: 0.8,
+        label: 'Architectural Custom House'
+    }); 
+    createCustomHouse({
+        x: -12,
+        y: 0.05,
+        z: 43.5,
+        rotateY: Math.PI / 2,
+        landBorderColor: 0x374951,    // Sleek premium blue border for the plot curb
+        landBorderWidth: 1,        // realistic thickness for the plot curb
+        windowBorderColor: 0x1e293b,  // elegant charcoal color for windows
+        windowBorderWidth: 0.1,       // fine borders for window frames
+        doorBorderColor: 0x4d2a1a,    // warm wood color for door frames
+        doorBorderWidth: 0.15,        // slightly wider frame for doors
+        scale: 0.8,
+        label: 'Architectural Custom House'
+    }); 
+    createCustomHouse({
+        x: 0,
+        y: 0.05,
+        z: 43.5,
+        rotateY: Math.PI / 2,
+        landBorderColor: 0x374951,  
+        landBorderWidth: 1,   
+        windowBorderColor: 0x1e293b,  
+        windowBorderWidth: 0.1,   
+        doorBorderColor: 0x4d2a1a,  
+        doorBorderWidth: 0.15,   
+        scale: 0.8,
+        label: 'Architectural Custom House',
+    }); 
+   
+    createCustomHouse({
+        x: -36,
+        y: 0.05,
+        z: 23.5,
+        rotateY: Math.PI / 2,
+        landBorderColor: 0x374951,    // Sleek premium blue border for the plot curb
+        landBorderWidth: 1,        // realistic thickness for the plot curb
+        windowBorderColor: 0x1e293b,  // elegant charcoal color for windows
+        windowBorderWidth: 0.1,       // fine borders for window frames
+        doorBorderColor: 0x4d2a1a,    // warm wood color for door frames
+        doorBorderWidth: 0.15,        // slightly wider frame for doors
+        scale: 0.8,
+        label: 'Architectural Custom House'
+    }); 
+    createCustomHouse({
+        x: -24,
+        y: 0.05,
+        z: 23.5,
+        rotateY: Math.PI / 2,
+        landBorderColor: 0x374951,    // Sleek premium blue border for the plot curb
+        landBorderWidth: 1,        // realistic thickness for the plot curb
+        windowBorderColor: 0x1e293b,  // elegant charcoal color for windows
+        windowBorderWidth: 0.1,       // fine borders for window frames
+        doorBorderColor: 0x4d2a1a,    // warm wood color for door frames
+        doorBorderWidth: 0.15,        // slightly wider frame for doors
+        scale: 0.8,
+        label: 'Architectural Custom House'
+    }); 
+    createCustomHouse({
+        x: -12,
+        y: 0.05,
+        z: 23.5,
+        rotateY: Math.PI / 2,
+        landBorderColor: 0x374951,    // Sleek premium blue border for the plot curb
+        landBorderWidth: 1,        // realistic thickness for the plot curb
+        windowBorderColor: 0x1e293b,  // elegant charcoal color for windows
+        windowBorderWidth: 0.1,       // fine borders for window frames
+        doorBorderColor: 0x4d2a1a,    // warm wood color for door frames
+        doorBorderWidth: 0.15,        // slightly wider frame for doors
+        scale: 0.8,
+        label: 'Architectural Custom House'
+    }); 
+    createCustomHouse({
+        x: 0,
+        y: 0.05,
+        z: 23.5,
+        rotateY: Math.PI / 2,
+        landBorderColor: 0x374951,  
+        landBorderWidth: 1,   
+        windowBorderColor: 0x1e293b,  
+        windowBorderWidth: 0.1,   
+        doorBorderColor: 0x4d2a1a,  
+        doorBorderWidth: 0.15,   
+        scale: 0.8,
+        label: 'Architectural Custom House',
+    }); 
+    
+    // empty land for house area
+    createEmptyLand({
+        x: -31,
+        y: 0.05,
+        z: 38,
+        w: 60,
+        d: 76,
+        rotateY: Math.PI / 2,
+        color: 0xc4c8ce,
+        borderColor: 0x333333,
+        borderWidth: 1,  
+        label: 'Custom Solid Empty Land'
+    }); 
     // createDreamTree({ type: 1, x: 25, y: 0.05, z: -20, scale: 2.0, label: 'Pine Tree' });
-    createDreamTree({ type: 2, x: -64, y: 0.05, z: 10, scale: 2.0, label: 'Oak Tree' });
-    createDreamTree({ type: 2, x: -64, y: 0.05, z: 16, scale: 2.0, label: 'Oak Tree' });
-    createDreamTree({ type: 2, x: -58, y: 0.05, z: 16, scale: 2.0, label: 'Oak Tree' });
-    createDreamTree({ type: 2, x: -2, y: 0.05, z: 60, scale: 2.0, label: 'Oak Tree' });
-    createDreamTree({ type: 2, x: -2, y: 0.05, z: 67, scale: 2.0, label: 'Oak Tree' });
-    createDreamTree({ type: 2, x: 6, y: 0.05, z: 67, scale: 2.0, label: 'Oak Tree' });
-    createDreamTree({ type: 3, x: -25, y: 0.05, z: 30, scale: 2.0, label: 'Palm Tree' });
-    createDreamTree({ type: 3, x: -15, y: 0.05, z: 30, scale: 2.0, label: 'Palm Tree' });
-    createDreamTree({ type: 3, x: -14, y: 0.05, z: 24, scale: 2.0, label: 'Palm Tree' });
-    createDreamTree({ type: 3, x: -28, y: 0.05, z: 23, scale: 2.0, label: 'Palm Tree' });
+    createDreamTree({ type: 2, x: -55, y: 0.05, z: 18, scale: 2.0, label: 'Oak Tree' });
+    createDreamTree({ type: 2, x: -64, y: 0.05, z: 18, scale: 2.0, label: 'Oak Tree' });
+    createDreamTree(
+        { type: 2, x: -46, y: 0.05, z: 18, scale: 2.0, label: 'Oak Tree' },
+        { type: 2, x: -46, y: 0.05, z: 29, scale: 2.0, label: 'Oak Tree' },
+        { type: 2, x: -46, y: 0.05, z: 38, scale: 2.0, label: 'Oak Tree' },
+        { type: 2, x: -46, y: 0.05, z: 49, scale: 2.0, label: 'Oak Tree' },
+        { type: 2, x: -46, y: 0.05, z: 60, scale: 2.0, label: 'Oak Tree' },
+        { type: 2, x: -46, y: 0.05, z: 67, scale: 2.0, label: 'Oak Tree' },
+    ); 
+    createDreamTree(
+        { type: 2, x: 6, y: 0.05, z: 67, scale: 2.0, label: 'Oak Tree' },
+        { type: 2, x: 6, y: 0.05, z: 60, scale: 2.0, label: 'Oak Tree' },
+        { type: 2, x: 6, y: 0.05, z: 53, scale: 2.0, label: 'Oak Tree' },
+        { type: 2, x: 6, y: 0.05, z: 46, scale: 2.0, label: 'Oak Tree' },
+        { type: 2, x: 6, y: 0.05, z: 38, scale: 2.0, label: 'Oak Tree' },
+        { type: 2, x: 6, y: 0.05, z: 31, scale: 2.0, label: 'Oak Tree' },
+        { type: 2, x: 6, y: 0.05, z: 24, scale: 2.0, label: 'Oak Tree' },
+        { type: 2, x: 6, y: 0.05, z: 17, scale: 2.0, label: 'Oak Tree' },
+    );
+    // Building Area Trees
+    createDreamTree( 
+        { type: 3, x: 48, y: 0.05, z: 48, scale: 2.0, label: 'Palm Tree' },
+        { type: 2, x: 48, y: 0.05, z: 40, scale: 2.0, label: 'Palm Tree' },
+        { type: 3, x: 48, y: 0.05, z: 32, scale: 2.0, label: 'Palm Tree' },
+        { type: 3, x: 30, y: 0.05, z: 48, scale: 2.0, label: 'Palm Tree' },
+        { type: 2, x: 30, y: 0.05, z: 40, scale: 2.0, label: 'Palm Tree' },
+        { type: 3, x: 30, y: 0.05, z: 32, scale: 2.0, label: 'Palm Tree' },
+        { type: 2, x: 30, y: 0.05, z: 24, scale: 2.0, label: 'Palm Tree' },
+        { type: 3, x: 30, y: 0.05, z: 16, scale: 2.0, label: 'Palm Tree' },
+    );
+
+    // forest one
+    createDreamTree(
+        { type: 1, x: 28, y: 0.05, z: -46, scale: 2.0, label: 'Oak Tree' },
+        { type: 1, x: 20, y: 0.05, z: -46, scale: 2.0, label: 'Oak Tree' },
+        { type: 1, x: 12, y: 0.05, z: -46, scale: 2.0, label: 'Oak Tree' },
+        { type: 1, x: 4, y: 0.05, z: -46, scale: 2.0, label: 'Oak Tree' },
+        { type: 1, x: -4, y: 0.05, z: -46, scale: 2.0, label: 'Oak Tree' },
+        { type: 1, x: -12, y: 0.05, z: -46, scale: 2.0, label: 'Oak Tree' },
+        { type: 1, x: -20, y: 0.05, z: -46, scale: 2.0, label: 'Oak Tree' },
+        { type: 1, x: -26, y: 0.05, z: -46, scale: 2.0, label: 'Oak Tree' },
+        // Row 2
+        { type: 1, x: 28, y: 0.05, z: -52, scale: 2.0, label: 'Oak Tree' },
+        { type: 1, x: 20, y: 0.05, z: -52, scale: 2.0, label: 'Oak Tree' },
+        { type: 1, x: 12, y: 0.05, z: -52, scale: 2.0, label: 'Oak Tree' },
+        { type: 1, x: 4, y: 0.05, z: -52, scale: 2.0, label: 'Oak Tree' },
+        { type: 1, x: -4, y: 0.05, z: -52, scale: 2.0, label: 'Oak Tree' },
+        { type: 1, x: -12, y: 0.05, z: -52, scale: 2.0, label: 'Oak Tree' },
+        { type: 1, x: -20, y: 0.05, z: -52, scale: 2.0, label: 'Oak Tree' },
+        { type: 1, x: -26, y: 0.05, z: -52, scale: 2.0, label: 'Oak Tree' },
+        // Row 3
+        { type: 1, x: 28, y: 0.05, z: -58, scale: 2.0, label: 'Oak Tree' },
+        { type: 1, x: 20, y: 0.05, z: -58, scale: 2.0, label: 'Oak Tree' },
+        { type: 1, x: 12, y: 0.05, z: -58, scale: 2.0, label: 'Oak Tree' },
+        { type: 1, x: 4, y: 0.05, z: -58, scale: 2.0, label: 'Oak Tree' },
+        { type: 1, x: -4, y: 0.05, z: -58, scale: 2.0, label: 'Oak Tree' },
+        { type: 1, x: -12, y: 0.05, z: -58, scale: 2.0, label: 'Oak Tree' },
+        { type: 1, x: -20, y: 0.05, z: -58, scale: 2.0, label: 'Oak Tree' },
+        { type: 1, x: -26, y: 0.05, z: -58, scale: 2.0, label: 'Oak Tree' },
+        // Row 4
+        { type: 1, x: 28, y: 0.05, z: -64, scale: 2.0, label: 'Oak Tree' },
+        { type: 1, x: 20, y: 0.05, z: -64, scale: 2.0, label: 'Oak Tree' },
+        { type: 1, x: 12, y: 0.05, z: -64, scale: 2.0, label: 'Oak Tree' },
+        { type: 1, x: 4, y: 0.05, z: -64, scale: 2.0, label: 'Oak Tree' },
+        { type: 1, x: -4, y: 0.05, z: -64, scale: 2.0, label: 'Oak Tree' },
+        { type: 1, x: -12, y: 0.05, z: -64, scale: 2.0, label: 'Oak Tree' },
+        { type: 1, x: -20, y: 0.05, z: -64, scale: 2.0, label: 'Oak Tree' },
+        { type: 1, x: -26, y: 0.05, z: -64, scale: 2.0, label: 'Oak Tree' },
+    );
+
+    // School Forest
+    createDreamTree(
+        { type: 2, x: -36, y: 0.05, z: -5, scale: 2.0, label: 'Oak Tree' },
+        { type: 2, x: -45, y: 0.05, z: -5, scale: 2.0, label: 'Oak Tree' },
+        { type: 2, x: -55, y: 0.05, z: -5, scale: 2.0, label: 'Oak Tree' },
+        { type: 2, x: -65, y: 0.05, z: -5, scale: 2.0, label: 'Oak Tree' },
+        { type: 2, x: -36, y: 0.05, z: -15, scale: 2.0, label: 'Oak Tree' },
+        { type: 2, x: -45, y: 0.05, z: -15, scale: 2.0, label: 'Oak Tree' },
+        { type: 2, x: -55, y: 0.05, z: -15, scale: 2.0, label: 'Oak Tree' },
+        { type: 2, x: -65, y: 0.05, z: -15, scale: 2.0, label: 'Oak Tree' },
+
+    );
+
+    // House 2 Trees
+    createDreamTree(
+        { type: 4, x: -19, y: 0.05, z: -4, scale: 1, label: 'Oak Tree' }, 
+        { type: 4, x: -19, y: 0.05, z: -11, scale: 1, label: 'Oak Tree' }, 
+        { type: 4, x: -19, y: 0.05, z: -18, scale: 1, label: 'Oak Tree' },
+        { type: 4, x: -19, y: 0.05, z: -25, scale: 1, label: 'Oak Tree' },
+        { type: 4, x: -19, y: 0.05, z: -32, scale: 1, label: 'Oak Tree' },
+        { type: 4, x: -11, y: 0.05, z: -4, scale: 1, label: 'Oak Tree' }, 
+        { type: 4, x: -11, y: 0.05, z: -11, scale: 1, label: 'Oak Tree' }, 
+        { type: 4, x: -11, y: 0.05, z: -18, scale: 1, label: 'Oak Tree' },
+        { type: 4, x: -11, y: 0.05, z: -25, scale: 1, label: 'Oak Tree' },
+        { type: 4, x: -11, y: 0.05, z: -32, scale: 1, label: 'Oak Tree' },
+    );
     // createDreamTree({ type: 4, x: 40, y: 0.05, z: -20, scale: 2.0, label: 'Sakura Tree' });
 
+    // Police Station
+    createPoliceStation({
+        x: 50,
+        y: 0.9,
+        z: -16,
+        w: 21,
+        d: 16,
+        face: 'front',
+        showPlot: false,
+        wallColor: 0xc5cad3,
+        accentColor: 0x1e3a8a,
+        signText: 'POLICE',
+        label: 'Police Station'
+    });
+    createEmptyLand({
+        x: 52,
+        y: 0.05,
+        z: -12.5,
+        w: 21,
+        d: 34,
+        rotateY: Math.PI / 2,
+        color: 0xc4c8ce,
+        borderColor: 0x333333,
+        borderWidth: 1,  
+        label: 'Custom Solid Empty Land'
+    });
+    // Pump Station (petrol / fuel)
+    createPumpStation({
+        x: 16,
+        y: 0.05,
+        z: -12.5,
+        w: 21,
+        d: 26,
+        rotateY: Math.PI / 2,
+        pumpCount: 2,
+        signText: 'BANGLA FUEL',
+        plotColor: 0xBCC4CD,
+        borderColor: 0xBFA590,
+        borderWidth: 1,
+        canopyColor: 0xe74c3c,
+        accentColor: 0xf39c12,
+        label: 'Pump Station'
+    });
     // New custom empty land with controllable width, depth/length, color, border color and border width
     createEmptyLand({
         x: 21,
         y: 0.05,
         z: 29,
-        w: 40,
-        d: 14,
+        w: 42,
+        d: 16,
         rotateY: Math.PI / 2,
-        color: 0xd2b280,      // Sand/desert courtyard style color
-        borderColor: 0x333333, // sleek boundary border color
-        borderWidth: 1,      // border thickness
+        color: 0xd2b280,
+        borderColor: 0x333333,
+        borderWidth: 1,  
         label: 'Custom Solid Empty Land'
+    });
+
+    // Tea stall, coffee shop & restaurant (prepared food strip land)
+    createEmptyLand({
+        x: 16,
+        y: 0.05,
+        z: -34.4,
+        w: 11,
+        d: 26,
+        rotateY: Math.PI / 2,
+        color: 0xD6D0CD,
+        borderColor: 0xF75F60,
+        borderWidth: 1,  
+        label: 'Custom Solid Empty Land'
+    });
+  
+        
+    createTeaStall({ x: 10, y: 0.05, z: -32, signText: 'TEA STALL', w: 9, d: 7, rotateY: Math.PI / 1,scale: 0.5 });
+    createCoffeeShop({ x: 16, y: 0.05, z: -33, signText: 'COFFEE SHOP',scale: 0.5,rotateY: Math.PI / 1, });
+    createRestaurant({ x: 25, y: 0.05, z: -33, signText: 'RESTAURANT',scale: 0.5, rotateY: Math.PI / 2,});
+
+    // Helicopter landing pad — controllable size, colors, shape
+    createHelipad({
+        x: 60,
+        y: 0.05,
+        z: 18,
+        size: 15,
+        shape: 'circle',
+        padColor: 0x3d3d3d,
+        borderColor: 0xf1c40f,
+        markColor: 0xffffff,
+        showH: true,
+        showLights: true,
+        lightColor: 0x55ff55,
+        label: 'Helipad'
     });
   
 
@@ -1881,11 +3118,11 @@ function buildDreamCity() {
 
     // land area 2
       createEmptyLand({
-        x: 31,
+        x: 30.5,
         y: 0.05,
-        z: 60,
+        z: 60.5,
         w: 17,
-        d: 34,
+        d: 35.4,
         rotateY: Math.PI / 2,
         color: 0xd2b280,      // Sand/desert courtyard style color
         borderColor: 0x333333, // sleek boundary border color
@@ -1947,16 +3184,84 @@ function buildDreamCity() {
         x: 59,
         y: 0.05,
         z: 48.5,
-        w: 40,
-        d: 17.8,
+        w: 41,
+        d: 20,
         rotateY: Math.PI / 2,
         color: 0xd2b280,      // Sand/desert courtyard style color
         borderColor: 0x333333, // sleek boundary border color
         borderWidth: 1,      // border thickness
         label: 'Custom Solid Empty Land'
     });
-     
-
+    createStylishApartment({
+        x: 55,
+        y: 0.05,
+        z: 65,
+        borderWidth:0,
+        rotateY: Math.PI / 1, // oriented facing the street
+        scale: 0.4,
+        floor:8,
+        label: '6-Story Stylish Apartment Building'
+    });
+    createStylishApartment({
+        x: 63,
+        y: 0.05,
+        z: 65,
+        borderWidth:0,
+        rotateY: Math.PI / 1, // oriented facing the street
+        scale: 0.4,
+        floor:8,
+        label: '6-Story Stylish Apartment Building'
+    });
+    createStylishApartment({
+        x: 55,
+        y: 0.05,
+        z: 32,
+        borderWidth:0,
+        rotateY: -Math.PI / 45, // oriented facing the street
+        scale: 0.4,
+        floor:8,
+        label: '6-Story Stylish Apartment Building'
+    });
+    createStylishApartment({
+        x: 63,
+        y: 0.05,
+        z: 32,
+        borderWidth:0,
+        rotateY: -Math.PI / 45, // oriented facing the street
+        scale: 0.4,
+        floor:8,
+        label: '6-Story Stylish Apartment Building'
+    });
+    createStylishApartment({
+        x: 65,
+        y: 0.05,
+        z: 58,
+        borderWidth:0,
+        rotateY: -Math.PI / 2, // oriented facing the street
+        scale: 0.4,
+        floor:8,
+        label: '6-Story Stylish Apartment Building'
+    });
+    createStylishApartment({
+        x: 65,
+        y: 0.05,
+        z: 49,
+        borderWidth:0,
+        rotateY: -Math.PI / 2, // oriented facing the street
+        scale: 0.4,
+        floor:8,
+        label: '6-Story Stylish Apartment Building'
+    });
+    createStylishApartment({
+        x: 65,
+        y: 0.05,
+        z: 40,
+        borderWidth:0,
+        rotateY: -Math.PI / 2, // oriented facing the street
+        scale: 0.4,
+        floor:8,
+        label: '6-Story Stylish Apartment Building'
+    });
   
 }
 
