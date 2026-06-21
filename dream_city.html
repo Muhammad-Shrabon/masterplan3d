@@ -6,13 +6,226 @@
     <title>Dream City — Bangla Bosoti Style</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        html, body { width: 100%; height: 100%; overflow: hidden; background: #87ceeb; font-family: 'Segoe UI', system-ui, sans-serif; }
+        html, body {
+            width: 100%; height: 100%; overflow: hidden;
+            background: #0f172a;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            color: #f8fafc;
+        }
         canvas { display: block; }
 
+        /* ── Loader ── */
+        #dc-loader {
+            position: fixed; inset: 0; z-index: 2000;
+            display: flex; align-items: center; justify-content: center;
+            background: linear-gradient(145deg, #0f172a 0%, #1e3a5f 55%, #158f5c 100%);
+            transition: opacity 0.55s ease, visibility 0.55s ease;
+        }
+        #dc-loader.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+        .dc-loader-box { text-align: center; padding: 2rem; }
+        .dc-loader-ring {
+            width: 52px; height: 52px; margin: 0 auto 1.25rem;
+            border: 3px solid rgba(255,255,255,0.15);
+            border-top-color: #fbbf24;
+            border-radius: 50%;
+            animation: dc-spin 0.85s linear infinite;
+        }
+        @keyframes dc-spin { to { transform: rotate(360deg); } }
+        .dc-loader-box h2 { font-size: 1.35rem; font-weight: 700; letter-spacing: 0.02em; margin-bottom: 0.35rem; }
+        .dc-loader-box p { font-size: 0.88rem; color: rgba(255,255,255,0.65); }
+        .dc-loader-bar-wrap {
+            width: 220px; height: 4px; margin: 1rem auto 0;
+            background: rgba(255,255,255,0.12); border-radius: 99px; overflow: hidden;
+        }
+        .dc-loader-bar {
+            height: 100%; width: 0%;
+            background: linear-gradient(90deg, #fbbf24, #34d399);
+            border-radius: 99px;
+            transition: width 0.3s ease;
+        }
+
+        /* ── Header ── */
+        #dc-header {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0.75rem 1.25rem;
+            background: linear-gradient(180deg, rgba(15,23,42,0.92) 0%, rgba(15,23,42,0.55) 100%);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            backdrop-filter: blur(12px);
+            pointer-events: none;
+        }
+        #dc-header > * { pointer-events: auto; }
+        .dc-brand { display: flex; align-items: center; gap: 0.65rem; }
+        .dc-brand-icon {
+            width: 36px; height: 36px; border-radius: 10px;
+            background: linear-gradient(135deg, #158f5c, #fbbf24);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem; box-shadow: 0 4px 14px rgba(21,143,92,0.35);
+        }
+        .dc-brand h1 { font-size: 1.05rem; font-weight: 700; line-height: 1.2; }
+        .dc-brand span { font-size: 0.72rem; color: rgba(255,255,255,0.55); font-weight: 400; }
+        .dc-header-actions { display: flex; gap: 0.5rem; }
+        .dc-icon-btn {
+            width: 36px; height: 36px; border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.06);
+            color: #fff; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.2s, border-color 0.2s, transform 0.15s;
+        }
+        .dc-icon-btn:hover { background: rgba(255,255,255,0.14); transform: translateY(-1px); }
+        .dc-icon-btn.active { background: rgba(251,191,36,0.2); border-color: #fbbf24; color: #fbbf24; }
+
+        /* ── Camera nav ── */
+        #dc-nav {
+            position: fixed; bottom: 28px; right: 24px; z-index: 1000;
+            display: flex; flex-direction: column; gap: 6px;
+            background: rgba(15,23,42,0.82);
+            padding: 10px 12px; border-radius: 18px;
+            border: 1px solid rgba(255,255,255,0.12);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+            backdrop-filter: blur(10px);
+            max-width: calc(100vw - 48px);
+        }
+        .dc-nav-label {
+            font-size: 0.65rem; font-weight: 600; letter-spacing: 0.08em;
+            text-transform: uppercase; color: rgba(255,255,255,0.4);
+            padding: 0 8px 2px;
+        }
+        .dc-nav-btn {
+            color: #fff; border: none; background: transparent;
+            cursor: pointer; font-family: inherit;
+            font-weight: 600; font-size: 0.82rem;
+            padding: 9px 16px; border-radius: 22px;
+            display: flex; align-items: center; gap: 8px;
+            white-space: nowrap; transition: background 0.2s, color 0.2s, transform 0.15s;
+        }
+        .dc-nav-btn svg { flex-shrink: 0; opacity: 0.85; }
+        .dc-nav-btn:hover:not(.active) { background: rgba(255,255,255,0.1); transform: translateY(-1px); }
+        .dc-nav-btn.active {
+            background: #fbbf24 !important;
+            color: #158f5c !important;
+            box-shadow: 0 4px 12px rgba(251,191,36,0.35);
+        }
+
+        /* ── Help panel ── */
+        #dc-help {
+            position: fixed; bottom: 28px; left: 24px; z-index: 1000;
+            background: rgba(15,23,42,0.82);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 14px; padding: 0.85rem 1rem;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            max-width: 240px;
+            transition: opacity 0.3s, transform 0.3s;
+        }
+        #dc-help.collapsed { opacity: 0; transform: translateY(8px); pointer-events: none; }
+        #dc-help h3 {
+            font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em;
+            text-transform: uppercase; color: #fbbf24; margin-bottom: 0.55rem;
+        }
+        #dc-help ul { list-style: none; display: flex; flex-direction: column; gap: 0.35rem; }
+        #dc-help li {
+            font-size: 0.78rem; color: rgba(255,255,255,0.72);
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+        #dc-help kbd {
+            display: inline-block; min-width: 22px; text-align: center;
+            padding: 2px 6px; border-radius: 5px;
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);
+            font-size: 0.68rem; font-family: inherit; color: #fff;
+        }
+
+        /* ── Status chip ── */
+        #dc-status {
+            position: fixed; top: 72px; left: 50%; transform: translateX(-50%);
+            z-index: 999; pointer-events: none;
+            background: rgba(15,23,42,0.75);
+            border: 1px solid rgba(251,191,36,0.35);
+            color: #fbbf24; font-size: 0.78rem; font-weight: 600;
+            padding: 0.4rem 1rem; border-radius: 99px;
+            opacity: 0; transition: opacity 0.35s;
+            backdrop-filter: blur(8px);
+        }
+        #dc-status.show { opacity: 1; }
+
+        @media (max-width: 640px) {
+            #dc-header { padding: 0.6rem 0.85rem; }
+            .dc-brand h1 { font-size: 0.92rem; }
+            #dc-help { bottom: auto; top: 64px; left: 12px; max-width: 200px; padding: 0.65rem 0.8rem; }
+            #dc-nav { bottom: 16px; right: 12px; left: 12px; flex-direction: row; flex-wrap: wrap; border-radius: 14px; }
+            .dc-nav-label { width: 100%; }
+            .dc-nav-btn { flex: 1 1 auto; justify-content: center; font-size: 0.75rem; padding: 8px 10px; }
+        }
     </style>
 </head>
 <body>
 
+<div id="dc-loader" aria-live="polite">
+    <div class="dc-loader-box">
+        <div class="dc-loader-ring"></div>
+        <h2>Dream City</h2>
+        <p id="dc-loader-text">3D city তৈরি হচ্ছে...</p>
+        <div class="dc-loader-bar-wrap"><div id="dc-loader-bar" class="dc-loader-bar"></div></div>
+    </div>
+</div>
+
+<header id="dc-header">
+    <div class="dc-brand">
+        <div class="dc-brand-icon">🏙</div>
+        <div>
+            <h1>Dream City</h1>
+            <span>Bangla Bosoti — 3D Masterplan</span>
+        </div>
+    </div>
+    <div class="dc-header-actions">
+        <button id="dc-btn-help" class="dc-icon-btn active" type="button" title="Help toggle" aria-label="Toggle help">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </button>
+        <button id="dc-btn-reset" class="dc-icon-btn" type="button" title="Reset view" aria-label="Reset camera">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+        </button>
+        <button id="dc-btn-fs" class="dc-icon-btn" type="button" title="Fullscreen" aria-label="Fullscreen">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+        </button>
+    </div>
+</header>
+
+<div id="dc-status"></div>
+
+<aside id="dc-help">
+    <h3>Controls</h3>
+    <ul>
+        <li><kbd>LMB</kbd> Rotate view</li>
+        <li><kbd>RMB</kbd> Pan camera</li>
+        <li><kbd>Scroll</kbd> Zoom in/out</li>
+        <li><kbd>→</kbd> Use nav buttons below</li>
+    </ul>
+</aside>
+
+<nav id="dc-nav" aria-label="Camera views">
+    <span class="dc-nav-label">Explore</span>
+    <button type="button" class="dc-nav-btn active" data-view="overview">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+        Overview
+    </button>
+    <button type="button" class="dc-nav-btn" data-view="school">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+        School
+    </button>
+    <button type="button" class="dc-nav-btn" data-view="park">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22V8"/><path d="M5 12H2a10 10 0 0 0 20 0h-3"/><circle cx="12" cy="5" r="3"/></svg>
+        Park
+    </button>
+    <button type="button" class="dc-nav-btn" data-view="residential">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Houses
+    </button>
+    <button type="button" class="dc-nav-btn" data-view="commercial">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4"/><line x1="8" y1="6" x2="8" y2="6.01"/><line x1="12" y1="6" x2="12" y2="6.01"/><line x1="16" y1="6" x2="16" y2="6.01"/></svg>
+        Apartments
+    </button>
+</nav>
 
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -41,14 +254,14 @@ const INDEX = {
     plotLand: 0x86eeaa,
     asphalt: 0x222222,
     body: 0xe8e4d9,
-    roof: 0xC47460,
+    roof: 0x4a5058,
     wall: 0xeeeeee,
     win: 0xadd8e6,
     gate: 0x111111,
     glass: 0x88ccff,
     beam: 0xFAF9F6,
-    floorYellow: 0xfcf286,
-    wallCream: 0xeee8aa,
+    floorYellow: 0xE8E6E1,
+    wallCream: 0xD8D2C4,
     trunk: 0x8D6E63,
     leaf: 0x388E3C,
 };
@@ -294,7 +507,7 @@ function createBuilding(transform) {
     return addToScene(g, 'createBuilding', transform);
 }
 
-function createDuplexHouse(transform) {
+function buildDuplexType1Group(transform = {}) {
     const group = new THREE.Group();
     const spacing = transform.spacing || 520;
     const left = buildHouseCore();
@@ -302,7 +515,12 @@ function createDuplexHouse(transform) {
     const right = buildHouseCore();
     right.position.x = spacing / 2;
     group.add(left, right);
-    const s = transform.scale || 1;
+    return group;
+}
+
+function createDuplexHouse(transform = {}) {
+    const group = buildDuplexType1Group(transform);
+    const s = transform.scale ?? 1;
     if (s !== 1) group.scale.multiplyScalar(s);
     return addToScene(group, 'createDuplexHouse', transform);
 }
@@ -480,7 +698,7 @@ function ch_createBalcony(parent, config) {
 }
 
 function ch_createRoof(parent, config) {
-    const { w = 6, d = 8, style = 'pitched', color = 0x8b0000 } = config;
+    const { w = 6, d = 8, style = 'pitched', color = 0x4a5058 } = config;
     const group = new THREE.Group();
     const roofMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.5, metalness: 0.3 });
     if (style === 'pitched') {
@@ -507,7 +725,7 @@ function ch_createRoof(parent, config) {
 }
 
 function ch_createGable(parent, config) {
-    const { w = 6, h = 1.5, t = 0.2, color = 0xeee8aa } = config;
+    const { w = 6, h = 1.5, t = 0.2, color = 0xD8D2C4 } = config;
     const group = new THREE.Group();
     
     const shape = new THREE.Shape();
@@ -848,21 +1066,21 @@ function createCustomHouse(transform = {}) {
     ch_createBeamSet(group, { x: 0, y: 0, z: -7.2, dist: 6, h: 4, w: 0.4, count: 1, isCircle: false });
 
     // Ground floor floors and walls
-    ch_createFloor(group, { x: 0, z: -2, y: 0, w: 11, d: 6.5, color: 0xfcf286, ry: Math.PI / 2 });
-    ch_createWall(group, { x: 3, z: 0, w: 6, h: 4, ry: Math.PI / 2, color: 0xeee8aa });
-    ch_createWall(group, { x: 0, y: 0, z: -3, w: 6, h: 4, color: 0xeee8aa });
-    ch_createWall(group, { x: -3, z: 0, w: 6, h: 4, ry: Math.PI / 2, color: 0xeee8aa });
-    ch_createWall(group, { x: 0, z: 3, w: 6, h: 4, color: 0xeee8aa });
+    ch_createFloor(group, { x: 0, z: -2, y: 0, w: 11, d: 6.5, color: 0xE8E6E1, ry: Math.PI / 2 });
+    ch_createWall(group, { x: 3, z: 0, w: 6, h: 4, ry: Math.PI / 2, color: 0xD8D2C4 });
+    ch_createWall(group, { x: 0, y: 0, z: -3, w: 6, h: 4, color: 0xD8D2C4 });
+    ch_createWall(group, { x: -3, z: 0, w: 6, h: 4, ry: Math.PI / 2, color: 0xD8D2C4 });
+    ch_createWall(group, { x: 0, z: 3, w: 6, h: 4, color: 0xD8D2C4 });
     ch_createDoor(group, { x: 3.2, y: 0.5, z: 0, w: 1.2, h: 2.2, ry: Math.PI / 2, isOpen: false }, doorBorderColor, doorBorderWidth);
 
     // Second floor walls, floors, and doors
-    ch_createWall(group, { x: 3, z: 0, y: 4, w: 6, h: 4, ry: Math.PI / 2, color: 0xeee8aa });
-    ch_createWall(group, { x: 0, y: 4, z: -3, w: 6, h: 4, color: 0xeee8aa });
-    ch_createWall(group, { x: -3, z: -2, y: 4, w: 10, h: 4, ry: Math.PI / 2, color: 0xeee8aa });
-    ch_createWall(group, { x: 0, z: 3, y: 4, w: 6, h: 4, color: 0xeee8aa });
-    ch_createWall(group, { x: -1.5, z: -7.2, y: 4, w: 3, h: 4, color: 0xeee8aa });
-    ch_createWall(group, { x: 0, z: -5.2, y: 4, w: 4.5, h: 4, ry: Math.PI / 2, color: 0xeee8aa });
-    ch_createFloor(group, { x: 0, y: 4, z: -2, w: 11, d: 6.5, color: 0xfcf286, ry: Math.PI / 2 });
+    ch_createWall(group, { x: 3, z: 0, y: 4, w: 6, h: 4, ry: Math.PI / 2, color: 0xD8D2C4 });
+    ch_createWall(group, { x: 0, y: 4, z: -3, w: 6, h: 4, color: 0xD8D2C4 });
+    ch_createWall(group, { x: -3, z: -2, y: 4, w: 10, h: 4, ry: Math.PI / 2, color: 0xD8D2C4 });
+    ch_createWall(group, { x: 0, z: 3, y: 4, w: 6, h: 4, color: 0xD8D2C4 });
+    ch_createWall(group, { x: -1.5, z: -7.2, y: 4, w: 3, h: 4, color: 0xD8D2C4 });
+    ch_createWall(group, { x: 0, z: -5.2, y: 4, w: 4.5, h: 4, ry: Math.PI / 2, color: 0xD8D2C4 });
+    ch_createFloor(group, { x: 0, y: 4, z: -2, w: 11, d: 6.5, color: 0xE8E6E1, ry: Math.PI / 2 });
     ch_createDoor(group, { x: 3.2, y: 4.3, z: 0, w: 1.2, h: 2.2, ry: Math.PI / 2, isOpen: true }, doorBorderColor, doorBorderWidth);
     ch_createDoor(group, { x: 0.2, y: 4.3, z: -5.2, w: 1.2, h: 2.2, ry: Math.PI / 2, isOpen: false }, doorBorderColor, doorBorderWidth);
 
@@ -874,8 +1092,8 @@ function createCustomHouse(transform = {}) {
     ch_createLight(group, { x: 0, y: 7.8, z: 0 });
 
     // Third floor, windows, balcony, roof, gables
-    ch_createFloor(group, { x: 0, y: 8, z: 0, w: 6, d: 6.5, color: 0xfcf286, ry: Math.PI / 2 });
-    ch_createFloor(group, { x: -1.5, y: 8, z: -5.2, w: 4.5, d: 3.5, color: 0xfcf286, ry: Math.PI / 2 });
+    ch_createFloor(group, { x: 0, y: 8, z: 0, w: 6, d: 6.5, color: 0xE8E6E1, ry: Math.PI / 2 });
+    ch_createFloor(group, { x: -1.5, y: 8, z: -5.2, w: 4.5, d: 3.5, color: 0xE8E6E1, ry: Math.PI / 2 });
     
     ch_createStairs(group, { x: 4.2, z: 0, y: 0, ry: -Math.PI / 2, w: 1.8, steps: 3 });
     ch_createWindow(group, { x: 1.0, y: 6, z: 3.3, w: 2, h: 1.5 }, windowBorderColor, windowBorderWidth);
@@ -3267,10 +3485,103 @@ function buildDreamCity() {
 
 
 
+/* ── UI: loader, camera presets, controls ── */
+const DC_VIEWS = {
+    overview:    { label: 'Overview',    pos: [35, 28, 35],  target: [0, 1, 0] },
+    school:      { label: 'School',      pos: [-48, 22, -18], target: [-50, 2, -32] },
+    park:        { label: 'Park',        pos: [42, 20, -32],  target: [52, 1, -45] },
+    residential: { label: 'Houses',      pos: [-32, 18, -12], target: [-24, 2, -24] },
+    commercial:  { label: 'Apartments',  pos: [38, 26, 52],   target: [38, 4, 58] }
+};
+
+let dcCamAnim = null;
+let dcActiveView = 'overview';
+
+function dcEase(t) {
+    return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+}
+
+function dcFlyToView(name) {
+    const v = DC_VIEWS[name];
+    if (!v || !camera) return;
+    dcActiveView = name;
+    dcCamAnim = {
+        start: performance.now(),
+        duration: 1100,
+        fromPos: camera.position.clone(),
+        fromTarget: controls.target.clone(),
+        toPos: new THREE.Vector3(...v.pos),
+        toTarget: new THREE.Vector3(...v.target)
+    };
+    document.querySelectorAll('.dc-nav-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.view === name);
+    });
+    dcShowStatus(v.label);
+}
+
+function dcShowStatus(text) {
+    const el = document.getElementById('dc-status');
+    if (!el) return;
+    el.textContent = text;
+    el.classList.add('show');
+    clearTimeout(dcShowStatus._t);
+    dcShowStatus._t = setTimeout(() => el.classList.remove('show'), 1800);
+}
+
+function dcSetLoader(pct, msg) {
+    const bar = document.getElementById('dc-loader-bar');
+    const txt = document.getElementById('dc-loader-text');
+    if (bar) bar.style.width = pct + '%';
+    if (txt && msg) txt.textContent = msg;
+}
+
+function dcHideLoader() {
+    const el = document.getElementById('dc-loader');
+    if (el) el.classList.add('hidden');
+}
+
+function dcInitUI() {
+    document.querySelectorAll('.dc-nav-btn').forEach(btn => {
+        btn.addEventListener('click', () => dcFlyToView(btn.dataset.view));
+    });
+
+    document.getElementById('dc-btn-reset')?.addEventListener('click', () => dcFlyToView('overview'));
+
+    document.getElementById('dc-btn-help')?.addEventListener('click', () => {
+        const help = document.getElementById('dc-help');
+        const btn = document.getElementById('dc-btn-help');
+        help?.classList.toggle('collapsed');
+        btn?.classList.toggle('active', !help?.classList.contains('collapsed'));
+    });
+
+    document.getElementById('dc-btn-fs')?.addEventListener('click', () => {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen?.();
+        } else {
+            document.exitFullscreen?.();
+        }
+    });
+}
+
+function dcUpdateCamAnim() {
+    if (!dcCamAnim) return;
+    const t = Math.min(1, (performance.now() - dcCamAnim.start) / dcCamAnim.duration);
+    const e = dcEase(t);
+    camera.position.lerpVectors(dcCamAnim.fromPos, dcCamAnim.toPos, e);
+    controls.target.lerpVectors(dcCamAnim.fromTarget, dcCamAnim.toTarget, e);
+    if (t >= 1) dcCamAnim = null;
+}
+
+
 function init() {
+    dcInitUI();
+    dcSetLoader(15, 'Scene তৈরি হচ্ছে...');
+
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x87ceeb);
     scene.fog = new THREE.FogExp2(0x87ceeb, 0.012);
+
+    dcSetLoader(35, 'Camera setup...');
 
     camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.5, 300);
     camera.position.set(35, 28, 35);
@@ -3292,17 +3603,25 @@ function init() {
     controls.maxPolarAngle = Math.PI / 2.08;
     controls.target.set(0, 1, 0);
 
+    dcSetLoader(55, 'City build হচ্ছে...');
     buildDreamCity();
+    dcSetLoader(90, 'Almost ready...');
+
     window.addEventListener('resize', () => {
         camera.aspect = innerWidth / innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(innerWidth, innerHeight);
     });
+
+    dcSetLoader(100, 'Done!');
+    setTimeout(dcHideLoader, 400);
+
     (function loop() {
         requestAnimationFrame(loop);
         const dt = parkClock.getDelta();
         const time = parkClock.getElapsedTime();
         updateCartoonParkAnimations(dt, time);
+        dcUpdateCamAnim();
         controls.update();
         renderer.render(scene, camera);
     })();
