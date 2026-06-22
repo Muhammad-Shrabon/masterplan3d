@@ -2670,6 +2670,259 @@ function createPlayground(transform) {
     return addToScene(group, 'createPlayground', transform);
 }
 
+function createFootballField(transform) {
+    const group = new THREE.Group();
+
+    // 1. Generate Crisp Canvas Texture for Football Field markings
+    const canvas = document.createElement('canvas');
+    canvas.width = 1024;
+    canvas.height = 768;
+    const ctx = canvas.getContext('2d');
+
+    // Alternating green stripes
+    const stripes = 15;
+    const stripeWidth = canvas.width / stripes;
+    for (let i = 0; i < stripes; i++) {
+        ctx.fillStyle = i % 2 === 0 ? '#2e7d32' : '#388e3c'; // dark vs lighter green
+        ctx.fillRect(i * stripeWidth, 0, stripeWidth, canvas.height);
+    }
+
+    // White field lines
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 8;
+
+    const marginX = 40;
+    const marginY = 40;
+    const fieldW = canvas.width - marginX * 2;
+    const fieldH = canvas.height - marginY * 2;
+
+    // Boundary line
+    ctx.strokeRect(marginX, marginY, fieldW, fieldH);
+
+    // Midfield line
+    ctx.beginPath();
+    ctx.moveTo(canvas.width / 2, marginY);
+    ctx.lineTo(canvas.width / 2, canvas.height - marginY);
+    ctx.stroke();
+
+    // Center circle
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const centerRadius = 85;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, centerRadius, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Center spot
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, 8, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Penalty Areas (both sides)
+    const penaltyW = 130;
+    const penaltyH = 320;
+    // Left Penalty Box
+    ctx.strokeRect(marginX, centerY - penaltyH / 2, penaltyW, penaltyH);
+    // Right Penalty Box
+    ctx.strokeRect(canvas.width - marginX - penaltyW, centerY - penaltyH / 2, penaltyW, penaltyH);
+
+    // Goal Areas
+    const goalAreaW = 45;
+    const goalAreaH = 160;
+    // Left Goal Area
+    ctx.strokeRect(marginX, centerY - goalAreaH / 2, goalAreaW, goalAreaH);
+    // Right Goal Area
+    ctx.strokeRect(canvas.width - marginX - goalAreaW, centerY - goalAreaH / 2, goalAreaW, goalAreaH);
+
+    // Penalty Spots
+    const spotDist = 95;
+    // Left spot
+    ctx.beginPath();
+    ctx.arc(marginX + spotDist, centerY, 6, 0, Math.PI * 2);
+    ctx.fill();
+    // Right spot
+    ctx.beginPath();
+    ctx.arc(canvas.width - marginX - spotDist, centerY, 6, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Penalty Arcs
+    // Left Arc
+    ctx.beginPath();
+    ctx.arc(marginX + spotDist, centerY, 75, -0.6, 0.6);
+    ctx.stroke();
+    // Right Arc
+    ctx.beginPath();
+    ctx.arc(canvas.width - marginX - spotDist, centerY, 75, Math.PI - 0.6, Math.PI + 0.6);
+    ctx.stroke();
+
+    // Corner Arcs
+    const cornerRadius = 25;
+    // Top-Left Corner
+    ctx.beginPath();
+    ctx.arc(marginX, marginY, cornerRadius, 0, Math.PI / 2);
+    ctx.stroke();
+    // Bottom-Left Corner
+    ctx.beginPath();
+    ctx.arc(marginX, canvas.height - marginY, cornerRadius, 3 * Math.PI / 2, 2 * Math.PI);
+    ctx.stroke();
+    // Top-Right Corner
+    ctx.beginPath();
+    ctx.arc(canvas.width - marginX, marginY, cornerRadius, Math.PI / 2, Math.PI);
+    ctx.stroke();
+    // Bottom-Right Corner
+    ctx.beginPath();
+    ctx.arc(canvas.width - marginX, canvas.height - marginY, cornerRadius, Math.PI, 3 * Math.PI / 2);
+    ctx.stroke();
+
+    const groundTex = new THREE.CanvasTexture(canvas);
+    const fieldMat = new THREE.MeshBasicMaterial({
+        map: groundTex,
+        polygonOffset: true,
+        polygonOffsetFactor: -2,
+        polygonOffsetUnits: -2
+    });
+
+    const fieldWidth = 24;
+    const fieldDepth = 16;
+    const fieldHeight = 0.2;
+
+    // Grass Field Mesh
+    part(group, new THREE.Mesh(new THREE.BoxGeometry(fieldWidth, fieldHeight, fieldDepth), fieldMat), { y: fieldHeight / 2 });
+
+    // Curb / Border around the field (Slate Grey)
+    const borderMat = getMat('footballBorder', () => new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.8 }));
+    part(group, new THREE.Mesh(new THREE.BoxGeometry(fieldWidth + 0.5, fieldHeight - 0.05, fieldDepth + 0.5), borderMat), { y: (fieldHeight - 0.05) / 2 });
+
+    // 2. Build 3D Goals
+    function buildGoal3D(isLeft) {
+        const goalGroup = new THREE.Group();
+        const postMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 });
+        const netMat = new THREE.MeshBasicMaterial({ color: 0xcccccc, wireframe: true, transparent: true, opacity: 0.15 });
+
+        const postRadius = 0.06;
+        const goalH = 1.6;
+        const goalW = 3.6;
+        const goalD = 1.0;
+
+        // Vertical posts
+        const postGeo = new THREE.CylinderGeometry(postRadius, postRadius, goalH, 8);
+        const leftPost = new THREE.Mesh(postGeo, postMat);
+        leftPost.position.set(0, goalH / 2, -goalW / 2);
+        leftPost.castShadow = true;
+        goalGroup.add(leftPost);
+
+        const rightPost = new THREE.Mesh(postGeo, postMat);
+        rightPost.position.set(0, goalH / 2, goalW / 2);
+        rightPost.castShadow = true;
+        goalGroup.add(rightPost);
+
+        // Crossbar
+        const barGeo = new THREE.CylinderGeometry(postRadius, postRadius, goalW, 8);
+        const crossbar = new THREE.Mesh(barGeo, postMat);
+        crossbar.rotation.x = Math.PI / 2;
+        crossbar.position.set(0, goalH, 0);
+        crossbar.castShadow = true;
+        goalGroup.add(crossbar);
+
+        // Support tubes running back
+        const backDir = isLeft ? -1 : 1;
+        const sideBarGeo = new THREE.CylinderGeometry(postRadius * 0.8, postRadius * 0.8, goalD, 8);
+
+        const leftSideBar = new THREE.Mesh(sideBarGeo, postMat);
+        leftSideBar.rotation.z = Math.PI / 2;
+        leftSideBar.position.set(backDir * goalD / 2, 0.03, -goalW / 2);
+        goalGroup.add(leftSideBar);
+
+        const rightSideBar = leftSideBar.clone();
+        rightSideBar.position.set(backDir * goalD / 2, 0.03, goalW / 2);
+        goalGroup.add(rightSideBar);
+
+        const topSideBarL = new THREE.Mesh(sideBarGeo, postMat);
+        topSideBarL.rotation.z = Math.PI / 2;
+        topSideBarL.position.set(backDir * goalD / 2, goalH, -goalW / 2);
+        goalGroup.add(topSideBarL);
+
+        const topSideBarR = topSideBarL.clone();
+        topSideBarR.position.set(backDir * goalD / 2, goalH, goalW / 2);
+        goalGroup.add(topSideBarR);
+
+        // Back bars
+        const backBarGeo = new THREE.CylinderGeometry(postRadius * 0.8, postRadius * 0.8, goalW, 8);
+        const backBar = new THREE.Mesh(backBarGeo, postMat);
+        backBar.rotation.x = Math.PI / 2;
+        backBar.position.set(backDir * goalD, 0.03, 0);
+        goalGroup.add(backBar);
+
+        const backTopBar = backBar.clone();
+        backTopBar.position.set(backDir * goalD, goalH, 0);
+        goalGroup.add(backTopBar);
+
+        // Net wireframe
+        const netGeo = new THREE.BoxGeometry(goalD, goalH, goalW);
+        const net = new THREE.Mesh(netGeo, netMat);
+        net.position.set(backDir * goalD / 2, goalH / 2, 0);
+        goalGroup.add(net);
+
+        return goalGroup;
+    }
+
+    // Place left goal just inside boundary
+    const leftGoal = buildGoal3D(true);
+    leftGoal.position.set(-11.0, fieldHeight, 0);
+    group.add(leftGoal);
+
+    // Place right goal
+    const rightGoal = buildGoal3D(false);
+    rightGoal.position.set(11.0, fieldHeight, 0);
+    group.add(rightGoal);
+
+    // 3. Build Corner Flags
+    function buildCornerFlag() {
+        const flagGroup = new THREE.Group();
+        const poleMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 });
+        const bannerMat = new THREE.MeshBasicMaterial({ color: 0xe74c3c }); // red
+
+        const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.2, 6), poleMat);
+        pole.position.y = 0.6;
+        flagGroup.add(pole);
+
+        const flagGeo = new THREE.ConeGeometry(0.15, 0.35, 3);
+        flagGeo.rotateZ(-Math.PI / 2);
+        const flag = new THREE.Mesh(flagGeo, bannerMat);
+        flag.position.set(0.1, 1.0, 0);
+        flagGroup.add(flag);
+
+        return flagGroup;
+    }
+
+    const boundX = 11.0;
+    const boundZ = 7.1;
+
+    const cf1 = buildCornerFlag(); cf1.position.set(-boundX, fieldHeight, -boundZ); group.add(cf1);
+    const cf2 = buildCornerFlag(); cf2.position.set(-boundX, fieldHeight, boundZ); group.add(cf2);
+    const cf3 = buildCornerFlag(); cf3.position.set(boundX, fieldHeight, -boundZ); group.add(cf3);
+    const cf4 = buildCornerFlag(); cf4.position.set(boundX, fieldHeight, boundZ); group.add(cf4);
+
+    // 4. Build soccer ball at center spot
+    const ballMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.1 });
+    const ballGeo = new THREE.SphereGeometry(0.15, 12, 12);
+    const ball = new THREE.Mesh(ballGeo, ballMat);
+    ball.position.set(0, fieldHeight + 0.075, 0);
+    const ballWire = new THREE.LineSegments(
+        new THREE.WireframeGeometry(ballGeo),
+        new THREE.LineBasicMaterial({ color: 0x111111 })
+    );
+    ball.add(ballWire);
+    group.add(ball);
+
+    // Scale and transform
+    const s = transform.scale || 1;
+    if (s !== 1) group.scale.multiplyScalar(s);
+
+    return addToScene(group, 'createFootballField', transform);
+}
+
 /* --- Cartoon Park (park2.html — ferris wheel, carousel, windmills, etc.) --- */
 function createPark(transform) {
     const group = buildCartoonParkGroup();
@@ -2721,7 +2974,8 @@ function buildDreamCity() {
     
     // School
     createSchool({ x: -60, z: -30, rotY: Math.PI / 2, label: 'Dream School' });
-    createPlayground({ x: -40, z: -55, rotY: Math.PI / 2, label: 'Playground' });
+    // createPlayground({ x: -40, z: -55, rotY: Math.PI / 2, label: 'Playground' });
+    createFootballField({ x: -60, z: -52, rotY: Math.PI / 2, label: 'Football Field' });
     // End School Part
 
     // Cartoon Park (full park2.html scene)

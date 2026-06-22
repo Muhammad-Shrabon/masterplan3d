@@ -30,7 +30,6 @@ function getParkMat(color, roughness = 0.8) {
 function buildCartoonParkGroup() {
     parkAnimReset();
     const group = new THREE.Group();
-    parkCreateGround(group);
     parkPopulate(group);
     return group;
 }
@@ -166,8 +165,8 @@ function parkCreateGround(parent) {
             groundTex.wrapS = THREE.ClampToEdgeWrapping;
             groundTex.wrapT = THREE.ClampToEdgeWrapping;
 
-            // Generate circular ground geometry
-            const groundGeom = new THREE.CylinderGeometry(100, 102, 5, 64);
+            // Generate square ground geometry
+            const groundGeom = new THREE.BoxGeometry(200, 5, 200);
             const groundMat = new THREE.MeshStandardMaterial({
                 map: groundTex,
                 roughness:.9,
@@ -176,8 +175,16 @@ function parkCreateGround(parent) {
 
             // Create materials array (top gets path map, sides get solid brown wood-like or green)
             const sideMat = new THREE.MeshStandardMaterial({ color: 0x422d1b, roughness: 0.95 });
-            const groundMesh = new THREE.Mesh(groundGeom, [sideMat, groundMat, sideMat]);
-            groundMesh.position.y = -2.5; // Offset cylinder height to make top surface rest at y = 0
+            // For BoxGeometry, material array goes in order: +x, -x, +y, -y, +z, -z
+            const groundMesh = new THREE.Mesh(groundGeom, [
+                sideMat, // +x
+                sideMat, // -x
+                groundMat, // +y (top)
+                sideMat, // -y
+                sideMat, // +z
+                sideMat  // -z
+            ]);
+            groundMesh.position.y = -2.5; // Offset box height to make top surface rest at y = 0
             groundMesh.receiveShadow = true;
             parent.add(groundMesh);
         }
@@ -1120,31 +1127,7 @@ function parkCreateGround(parent) {
         // --- Scene Composition Builder ---
         function parkPopulate(parent) {
             
-            // --- 1. Background forest boundaries of Pine Trees ---
-            // Rings around the circular platform borders to form natural cartoon background
-            for (let i = 0; i < 110; i++) {
-                const angle = (Math.PI * 2 / 110) * i;
-                const r = 82 + Math.random() * 12;
-                // Leave the front entrance area tree-free to show the beautiful sign
-                if (angle > 1.25 && angle < 1.9) continue;
-
-                const tree = parkCreatePineTree();
-                tree.position.set(Math.cos(angle) * r, 0, Math.sin(angle) * r);
-                parent.add(tree);
-            }
-
-            // Scattered internal tree clusters
-            const treePositions = [
-                {x: -45, z: 45}, {x: -35, z: 52}, {x: -55, z: 35},
-                {x: 45, z: 45}, {x: 35, z: 52}, {x: 55, z: 35},
-                {x: -65, z: -15}, {x: -55, z: -35}, {x: 55, z: -35},
-                {x: 65, z: -15}, {x: -15, z: -62}, {x: 15, z: -62}
-            ];
-            treePositions.forEach(pos => {
-                const tree = parkCreatePineTree();
-                tree.position.set(pos.x + (Math.random()-0.5)*4, 0, pos.z + (Math.random()-0.5)*4);
-                parent.add(tree);
-            });
+            // --- 1. Trees removed as requested ---
 
             // --- 2. Windmills ---
             const windmillPositions = [
@@ -1249,7 +1232,18 @@ function parkCreateGround(parent) {
                 {x: -15, z: 5, rot: 3.14},
                 {x: 15, z: 5, rot: 3.14},
                 {x: -46, z: -5, rot: 1.5},
-                {x: 46, z: -5, rot: -1.5}
+                {x: 46, z: -5, rot: -1.5},
+                // Additional benches in place of removed trees
+                {x: -45, z: 45, rot: 0.8},
+                {x: 45, z: 45, rot: -0.8},
+                {x: -55, z: -35, rot: 1.5},
+                {x: 55, z: -35, rot: -1.5},
+                {x: -15, z: -62, rot: 0},
+                {x: 15, z: -62, rot: 0},
+                {x: -65, z: -15, rot: 1.5},
+                {x: 65, z: -15, rot: -1.5},
+                {x: 0, z: -75, rot: 0},
+                {x: 0, z: 75, rot: 3.14}
             ];
             benchPositions.forEach(pos => {
                 const bench = parkCreateBench();
