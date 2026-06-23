@@ -3009,23 +3009,31 @@
             ctx.stroke();
 
             const groundTex = new THREE.CanvasTexture(canvas);
+            groundTex.wrapS = groundTex.wrapT = THREE.ClampToEdgeWrapping;
+            groundTex.minFilter = THREE.LinearMipmapLinearFilter;
+            groundTex.magFilter = THREE.LinearFilter;
+            groundTex.anisotropy = 8;
+            groundTex.needsUpdate = true;
+
             const fieldMat = new THREE.MeshBasicMaterial({
                 map: groundTex,
-                polygonOffset: true,
-                polygonOffsetFactor: 3,
-                polygonOffsetUnits: 3
+                depthWrite: true,
+                depthTest: true,
             });
 
             const fieldWidth = 24;
             const fieldDepth = 16;
-            const fieldHeight = 0.2;
+            const FIELD_BASE_LIFT = 0.18;
+            const GRASS_Y = FIELD_BASE_LIFT + 0.02;
 
-            // Grass Field Mesh
-            part(group, new THREE.Mesh(new THREE.BoxGeometry(fieldWidth, fieldHeight, fieldDepth), fieldMat), { y: fieldHeight / 2 });
-
-            // Curb / Border around the field (Slate Grey)
+            // Curb / Border base — sits below grass so it never z-fights the texture
             const borderMat = getMat('footballBorder', () => new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.8 }));
-            part(group, new THREE.Mesh(new THREE.BoxGeometry(fieldWidth + 0.5, fieldHeight - 0.05, fieldDepth + 0.5), borderMat), { y: (fieldHeight - 0.05) / 2 });
+            part(group, new THREE.Mesh(new THREE.BoxGeometry(fieldWidth + 0.5, FIELD_BASE_LIFT, fieldDepth + 0.5), borderMat), { y: FIELD_BASE_LIFT / 2 });
+
+            // Grass surface — single plane above ground/school plot (avoids zoom flicker)
+            const grassPlane = new THREE.Mesh(new THREE.PlaneGeometry(fieldWidth, fieldDepth), fieldMat);
+            grassPlane.renderOrder = 2;
+            part(group, grassPlane, { y: GRASS_Y, rx: -Math.PI / 2 });
 
             // 2. Build 3D Goals
             function buildGoal3D(isLeft) {
@@ -3102,12 +3110,12 @@
 
             // Place left goal just inside boundary
             const leftGoal = buildGoal3D(true);
-            leftGoal.position.set(-11.0, fieldHeight, 0);
+            leftGoal.position.set(-11.0, GRASS_Y, 0);
             group.add(leftGoal);
 
             // Place right goal
             const rightGoal = buildGoal3D(false);
-            rightGoal.position.set(11.0, fieldHeight, 0);
+            rightGoal.position.set(11.0, GRASS_Y, 0);
             group.add(rightGoal);
 
             // 3. Build Corner Flags
@@ -3132,16 +3140,16 @@
             const boundX = 11.0;
             const boundZ = 7.1;
 
-            const cf1 = buildCornerFlag(); cf1.position.set(-boundX, fieldHeight, -boundZ); group.add(cf1);
-            const cf2 = buildCornerFlag(); cf2.position.set(-boundX, fieldHeight, boundZ); group.add(cf2);
-            const cf3 = buildCornerFlag(); cf3.position.set(boundX, fieldHeight, -boundZ); group.add(cf3);
-            const cf4 = buildCornerFlag(); cf4.position.set(boundX, fieldHeight, boundZ); group.add(cf4);
+            const cf1 = buildCornerFlag(); cf1.position.set(-boundX, GRASS_Y, -boundZ); group.add(cf1);
+            const cf2 = buildCornerFlag(); cf2.position.set(-boundX, GRASS_Y, boundZ); group.add(cf2);
+            const cf3 = buildCornerFlag(); cf3.position.set(boundX, GRASS_Y, -boundZ); group.add(cf3);
+            const cf4 = buildCornerFlag(); cf4.position.set(boundX, GRASS_Y, boundZ); group.add(cf4);
 
             // 4. Build soccer ball at center spot
             const ballMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.1 });
             const ballGeo = new THREE.SphereGeometry(0.15, 12, 12);
             const ball = new THREE.Mesh(ballGeo, ballMat);
-            ball.position.set(0, fieldHeight + 0.075, 0);
+            ball.position.set(0, GRASS_Y + 0.075, 0);
             const ballWire = new THREE.LineSegments(
                 new THREE.WireframeGeometry(ballGeo),
                 new THREE.LineBasicMaterial({ color: 0x111111 })
@@ -3171,9 +3179,9 @@
             // Ground — index cityLand
             const ground = new THREE.Mesh(
                 new THREE.PlaneGeometry(140, 140),
-                getMat('cityGrass', () => new THREE.MeshBasicMaterial({ color: INDEX.grass, polygonOffset: true, polygonOffsetFactor: 5, polygonOffsetUnits: 5 }))
+                getMat('cityGrass', () => new THREE.MeshBasicMaterial({ color: INDEX.grass }))
             );
-            addToScene(ground, 'buildDreamCity', { label: 'City Land (index style)', rotX: -Math.PI / 2 });
+            addToScene(ground, 'buildDreamCity', { label: 'City Land (index style)', rotX: -Math.PI / 2, y: -0.08 });
 
             // Roads
             createRoad({ x: 0, z: 5, rotateY: Math.PI / 2, length: 140, width: 4, label: 'Main Road N-S' });
