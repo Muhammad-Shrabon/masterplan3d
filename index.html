@@ -2481,15 +2481,15 @@ let scene, camera, renderer, controls, flagObj, lakeObj, river;
             cityBlocks.add(subGreenLandCL7);
             // Cluster 8
             const subGreenLandCL8 = new THREE.Group();
-            subGreenLandCL8.position.set(-620, 0, -12);
+            subGreenLandCL8.position.set(-610, 0, -12);
             cityBlocks.add(subGreenLandCL8);
             // Cluster 9
             const subGreenLandCL9 = new THREE.Group();
-            subGreenLandCL9.position.set(-620, 0, 31);
+            subGreenLandCL9.position.set(-610, 0, 31);
             cityBlocks.add(subGreenLandCL9);
             // Cluster 10
             const subGreenLandCL10 = new THREE.Group();
-            subGreenLandCL10.position.set(-620, 0, 80);
+            subGreenLandCL10.position.set(-600, 0, 80);
             cityBlocks.add(subGreenLandCL10);
 
             // Lake Near 
@@ -2579,16 +2579,16 @@ let scene, camera, renderer, controls, flagObj, lakeObj, river;
             createHouseBunch(L.subGreenLand1, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 280, unitSpacing: 15.5, houseGap: 280, rowSpacing: 25, startId: 2, clusterName: "BUNCH-1", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
             setLoaderProgress(32, 'Building clusters...');
 
-            createHouseCluster(L.subGreenLandCL1, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 23, startId: 2, clusterName: "CLUSTER-1", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
-            createHouseCluster(L.subGreenLandCL2, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 20, startId: 2, clusterName: "CLUSTER-2", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
-            createHouseCluster(L.subGreenLandCL3, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 20, startId: 2, clusterName: "CLUSTER-3", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
-            createHouseCluster(L.subGreenLandCL4, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 20, startId: 2, clusterName: "CLUSTER-4", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
-            createHouseCluster(L.subGreenLandCL5, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 20, startId: 2, clusterName: "CLUSTER-5", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
-            createHouseCluster(L.subGreenLandCL6, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-6", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
-            createHouseCluster(L.subGreenLandCL7, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-7", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
-            createHouseCluster(L.subGreenLandCL8, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 15.4, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-8", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
-            createHouseCluster(L.subGreenLandCL9, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 15.5, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-9", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
-            createHouseCluster(L.subGreenLandCL10, { houseOX: 150, houseOZ: 250, carOX: -460, carOZ: 100, serialCount: 34, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-10", houseDesign: 'custom', houseOX: 80, houseOZ: 310, hScale: 4, hRotate: 90 });
+            createHouseCluster(L.subGreenLandCL1, { buildingOX: -150, buildingOZ: 230, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 23, startId: 2, clusterName: "CLUSTER-1", houseDesign: 'twins', hScale: 4, hRotate: 90 });
+            createHouseCluster(L.subGreenLandCL2, { buildingOX: -150, buildingOZ: 230, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 20, startId: 2, clusterName: "CLUSTER-2", houseDesign: 'twins', hScale: 4, hRotate: 90 });
+            createHouseCluster(L.subGreenLandCL3, { buildingOX: -150, buildingOZ: 230, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 20, startId: 2, clusterName: "CLUSTER-3", houseDesign: 'twins', hScale: 4, hRotate: 90 });
+            createHouseCluster(L.subGreenLandCL4, { buildingOX: -150, buildingOZ: 230, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 20, startId: 2, clusterName: "CLUSTER-4", houseDesign: 'twins', hScale: 4, hRotate: 90 });
+            createHouseCluster(L.subGreenLandCL5, { buildingOX: -150, buildingOZ: 230, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 20, startId: 2, clusterName: "CLUSTER-5", houseDesign: 'twins', hScale: 4, hRotate: 90 });
+            createHouseCluster(L.subGreenLandCL6, { buildingOX: -150, buildingOZ: 230, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-6", houseDesign: 'twins', hScale: 4, hRotate: 90 });
+            createHouseCluster(L.subGreenLandCL7, { buildingOX: -150, buildingOZ: 230, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-7", houseDesign: 'twins', hScale: 4, hRotate: 90 });
+            createHouseCluster(L.subGreenLandCL8, { buildingOX: -150, buildingOZ: 230, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 15.4, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-8", houseDesign: 'twins', hScale: 4, hRotate: 90 });
+            createHouseCluster(L.subGreenLandCL9, { buildingOX: -150, buildingOZ: 230, carOX: -460, carOZ: 100, serialCount: 36, startX: 0, startZ: 210, unitSpacing: 15.5, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-9", houseDesign: 'twins', hScale: 4, hRotate: 90 });
+            createHouseCluster(L.subGreenLandCL10, { buildingOX: -150, buildingOZ: 230, carOX: -460, carOZ: 100, serialCount: 34, startX: 0, startZ: 210, unitSpacing: 16, houseGap: 280, rowSpacing: 22, startId: 2, clusterName: "CLUSTER-10", houseDesign: 'twins', hScale: 4, hRotate: 90 });
             setLoaderProgress(42, 'Building block zones...');
             // BLOCK B -1
             createHouseCluster(L.subGreenLandBB1, {
@@ -4649,6 +4649,133 @@ let scene, camera, renderer, controls, flagObj, lakeObj, river;
             return bGrp;
         }
 
+        function createTwinFancyBuilding(parent, hScale = 1, plateText = null) {
+            const cacheKey = `fancyTwin_${hScale}`;
+            let bGrp;
+            if (houseMeshCache.has(cacheKey)) {
+                bGrp = houseMeshCache.get(cacheKey).clone();
+            } else {
+            bGrp = new THREE.Group();
+            const finalScale = 13 * hScale;
+            bGrp.scale.set(finalScale, finalScale, finalScale);
+            bGrp.position.y = 0.1;
+
+            const mergeRegistry = new Map();
+            const collect = (mesh) => {
+                if (!mesh.isMesh) return;
+                const mat = mesh.material;
+                const mKey = mat.uuid;
+                if (!mergeRegistry.has(mKey)) mergeRegistry.set(mKey, { mat: mat, geos: [] });
+                let g = mesh.geometry.clone();
+                g.applyMatrix4(mesh.matrixWorld);
+                if (g.index) g = g.toNonIndexed();
+                if (!g.attributes.uv) {
+                    const uvs = new Float32Array(g.attributes.position.count * 2);
+                    g.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+                }
+                if (!g.attributes.normal) g.computeVertexNormals();
+                const skip = ['position', 'normal', 'uv'];
+                Object.keys(g.attributes).forEach(name => {
+                    if (!skip.includes(name)) g.deleteAttribute(name);
+                });
+                mergeRegistry.get(mKey).geos.push(g);
+            };
+
+            const zFlipCfg = (cfg) => {
+                const c = { ...cfg };
+                if (c.z != null) c.z = -c.z;
+                return c;
+            };
+            const Z = (flipZ, cfg) => flipZ ? zFlipCfg(cfg) : cfg;
+
+            function buildTwinMain(grp) {
+                srv2_createBeamSet(grp, { dist: 6, h: 8, w: 0.4 });
+                srv2_createFloor(grp, { x: 0, z: -2, y: 0, w: 11, d: 6.5, color: 0xfcf286, ry: Math.PI / 2 });
+                srv2_createWall(grp, { x: 3, z: 0, w: 6, h: 4, ry: Math.PI / 2, color: 0xeee8aa });
+                srv2_createWall(grp, { x: 0, y: 0, z: -3, w: 6, h: 4, color: 0xeee8aa });
+                srv2_createWall(grp, { x: -3, z: 0, w: 6, h: 4, ry: Math.PI / 2, color: 0xeee8aa });
+                srv2_createWall(grp, { x: 0, z: 3, w: 6, h: 4, color: 0xeee8aa });
+                srv2_createDoor(grp, { x: 3.2, y: 0.5, z: 0, w: 1.2, h: 2.2, ry: Math.PI / 2, isOpen: false });
+                srv2_createWall(grp, { x: 3, z: 0, y: 4, w: 6, h: 4, ry: Math.PI / 2, color: 0xeee8aa });
+                srv2_createWall(grp, { x: 0, y: 4, z: -3, w: 6, h: 4, color: 0xeee8aa });
+                srv2_createWall(grp, { x: 0, z: 3, y: 4, w: 6, h: 4, color: 0xeee8aa });
+                srv2_createFloor(grp, { x: 0, y: 4, z: -2, w: 11, d: 6.5, color: 0xfcf286, ry: Math.PI / 2 });
+                srv2_createDoor(grp, { x: 3.2, y: 4.3, z: 0, w: 1.2, h: 2.2, ry: Math.PI / 2, isOpen: true });
+                srv2_createBed(grp, { x: -1.5, y: 4, z: -1.5, w: 2, d: 2.5 });
+                srv2_createTV(grp, { x: -1.5, y: 4.8, z: 2, ry: Math.PI });
+                srv2_createLight(grp, { x: 0, y: 7.8, z: 0 });
+                srv2_createFloor(grp, { x: 0, y: 8, z: 0, w: 6, d: 6.5, color: 0xfcf286, ry: Math.PI / 2 });
+                srv2_createStairs(grp, { x: 4.2, z: 0, y: 0, ry: -Math.PI / 2, w: 1.8, steps: 3 });
+                srv2_createWindow(grp, { x: 1.0, y: 6, z: 3.3, w: 2, h: 1.5 });
+                srv2_createWindow(grp, { x: 1.0, y: 2, z: 3.3, w: 2, h: 1.5 });
+                srv2_createBalcony(grp, { x: 3.4, y: 4.2, z: 0, w: 3.5, ry: Math.PI / 2 });
+                srv2_createRoof(grp, { x: 0, z: 0, y: 9, w: 6.4, d: 7.2, ry: Math.PI / 2, style: 'pitched' });
+                srv2_createGable(grp, { x: 3.3, y: 8.1, z: 0, w: 6, h: 1.7, ry: Math.PI / 2 });
+                srv2_createGable(grp, { x: -3.3, y: 8.1, z: 0, w: 6, h: 1.7, ry: Math.PI / 2 });
+                srv2_createWallVine(grp, { x: 3.5, y: 8.5, z: 2.4, h: 7, w: 1.0, ry: Math.PI / 2 });
+            }
+
+            function buildTwinExtension(grp, flipZ) {
+                srv2_createBeamSet(grp, Z(flipZ, { x: -1.5, y: 0, z: -7.2, dist: 3, h: 8, w: 0.4, count: 2 }));
+                srv2_createBeamSet(grp, Z(flipZ, { x: 0, y: 0, z: -7.2, dist: 6, h: 4, w: 0.4, count: 1, isCircle: false }));
+                if (flipZ) {
+                    srv2_createFloor(grp, Z(flipZ, { x: -1.5, y: 0, z: -5.2, w: 4.5, d: 3.5, color: 0xfcf286, ry: Math.PI / 2 }));
+                    srv2_createFloor(grp, Z(flipZ, { x: 1.5, y: 0, z: -5.2, w: 4.5, d: 3.5, color: 0xfcf286, ry: Math.PI / 2 }));
+                    srv2_createFloor(grp, Z(flipZ, { x: -1.5, y: 4, z: -5.2, w: 4.5, d: 3.5, color: 0xfcf286, ry: Math.PI / 2 }));
+                    srv2_createFloor(grp, Z(flipZ, { x: 1.5, y: 4, z: -5.2, w: 4.5, d: 3.5, color: 0xfcf286, ry: Math.PI / 2 }));
+                }
+                srv2_createWall(grp, Z(flipZ, { x: -3, z: -2, y: 4, w: 10, h: 4, ry: Math.PI / 2, color: 0xeee8aa }));
+                srv2_createWall(grp, Z(flipZ, { x: -1.5, z: -7.2, y: 4, w: 3, h: 4, color: 0xeee8aa }));
+                srv2_createWall(grp, Z(flipZ, { x: 0, z: -5.2, y: 4, w: 4.5, h: 4, ry: Math.PI / 2, color: 0xeee8aa }));
+                srv2_createDoor(grp, Z(flipZ, { x: 0.2, y: 4.3, z: -5.2, w: 1.2, h: 2.2, ry: Math.PI / 2, isOpen: false }));
+                srv2_createTable(grp, Z(flipZ, { x: 1.5, y: 4, z: -6.5, w: 1, d: 0.8 }));
+                srv2_createChair(grp, Z(flipZ, { x: 1.5, y: 4, z: -6.0, ry: Math.PI }));
+                srv2_createFloor(grp, Z(flipZ, { x: -1.5, y: 8, z: -5.2, w: 4.5, d: 3.5, color: 0xfcf286, ry: Math.PI / 2 }));
+                srv2_createRoof(grp, Z(flipZ, { x: -1.5, z: -4.3, y: 8.7, w: 3.6, d: 6.2, ry: Math.PI / 1, style: 'pitched' }));
+                srv2_createGable(grp, Z(flipZ, { x: -1.5, y: 8.15, z: -1.5, w: 3.1, h: 0.9 }));
+                srv2_createGable(grp, Z(flipZ, { x: -1.5, y: 8.15, z: -7.2, w: 3.1, h: 0.9 }));
+                srv2_createWoodGril(grp, Z(flipZ, { x: 3.1, y: 4.15, z: -5.4, w: 3.7, h: 1.2, ry: -Math.PI / 2, startPost: true, midPost: true, endPost: true }));
+                srv2_createWoodGril(grp, Z(flipZ, { x: 1.9, y: 4.15, z: -7.35, w: 2.6, h: 1.2, startPost: true, midPost: true, endPost: false }));
+                srv2_createPergola(grp, Z(flipZ, { x: 1.5, y: 7.5, z: -5.2, w: 2.6, d: 4, color: 0x5d4037 }));
+            }
+
+            const tempParent = new THREE.Group();
+            const TWIN_OFFSET = 0;
+
+            const leftUnit = new THREE.Group();
+            leftUnit.position.set(-TWIN_OFFSET, 0, 6);
+            leftUnit.rotation.y = Math.PI / 90;
+            tempParent.add(leftUnit);
+            buildTwinMain(leftUnit);
+            buildTwinExtension(leftUnit, true);
+
+            const rightUnit = new THREE.Group();
+            rightUnit.position.set(TWIN_OFFSET, 0, 0);
+            tempParent.add(rightUnit);
+            buildTwinMain(rightUnit);
+            buildTwinExtension(rightUnit, false);
+
+            tempParent.updateMatrixWorld(true);
+            tempParent.traverse(collect);
+
+            mergeRegistry.forEach(group => {
+                if (group.geos.length > 0) {
+                    const mergedGeo = THREE.BufferGeometryUtils.mergeBufferGeometries(group.geos);
+                    const mesh = new THREE.Mesh(mergedGeo, group.mat);
+                    mesh.castShadow = true;
+                    mesh.receiveShadow = true;
+                    mesh.matrixAutoUpdate = false;
+                    bGrp.add(mesh);
+                }
+            });
+
+            houseMeshCache.set(cacheKey, bGrp.clone());
+            }
+            parent.add(bGrp);
+            if (plateText) addTwinHousePlate(bGrp, plateText);
+            return bGrp;
+        }
+
         function createFancyBuildingV2(parent, hScale = 1) {
             // Check cache for identical hScale
             const cacheKey = `fancyV2_${hScale}`;
@@ -5668,17 +5795,60 @@ let scene, camera, renderer, controls, flagObj, lakeObj, river;
         }
 
 
-        function createHouse(id, plotW = 500, plotD = 600, skipWall = null, hasPool = false, carCount = 0, hasPlayground = false, hDepth = 280, hWidth = 220, hasWing = true, hFloorH = 100, houseOX = 0, houseOZ = 0, poolOX = 0, poolOZ = 0, carOX = 0, carOZ = 0, playOX = 0, playOZ = 0, carW = 80, carL = 160, innerGapScale = 1, isTerrace = false, hasCarParking = true, houseDesign = 'standard', hScale = 1, hRotate = 0) {
+        function getBuildingOffset(options) {
+            return {
+                x: options.buildingOX !== undefined ? options.buildingOX : (options.houseOX || 0),
+                z: options.buildingOZ !== undefined ? options.buildingOZ : (options.houseOZ || 0)
+            };
+        }
+
+        function addTwinHousePlate(bGrp, text) {
+            const matKey = `twinHousePlate_mat_${text}`;
+            const plateMat = getSharedMaterial(matKey, () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 512;
+                canvas.height = 192;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, 512, 192);
+                ctx.strokeStyle = '#333333';
+                ctx.lineWidth = 6;
+                ctx.strokeRect(6, 6, 500, 180);
+                ctx.fillStyle = '#000000';
+                ctx.font = 'bold 52px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(text, 256, 96);
+                const tex = new THREE.CanvasTexture(canvas);
+                return new THREE.MeshStandardMaterial({
+                    map: tex,
+                    emissive: 0xffffff,
+                    emissiveMap: tex,
+                    emissiveIntensity: 0.35
+                });
+            });
+            const plateW = 1.35;
+            const plateH = 0.48;
+            const plate = new THREE.Mesh(new THREE.PlaneGeometry(plateW, plateH), plateMat);
+            plate.name = 'housePlate';
+            // Vertical wall plate — left of both ground-floor main doors on +X wall
+            plate.position.set(3.44, 1.55, -1.7);
+            plate.rotation.y = Math.PI / 2;
+            bGrp.add(plate);
+        }
+
+        function createHouse(id, plotW = 500, plotD = 600, skipWall = null, hasPool = false, carCount = 0, hasPlayground = false, hDepth = 280, hWidth = 220, hasWing = true, hFloorH = 100, buildingOX = 0, buildingOZ = 0, poolOX = 0, poolOZ = 0, carOX = 0, carOZ = 0, playOX = 0, playOZ = 0, carW = 80, carL = 160, innerGapScale = 1, isTerrace = false, hasCarParking = true, houseDesign = 'standard', hScale = 1, hRotate = 0) {
 
             const addPool = hasPool === true;
 
             // Create a cache key for identical houses
             const cacheKey = JSON.stringify({
                 plotW, plotD, skipWall, hasPool: addPool, carCount, hasPlayground,
-                hDepth, hWidth, hasWing, hFloorH, houseOX, houseOZ,
+                hDepth, hWidth, hasWing, hFloorH, buildingOX, buildingOZ,
                 poolOX, poolOZ, carOX, carOZ, playOX, playOZ,
                 carW, carL, innerGapScale, isTerrace, hasCarParking,
-                houseDesign, hScale, hRotate
+                houseDesign, hScale, hRotate,
+                ...(houseDesign === 'twins' ? { plateId: id } : {})
             });
 
             if (houseMeshCache.has(cacheKey)) {
@@ -5778,7 +5948,7 @@ let scene, camera, renderer, controls, flagObj, lakeObj, river;
             // Caching removed the need for manual merge loops here
 
             const building = new THREE.Group();
-            building.position.set(houseOX, 0, houseOZ);
+            building.position.set(buildingOX, 0, buildingOZ);
             // Apply internal house rotation (only the building rotates, not the plot/walls)
             building.rotation.y = (hRotate || 0) * (Math.PI / 180);
             house.add(building);
@@ -5824,6 +5994,8 @@ let scene, camera, renderer, controls, flagObj, lakeObj, river;
                     poolGroup.add(border_c);
                     house.add(poolGroup);
                 }
+            } else if (houseDesign === 'twins') {
+                createTwinFancyBuilding(building, hScale, id);
             } else if (houseDesign === 'customV2') {
                 createFancyBuildingV2(building, hScale);
                 // Also add pool if requested
@@ -6395,8 +6567,10 @@ let scene, camera, renderer, controls, flagObj, lakeObj, river;
                 hasCarParking = false
             } = options;
 
+            const { x: buildingOX, z: buildingOZ } = getBuildingOffset(options);
+
             // Decouple building scale from area scale for custom designs
-            const areaHScale = (options.houseDesign === 'custom' || options.houseDesign === 'customV2') ? 1 : hScale;
+            const areaHScale = (options.houseDesign === 'custom' || options.houseDesign === 'customV2' || options.houseDesign === 'twins') ? 1 : hScale;
 
             // Calculate the actual Wall Boundary (Plot Width/Depth)
             // Use Math.max to prevent negative plot sizes if building is larger than base plot
@@ -6487,7 +6661,7 @@ let scene, camera, renderer, controls, flagObj, lakeObj, river;
                 const hRotateVal = options.hRotate !== undefined ? options.hRotate : 0;
                 // houseRotation: rotates each individual plot/unit (walls + building)
                 const unitRotation = options.houseRotation !== undefined ? options.houseRotation * (Math.PI / 180) : 0;
-                const house = createHouse(formattedId, plotWidth, plotDepth, null, false, options.carCount || 1, false, hDepthNominal * areaHScale, hWidthNominal * areaHScale, true, (options.hFloorH || 100) * hScale, (options.houseOX || 0), (options.houseOZ || 0), (options.poolOX || 0), (options.poolOZ || 0), (options.carOX || 0), (options.carOZ || 0), (options.playOX || 0), (options.playOZ || 0), (options.carW !== undefined ? options.carW : 80) * hScale, (options.carL !== undefined ? options.carL : 160) * hScale, igScaleRaw, false, options.hasCarParking !== undefined ? options.hasCarParking : true, options.houseDesign || 'standard', hScale, hRotateVal);
+                const house = createHouse(formattedId, plotWidth, plotDepth, null, false, options.carCount || 1, false, hDepthNominal * areaHScale, hWidthNominal * areaHScale, true, (options.hFloorH || 100) * hScale, buildingOX, buildingOZ, (options.poolOX || 0), (options.poolOZ || 0), (options.carOX || 0), (options.carOZ || 0), (options.playOX || 0), (options.playOZ || 0), (options.carW !== undefined ? options.carW : 80) * hScale, (options.carL !== undefined ? options.carL : 160) * hScale, igScaleRaw, false, options.hasCarParking !== undefined ? options.hasCarParking : true, options.houseDesign || 'standard', hScale, hRotateVal);
                 unitGroup.add(house);
 
                 if (serialNum % 2 !== 0) {
@@ -6538,9 +6712,10 @@ let scene, camera, renderer, controls, flagObj, lakeObj, river;
             const wantsPool = options.hasPool === true;
             const poolPassX = wantsPool ? (options.poolOX || 0) : 0;
             const poolPassZ = wantsPool ? (options.poolOZ || 0) : 0;
+            const { x: buildingOX, z: buildingOZ } = getBuildingOffset(options);
 
             // Decouple building scale from area scale for custom designs
-            const areaHScale = (options.houseDesign === 'custom' || options.houseDesign === 'customV2') ? 1 : hScale;
+            const areaHScale = (options.houseDesign === 'custom' || options.houseDesign === 'customV2' || options.houseDesign === 'twins') ? 1 : hScale;
 
             // Calculate Wall Boundary (Plot Width/Depth)
             // Use Math.max to prevent negative plot sizes if building is larger than base plot
@@ -6549,6 +6724,8 @@ let scene, camera, renderer, controls, flagObj, lakeObj, river;
 
             const unitSpacing = options.unitSpacing ? (options.unitSpacing * areaHScale) : (plotWidth * houseScale);
             const rowSpacing = options.rowSpacing ? (options.rowSpacing * areaHScale) : (plotDepth * houseScale);
+            const isTwinCluster = options.houseDesign === 'twins';
+            const placementSpacing = isTwinCluster ? unitSpacing * 2 : unitSpacing;
 
             const paddingLeft = (options.paddingLeft || 2) * areaHScale * ogx;
             const paddingRight = (options.paddingRight || 2) * areaHScale * ogx;
@@ -6566,8 +6743,11 @@ let scene, camera, renderer, controls, flagObj, lakeObj, river;
 
             // Calculate Bunch Land Size including padding based on scaled house plot depth
             const hPlotScaledDepth = plotDepth * houseScale;
-            const totalUnits = singleRow ? serialCount : Math.ceil(serialCount / 2);
-            const landWidth = totalUnits * unitSpacing + paddingLeft + paddingRight;
+            const twinSetCount = isTwinCluster ? Math.floor(serialCount / 2) : 0;
+            const totalUnits = isTwinCluster
+                ? (singleRow ? twinSetCount : Math.floor(twinSetCount / 2))
+                : (singleRow ? serialCount : Math.ceil(serialCount / 2));
+            const landWidth = totalUnits * placementSpacing + paddingLeft + paddingRight;
             // landDepth covers from -(hPlotScaledDepth/2) to (rowSpacing + hPlotScaledDepth/2)
             const landDepth = (singleRow ? hPlotScaledDepth : (rowSpacing + hPlotScaledDepth)) + paddingTop + paddingBottom;
 
@@ -6579,7 +6759,7 @@ let scene, camera, renderer, controls, flagObj, lakeObj, river;
             const landMesh = new THREE.Mesh(landGeo, landMat);
 
             // Positioning the land box - Restored to center between rows
-            const centerX = ((totalUnits - 1) * unitSpacing) / 2 + (paddingRight - paddingLeft) / 2;
+            const centerX = ((totalUnits - 1) * placementSpacing) / 2 + (paddingRight - paddingLeft) / 2;
             const centerZ = (singleRow ? 0 : rowSpacing / 2) + (paddingBottom - paddingTop) / 2;
             landMesh.position.set(centerX, -landThickness / 2 - 0.02, centerZ);
             clusterGroup.add(landMesh);
@@ -6601,8 +6781,10 @@ let scene, camera, renderer, controls, flagObj, lakeObj, river;
                 housesGroup.rotation.y = options.houseAreaRotation * (Math.PI / 180);
             }
 
-            if (!singleRow) housesGroup.add(oddRow);
-            housesGroup.add(evenRow);
+            if (!isTwinCluster) {
+                if (!singleRow) housesGroup.add(oddRow);
+                housesGroup.add(evenRow);
+            }
             clusterGroup.add(housesGroup);
 
             // Add Cluster Label in the middle
@@ -6623,11 +6805,38 @@ let scene, camera, renderer, controls, flagObj, lakeObj, river;
                 const label = new THREE.Mesh(labelGeo, labelMat);
                 label.rotation.x = -Math.PI / 2;
                 // Center the label between house rows (Restored to previous correct position)
-                label.position.set(((totalUnits - 1) * unitSpacing) / 2, 0.05, rowSpacing / 2);
+                label.position.set(((totalUnits - 1) * placementSpacing) / 2, 0.05, rowSpacing / 2);
                 clusterGroup.add(label);
             }
 
-            for (let i = 0; i < serialCount; i++) {
+            if (isTwinCluster) {
+                const twinPlotW = plotWidth * 2;
+                const twinPlotD = plotDepth;
+                const hRotateVal = options.hRotate !== undefined ? options.hRotate : 0;
+                const unitRot = options.houseRotation !== undefined ? options.houseRotation : (rotation || 0);
+                const unitRotRad = unitRot * (Math.PI / 180);
+
+                if (!singleRow) housesGroup.add(oddRow);
+                housesGroup.add(evenRow);
+
+                const addTwinUnit = (plateId, rowGroup, rotY, localIdx) => {
+                    const unitGroup = new THREE.Group();
+                    unitGroup.position.x = localIdx * placementSpacing;
+                    const house = createHouse(plateId, twinPlotW, twinPlotD, null, wantsPool, carCount, hasPlayground, hDepthNominal * areaHScale, hWidthNominal * areaHScale, options.hasWing !== undefined ? options.hasWing : true, hFloorH, buildingOX, buildingOZ, poolPassX, poolPassZ, (options.carOX || 0), (options.carOZ || 0), (options.playOX || 0), (options.playOZ || 0), (options.carW !== undefined ? options.carW : 80) * hScale, (options.carL !== undefined ? options.carL : 160) * hScale, options.innerGapScale || options.paddingScale || 1, false, hasCarParking, 'twins', hScale, hRotateVal);
+                    unitGroup.add(house);
+                    unitGroup.rotation.y = rotY;
+                    rowGroup.add(unitGroup);
+                };
+
+                for (let localIdx = 0; localIdx < totalUnits; localIdx++) {
+                    const oddNum = localIdx * 2 + 1;
+                    const evenNum = localIdx * 2 + 2;
+                    if (!singleRow) {
+                        addTwinUnit(`${oddNum}A+${oddNum}B`, oddRow, Math.PI + unitRotRad, localIdx);
+                    }
+                    addTwinUnit(`${evenNum}A+${evenNum}B`, evenRow, unitRotRad, localIdx);
+                }
+            } else for (let i = 0; i < serialCount; i++) {
                 const serialNum = startId + i;
                 const formattedId = "H-" + serialNum.toString().padStart(2, '0');
                 const unitGroup = new THREE.Group();
@@ -6642,7 +6851,7 @@ let scene, camera, renderer, controls, flagObj, lakeObj, river;
                 // 'rotation' is legacy alias for houseRotation in createHouseCluster
                 const unitRot = options.houseRotation !== undefined ? options.houseRotation : (rotation || 0);
                 const unitRotRad = unitRot * (Math.PI / 180);
-                const house = createHouse(formattedId, plotWidth, plotDepth, null, wantsPool, carCount, hasPlayground, hDepthNominal * areaHScale, hWidthNominal * areaHScale, options.hasWing !== undefined ? options.hasWing : true, hFloorH, (options.houseOX || 0), (options.houseOZ || 0), poolPassX, poolPassZ, (options.carOX || 0), (options.carOZ || 0), (options.playOX || 0), (options.playOZ || 0), (options.carW !== undefined ? options.carW : 80) * hScale, (options.carL !== undefined ? options.carL : 160) * hScale, options.innerGapScale || options.paddingScale || 1, false, hasCarParking, options.houseDesign || 'standard', hScale, hRotateVal);
+                const house = createHouse(formattedId, plotWidth, plotDepth, null, wantsPool, carCount, hasPlayground, hDepthNominal * areaHScale, hWidthNominal * areaHScale, options.hasWing !== undefined ? options.hasWing : true, hFloorH, buildingOX, buildingOZ, poolPassX, poolPassZ, (options.carOX || 0), (options.carOZ || 0), (options.playOX || 0), (options.playOZ || 0), (options.carW !== undefined ? options.carW : 80) * hScale, (options.carL !== undefined ? options.carL : 160) * hScale, options.innerGapScale || options.paddingScale || 1, false, hasCarParking, options.houseDesign || 'standard', hScale, hRotateVal);
 
                 unitGroup.add(house);
 
@@ -7397,14 +7606,14 @@ let scene, camera, renderer, controls, flagObj, lakeObj, river;
                 hScale = 1
             } = options;
 
-            // Priority: hRotate > rotation (from options) > houseRotation > 0
-            // NOTE: must be computed AFTER destructuring, not inside it,
-            // because JS destructuring defaults are skipped when the key exists (even if value is 0).
             const finalHouseRotation = options.hRotate !== undefined
                 ? options.hRotate
                 : (options.rotation !== undefined
                     ? options.rotation
                     : houseRotation);
+
+            const buildingOX = options.buildingOX !== undefined ? options.buildingOX : houseOX;
+            const buildingOZ = options.buildingOZ !== undefined ? options.buildingOZ : houseOZ;
 
             const igx = (typeof innerGapScale === 'object') ? (innerGapScale.x !== undefined ? innerGapScale.x : 1) : innerGapScale;
             const igy = (typeof innerGapScale === 'object') ? (innerGapScale.y !== undefined ? innerGapScale.y : 1) : innerGapScale;
@@ -7528,7 +7737,7 @@ let scene, camera, renderer, controls, flagObj, lakeObj, river;
                     if (housesPlaced < targetTotal) {
                         const sideDirA = flipped ? -1 : 1;
                         const housePosA = p.clone().add(binormal.clone().multiplyScalar(offsetDistance * sideDirA));
-                        const houseA = createHouse("CH-" + (startId + housesPlaced), plotWidth, plotDepth, null, hasPool, carCount, hasPlayground, hDepth * areaHScale, hWidth * areaHScale, !isTerrace, hFloorH, houseOX, houseOZ, poolOX, poolOZ, carOX, carOZ, playOX, playOZ, carW, carL, innerGapScale, isTerrace, hasCarParking, houseDesign, hScale, finalHouseRotation);
+                        const houseA = createHouse("CH-" + (startId + housesPlaced), plotWidth, plotDepth, null, hasPool, carCount, hasPlayground, hDepth * areaHScale, hWidth * areaHScale, !isTerrace, hFloorH, buildingOX, buildingOZ, poolOX, poolOZ, carOX, carOZ, playOX, playOZ, carW, carL, innerGapScale, isTerrace, hasCarParking, houseDesign, hScale, finalHouseRotation);
 
                         houseA.position.copy(housePosA);
                         houseA.position.y = 0.2;
@@ -7542,7 +7751,7 @@ let scene, camera, renderer, controls, flagObj, lakeObj, river;
                     if (housesPlaced < targetTotal) {
                         const sideDirB = flipped ? 1 : -1;
                         const housePosB = p.clone().add(binormal.clone().multiplyScalar(offsetDistance * sideDirB));
-                        const houseB = createHouse("CH-" + (startId + housesPlaced), plotWidth, plotDepth, null, hasPool, carCount, hasPlayground, hDepth * areaHScale, hWidth * areaHScale, !isTerrace, hFloorH, houseOX, houseOZ, poolOX, poolOZ, carOX, carOZ, playOX, playOZ, carW, carL, innerGapScale, isTerrace, hasCarParking, houseDesign, hScale, finalHouseRotation);
+                        const houseB = createHouse("CH-" + (startId + housesPlaced), plotWidth, plotDepth, null, hasPool, carCount, hasPlayground, hDepth * areaHScale, hWidth * areaHScale, !isTerrace, hFloorH, buildingOX, buildingOZ, poolOX, poolOZ, carOX, carOZ, playOX, playOZ, carW, carL, innerGapScale, isTerrace, hasCarParking, houseDesign, hScale, finalHouseRotation);
 
                         houseB.position.copy(housePosB);
                         houseB.position.y = 0.2;
@@ -7556,7 +7765,7 @@ let scene, camera, renderer, controls, flagObj, lakeObj, river;
                     if (housesPlaced < targetTotal) {
                         const sideDir = flipped ? -1 : 1;
                         const housePos = p.clone().add(binormal.clone().multiplyScalar(offsetDistance * sideDir));
-                        const house = createHouse("CH-" + (startId + housesPlaced), plotWidth, plotDepth, null, hasPool, carCount, hasPlayground, hDepth * areaHScale, hWidth * areaHScale, !isTerrace, hFloorH, houseOX, houseOZ, poolOX, poolOZ, carOX, carOZ, playOX, playOZ, carW, carL, innerGapScale, isTerrace, hasCarParking, houseDesign, hScale, finalHouseRotation);
+                        const house = createHouse("CH-" + (startId + housesPlaced), plotWidth, plotDepth, null, hasPool, carCount, hasPlayground, hDepth * areaHScale, hWidth * areaHScale, !isTerrace, hFloorH, buildingOX, buildingOZ, poolOX, poolOZ, carOX, carOZ, playOX, playOZ, carW, carL, innerGapScale, isTerrace, hasCarParking, houseDesign, hScale, finalHouseRotation);
 
                         house.position.copy(housePos);
                         house.position.y = 0.2;
