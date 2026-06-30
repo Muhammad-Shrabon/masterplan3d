@@ -573,8 +573,9 @@
                 inst.instanceMatrix.needsUpdate = true;
 
                 _box.getBoundingSphere(_sphere);
+                _sphere.radius *= 1.05;
                 inst.boundingSphere = _sphere.clone();
-                inst.frustumCulled = true;
+                inst.frustumCulled = false;
                 parent.add(inst);
             });
         }
@@ -594,6 +595,9 @@
                 const root = new THREE.Group();
                 root.name = item.label;
                 ch_placeInstancedBunchLayers(bakedParts, item.placements, item.scale, root);
+                ch_placeHouseDoorNumbers(item.placements, root, {
+                    twin: !!item.templateStyle.twin
+                });
                 scene.add(root);
             });
             customHouseBunchQueue.length = 0;
@@ -602,7 +606,7 @@
         /* --- index.html shared look --- */
         const INDEX = {
             grass: 0x86eeaa,
-            plotLand: 0x86eeaa,
+            plotLand: 0x101010,
             asphalt: 0x222222,
             body: 0xe8e4d9,
             roof: 0x4a5058,
@@ -615,6 +619,22 @@
             wallCream: 0xD8D2C4,
             trunk: 0x8D6E63,
             leaf: 0x388E3C,
+            // Custom architectural house palette
+            houseLand: 0x86eeaa,
+            houseLandBorder: 0x374951,
+            houseRoof: 0x4a5058,
+            houseWall: 0xD8D2C4,
+            houseFloor: 0xE8E6E1,
+            houseBeam: 0xFAF9F6,
+            houseGable: 0xD8D2C4,
+            houseDoor: 0x4d2a1a,
+            houseDoorBorder: 0x4d2a1a,
+            houseDoorHandle: 0xffd700,
+            houseWindow: 0xadd8e6,
+            houseWindowBorder: 0x1e293b,
+            houseGlass: 0x88ccff,
+            houseStair: 0xeeeeee,
+            houseWood: 0x5d4037,
         };
 
         function part(parent, mesh, cfg = {}) {
@@ -913,7 +933,7 @@
             const group = new THREE.Group();
             const glass = new THREE.Mesh(
                 new THREE.BoxGeometry(w, h, 0.05),
-                getMat('ch_glass', () => new THREE.MeshStandardMaterial({ color: 0x88ccff, transparent: true, opacity: 0.5 }))
+                getMat('ch_glass', () => new THREE.MeshStandardMaterial({ color: INDEX.houseGlass, transparent: true, opacity: 0.5 }))
             );
             group.add(glass);
             const borderMat = ch_borderMat(borderCol);
@@ -937,12 +957,12 @@
             const group = new THREE.Group();
 
             const doorGroup = new THREE.Group();
-            const doorMat = ch_colorMat(0x4d2a1a);
+            const doorMat = ch_colorMat(INDEX.houseDoor);
             const doorBody = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.1), doorMat);
             doorBody.position.set(w / 2, h / 2, 0);
             doorGroup.add(doorBody);
 
-            const handleMat = getMat('ch_gold', () => new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.9, roughness: 0.1 }));
+            const handleMat = getMat('ch_gold', () => new THREE.MeshStandardMaterial({ color: INDEX.houseDoorHandle, metalness: 0.9, roughness: 0.1 }));
             const handle = new THREE.Mesh(new THREE.SphereGeometry(0.06, 16, 16), handleMat);
             handle.position.set(w - 0.2, h / 2, 0.1);
             doorGroup.add(handle);
@@ -973,7 +993,7 @@
         function ch_createBeamSet(parent, config) {
             const { w = 0.3, h = 4, dist = 5, isCircle = false, count = 4 } = config;
             const group = new THREE.Group();
-            const mat = ch_colorMat(0xdddddd);
+            const mat = ch_colorMat(INDEX.houseBeam);
 
             let positions = [];
             if (count === 4) {
@@ -1050,7 +1070,7 @@
         }
 
         function ch_createRoof(parent, config) {
-            const { w = 6, d = 8, style = 'pitched', color = 0x4a5058, simple = false } = config;
+            const { w = 6, d = 8, style = 'pitched', color = INDEX.houseRoof, simple = false } = config;
             const group = new THREE.Group();
             const roofMat = ch_colorMat(color, 0.5, 0.3);
             if (style === 'pitched') {
@@ -1079,7 +1099,7 @@
         }
 
         function ch_createGable(parent, config) {
-            const { w = 6, h = 1.5, t = 0.2, color = 0xD8D2C4 } = config;
+            const { w = 6, h = 1.5, t = 0.2, color = INDEX.houseGable } = config;
             const group = new THREE.Group();
 
             const shape = new THREE.Shape();
@@ -1098,7 +1118,7 @@
         }
 
         function ch_createStairs(parent, config) {
-            const { steps = 3, w = 1.5, stepH = 0.17, stepD = 0.4, color = 0xeeeeee, simple = false } = config;
+            const { steps = 3, w = 1.5, stepH = 0.17, stepD = 0.4, color = INDEX.houseStair, simple = false } = config;
             const group = new THREE.Group();
             const mat = ch_colorMat(color);
             const railMat = getMat('ch_rail', () => new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.9, roughness: 0.1 }));
@@ -1368,22 +1388,24 @@
         }
 
         function ch_resolveHouseStyle(style = {}) {
-            const baseBorderColor = style.borderColor ?? 0x333333;
+            const baseBorderColor = style.borderColor ?? INDEX.houseLandBorder;
             const baseBorderWidth = style.borderWidth ?? 0.15;
             return {
                 lite: style.lite === true,
                 skipHeavy: style.lite === true && !style.fullDetail,
                 landBorderColor: style.landBorderColor ?? baseBorderColor,
                 landBorderWidth: style.landBorderWidth ?? baseBorderWidth,
-                windowBorderColor: style.windowBorderColor ?? baseBorderColor,
+                windowBorderColor: style.windowBorderColor ?? INDEX.houseWindowBorder,
                 windowBorderWidth: style.windowBorderWidth ?? baseBorderWidth,
-                doorBorderColor: style.doorBorderColor ?? baseBorderColor,
+                doorBorderColor: style.doorBorderColor ?? INDEX.houseDoorBorder,
                 doorBorderWidth: style.doorBorderWidth ?? baseBorderWidth,
                 plotW: style.plotW ?? 12,
                 plotD: style.plotD ?? 15,
-                plotColor: style.plotColor ?? 0x86eeaa,
-                wallColor: 0xD8D2C4,
-                floorColor: 0xE8E6E1
+                plotColor: style.plotColor ?? INDEX.houseLand,
+                wallColor: style.wallColor ?? INDEX.houseWall,
+                floorColor: style.floorColor ?? INDEX.houseFloor,
+                roofColor: style.roofColor ?? INDEX.houseRoof,
+                gableColor: style.gableColor ?? INDEX.houseGable
             };
         }
 
@@ -1414,7 +1436,7 @@
         /** Core house body — customeHouseTwins buildMainHouse equivalent */
         function buildCustomMainHouse(parent, style = {}) {
             const s = ch_resolveHouseStyle(style);
-            const { skipHeavy, doorBorderColor, doorBorderWidth, windowBorderColor, windowBorderWidth, wallColor, floorColor } = s;
+            const { skipHeavy, doorBorderColor, doorBorderWidth, windowBorderColor, windowBorderWidth, wallColor, floorColor, roofColor, gableColor } = s;
 
             ch_createBeamSet(parent, { dist: 6, h: 8, w: 0.4 });
 
@@ -1443,9 +1465,9 @@
             ch_createWindow(parent, { x: 1.0, y: 6, z: 3.3, w: 2, h: 1.5 }, windowBorderColor, windowBorderWidth);
             ch_createWindow(parent, { x: 1.0, y: 2, z: 3.3, w: 2, h: 1.5 }, windowBorderColor, windowBorderWidth);
             ch_createBalcony(parent, { x: 3.4, y: 4.2, z: 0, w: 3.5, ry: Math.PI / 2, simple: skipHeavy });
-            ch_createRoof(parent, { x: 0, z: 0, y: 9, w: 6.4, d: 7.2, ry: Math.PI / 2, style: 'pitched', simple: skipHeavy });
-            ch_createGable(parent, { x: 3.3, y: 8.1, z: 0, w: 6, h: 1.7, ry: Math.PI / 2 });
-            ch_createGable(parent, { x: -3.3, y: 8.1, z: 0, w: 6, h: 1.7, ry: Math.PI / 2 });
+            ch_createRoof(parent, { x: 0, z: 0, y: 9, w: 6.4, d: 7.2, ry: Math.PI / 2, style: 'pitched', color: roofColor, simple: skipHeavy });
+            ch_createGable(parent, { x: 3.3, y: 8.1, z: 0, w: 6, h: 1.7, ry: Math.PI / 2, color: gableColor });
+            ch_createGable(parent, { x: -3.3, y: 8.1, z: 0, w: 6, h: 1.7, ry: Math.PI / 2, color: gableColor });
 
             if (!skipHeavy) {
                 ch_createWallVine(parent, { x: 3.5, y: 8.5, z: 2.4, h: 7, w: 1.0, ry: Math.PI / 2 });
@@ -1456,7 +1478,7 @@
         function buildCustomExtension(parent, style = {}, flipZ = false) {
             const s = ch_resolveHouseStyle(style);
             const Z = flipZ ? ch_zFlip : (c) => c;
-            const { skipHeavy, doorBorderColor, doorBorderWidth, wallColor, floorColor } = s;
+            const { skipHeavy, doorBorderColor, doorBorderWidth, wallColor, floorColor, roofColor, gableColor } = s;
 
             ch_createBeamSet(parent, Z({ x: -1.5, y: 0, z: -7.2, dist: 3, h: 8, w: 0.4, count: 2 }));
             if (!skipHeavy) {
@@ -1481,9 +1503,9 @@
 
             ch_createFloor(parent, Z({ x: -1.5, y: 8, z: -5.2, w: 4.5, d: 3.5, color: floorColor, ry: Math.PI / 2 }));
 
-            ch_createRoof(parent, Z({ x: -1.5, z: -4.3, y: 8.7, w: 3.6, d: 6.2, ry: Math.PI / 1, style: 'pitched', simple: skipHeavy }));
-            ch_createGable(parent, Z({ x: -1.5, y: 8.15, z: -1.5, w: 3.1, h: 0.9 }));
-            ch_createGable(parent, Z({ x: -1.5, y: 8.15, z: -7.2, w: 3.1, h: 0.9 }));
+            ch_createRoof(parent, Z({ x: -1.5, z: -4.3, y: 8.7, w: 3.6, d: 6.2, ry: Math.PI / 1, style: 'pitched', color: roofColor, simple: skipHeavy }));
+            ch_createGable(parent, Z({ x: -1.5, y: 8.15, z: -1.5, w: 3.1, h: 0.9, color: gableColor }));
+            ch_createGable(parent, Z({ x: -1.5, y: 8.15, z: -7.2, w: 3.1, h: 0.9, color: gableColor }));
 
             if (!skipHeavy) {
                 ch_createWoodGril(parent, Z({ x: 3.1, y: 4.15, z: -5.4, w: 3.7, h: 1.2, ry: -Math.PI / 2, startPost: true, midPost: true, endPost: true }));
@@ -1579,6 +1601,176 @@
             return addToScene(house, 'createCustomHouse', transform);
         }
 
+        function ch_isOddHouseRow(rotateY) {
+            return Math.abs((rotateY ?? 0) - Math.PI) < 0.01;
+        }
+
+        const ch_doorNumberTexCache = new Map();
+        function ch_createDoorNumberTexture(text) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#3d2314';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = '#c9a227';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(3, 3, canvas.width - 6, canvas.height - 6);
+            ctx.fillStyle = '#f5e6c8';
+            ctx.font = `bold ${text.length > 3 ? 26 : 32}px Segoe UI, Arial, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, canvas.width / 2, canvas.height / 2 + 1);
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.needsUpdate = true;
+            return tex;
+        }
+        function ch_getDoorNumberTexture(text) {
+            if (!ch_doorNumberTexCache.has(text)) {
+                ch_doorNumberTexCache.set(text, ch_createDoorNumberTexture(text));
+            }
+            return ch_doorNumberTexCache.get(text);
+        }
+
+        function ch_getDoorAnchors(twin) {
+            if (!ch_getDoorAnchors._cache) {
+                const singleTpl = getCustomHouseTemplate({ instancedBunch: true, fullDetail: false });
+                const twinTpl = getCustomHouseTemplate({
+                    twin: true,
+                    instancedBunch: true,
+                    fullDetail: false,
+                    twinPlotW: 22,
+                    twinPlotD: 28
+                });
+                const building = twinTpl.getObjectByName('ch_buildings');
+                ch_getDoorAnchors._cache = {
+                    single: ch_extractMainDoorAnchor(singleTpl, singleTpl),
+                    twinA: building?.children[0]
+                        ? ch_extractMainDoorAnchor(twinTpl, building.children[0])
+                        : { x: 3.35, y: 1.75, z: 6.1, ry: Math.PI / 2 },
+                    twinB: building?.children[1]
+                        ? ch_extractMainDoorAnchor(twinTpl, building.children[1])
+                        : { x: 3.35, y: 1.75, z: 0, ry: Math.PI / 2 }
+                };
+            }
+            const c = ch_getDoorAnchors._cache;
+            return twin ? [c.twinA, c.twinB] : [c.single];
+        }
+
+        function ch_extractMainDoorAnchor(template, root) {
+            template.updateMatrixWorld(true);
+            const inv = new THREE.Matrix4().copy(template.matrixWorld).invert();
+            let best = null;
+            let bestY = Infinity;
+
+            root.traverse(obj => {
+                if (!obj.isMesh || !obj.geometry) return;
+                const geo = obj.geometry;
+                if (!geo.boundingBox) geo.computeBoundingBox();
+                const sz = new THREE.Vector3();
+                geo.boundingBox.getSize(sz);
+                const dims = [sz.x, sz.y, sz.z].sort((a, b) => a - b);
+                const thin = dims[0];
+                const mid = dims[1];
+                const tall = dims[2];
+                if (thin > 0.25 || mid < 0.9 || mid > 1.5 || tall < 1.8 || tall > 2.6) return;
+
+                const center = new THREE.Vector3();
+                geo.boundingBox.getCenter(center);
+                center.applyMatrix4(obj.matrixWorld);
+                const local = center.applyMatrix4(inv);
+                if (local.y > 3.2 || local.x < 1.5) return;
+                if (local.y < bestY) {
+                    bestY = local.y;
+                    best = {
+                        x: local.x + 0.08,
+                        y: local.y + tall * 0.12,
+                        z: local.z,
+                        ry: Math.PI / 2
+                    };
+                }
+            });
+
+            return best ?? { x: 3.35, y: 1.75, z: 0, ry: Math.PI / 2 };
+        }
+
+        function ch_buildDoorLabelMatrix(placement, anchor) {
+            const s = placement.scale ?? 1;
+            const pos = new THREE.Vector3(placement.x, placement.y, placement.z);
+            const quat = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, placement.rotateY ?? 0, 0));
+
+            const buildingOff = new THREE.Vector3(placement.houseOffsetX ?? 0, 0, placement.houseOffsetZ ?? 0);
+            buildingOff.applyQuaternion(quat);
+            pos.add(buildingOff);
+
+            const doorPt = new THREE.Vector3(anchor.x, anchor.y, anchor.z).multiplyScalar(s);
+            doorPt.applyQuaternion(quat);
+            pos.add(doorPt);
+
+            const labelQuat = quat.clone().multiply(
+                new THREE.Quaternion().setFromEuler(new THREE.Euler(0, anchor.ry ?? 0, 0))
+            );
+            const m = new THREE.Matrix4();
+            m.compose(pos, labelQuat, new THREE.Vector3(s, s, s));
+            return m;
+        }
+
+        function ch_makeDoorNumberMesh(text) {
+            const group = new THREE.Group();
+            const w = text.length > 3 ? 0.55 : 0.48;
+            const h = 0.2;
+            const tex = ch_getDoorNumberTexture(text);
+            const mat = getMat(`ch_door_num_${text}`, () => new THREE.MeshStandardMaterial({
+                map: tex,
+                transparent: true,
+                emissive: 0xffffff,
+                emissiveMap: tex,
+                emissiveIntensity: 0.55,
+                side: THREE.DoubleSide,
+                depthTest: true,
+                depthWrite: false,
+                polygonOffset: true,
+                polygonOffsetFactor: -2,
+                polygonOffsetUnits: -2
+            }));
+            const face = new THREE.Mesh(
+                getGeo('ch_door_num_plane', () => new THREE.PlaneGeometry(w, h)),
+                mat
+            );
+            face.renderOrder = 20;
+            group.add(face);
+            ch_disableShadows(group);
+            return group;
+        }
+
+        function ch_placeDoorNumber(parent, placement, text, anchor) {
+            if (!text || !anchor) return;
+            const label = ch_makeDoorNumberMesh(text);
+            label.applyMatrix4(ch_buildDoorLabelMatrix(placement, anchor));
+            parent.add(label);
+        }
+
+        function ch_placeHouseDoorNumbers(placements, parent, { twin = false } = {}) {
+            const anchors = ch_getDoorAnchors(twin);
+            placements.forEach(p => {
+                if (twin) {
+                    ch_placeDoorNumber(parent, p, p.houseNumberA, anchors[0]);
+                    ch_placeDoorNumber(parent, p, p.houseNumberB, anchors[1]);
+                } else if (p.houseNumber) {
+                    ch_placeDoorNumber(parent, p, p.houseNumber, anchors[0]);
+                }
+            });
+        }
+
+        function ch_assignHouseNumbers(isTwin, rotateY, index) {
+            const isOddRow = ch_isOddHouseRow(rotateY);
+            const n = isOddRow ? (index * 2 + 1) : (index * 2 + 2);
+            if (isTwin) {
+                return { houseNumberA: `${n}A`, houseNumberB: `${n}B` };
+            }
+            return { houseNumber: `H${String(n).padStart(2, '0')}` };
+        }
+
         /**
          * Place multiple custom houses in one or more rows.
          * Spacing between houses: spacingX, spacingY, spacingZ (per house step along each axis).
@@ -1590,11 +1782,11 @@
             const lite = options.lite === true;
             const isTwin = options.twin === true;
             const houseStyle = {
-                landBorderColor: options.landBorderColor ?? 0x374951,
+                landBorderColor: options.landBorderColor ?? INDEX.houseLandBorder,
                 landBorderWidth: options.landBorderWidth ?? 1,
-                windowBorderColor: options.windowBorderColor ?? 0x1e293b,
+                windowBorderColor: options.windowBorderColor ?? INDEX.houseWindowBorder,
                 windowBorderWidth: options.windowBorderWidth ?? 0.1,
-                doorBorderColor: options.doorBorderColor ?? 0x4d2a1a,
+                doorBorderColor: options.doorBorderColor ?? INDEX.houseDoorBorder,
                 doorBorderWidth: options.doorBorderWidth ?? 0.15,
                 scale: options.scale ?? 0.4,
                 label: options.label ?? 'Architectural Custom House'
@@ -1657,6 +1849,9 @@
                 const rowOffsetX = row.houseOffsetX ?? row.buildingOffsetX ?? defaultHouseOffsetX;
                 const rowOffsetZ = row.houseOffsetZ ?? row.buildingOffsetZ ?? defaultHouseOffsetZ;
                 for (let i = 0; i < count; i++) {
+                    const houseNumbers = options.doorNumbers === false
+                        ? {}
+                        : ch_assignHouseNumbers(isTwin, rotateY, i);
                     placements.push({
                         x: startX + i * spacingX,
                         y: startY + i * spacingY,
@@ -1664,7 +1859,8 @@
                         rotateY,
                         scale: rowScale,
                         houseOffsetX: rowOffsetX,
-                        houseOffsetZ: rowOffsetZ
+                        houseOffsetZ: rowOffsetZ,
+                        ...houseNumbers
                     });
                 }
             });
