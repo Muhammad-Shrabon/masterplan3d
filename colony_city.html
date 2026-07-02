@@ -3715,15 +3715,20 @@
         function buildDreamCity() {
             // Ground — index cityLand
             const ground = new THREE.Mesh(
-                new THREE.PlaneGeometry(140, 140),
+                new THREE.PlaneGeometry(140, 210),
                 getMat('cityGrass', () => new THREE.MeshBasicMaterial({ color: INDEX.grass }))
             );
-            addToScene(ground, 'buildDreamCity', { label: 'City Land (index style)', rotX: -Math.PI / 2, y: -0.08 });
+            addToScene(ground, 'buildDreamCity', { label: 'City Land (index style)', rotX: -Math.PI / 2, y: -0.08,z: 70 });
 
             // Roads
             createRoad({ x: 0, z: 5, rotateY: Math.PI / 2, length: 140, width: 4, label: 'Main Road N-S' });
             createRoad({ x: 0, z: 1, rotateY: Math.PI / 2, length: 140, width: 4, label: 'Main Road N-S' }); 
+            createRoad({ x: 0, z: 70, rotateY: Math.PI / 2, length: 140, width: 4, label: 'Main Road N-S' }); 
+            createRoad({ x: 0, z: 73, rotateY: Math.PI / 2, length: 140, width: 2, label: 'Main Road N-S' }); 
             // Cluster Roads Start from here
+            createRoad({ x: 51, z: 100, length: 72,  width: 3, label: 'Main Road N-S' }); 
+            createRoad({ x: 31, z: 100, length: 72, width: 3, label: 'Main Road N-S' }); 
+            createRoad({ x: 11, z: 100, length: 72, width: 3, label: 'Main Road N-S' }); 
             createRoad({ x: 51, z: 38, length: 62, width: 3, label: 'Main Road N-S' }); 
             createRoad({ x: 31, z: 38, length: 62, width: 3, label: 'Main Road N-S' }); 
             createRoad({ x: 11, z: 38, length: 62, width: 3, label: 'Main Road N-S' }); 
@@ -3733,6 +3738,41 @@
             createRoad({ x: -69, z: 38, length: 62, width: 3, label: 'Main Road N-S' }); 
 
             // Cluster Twin House Start from here (7 groups — mirror duplex like customeHouseTwins.html)
+            // 3rd Line 
+            createCustomTwinHouseBunch({
+                y: 0.2,
+                scale: 0.22,
+                spacingZ: 7.5,
+                houseOffsetX: 0,  
+                houseOffsetZ: -1,  
+                rows: [
+                    { count: 8, startX: 56, startZ: 80, spacingZ: 7.5, rotateY: 0 },
+                    { count: 8, startX: 64, startZ: 79, spacingZ: 7.55, rotateY: Math.PI }
+                ]
+            });
+            createCustomTwinHouseBunch({
+                y: 0.2,
+                scale: 0.22,
+                spacingZ: 7.5,
+                houseOffsetX: 0,  
+                houseOffsetZ: -1,  
+                rows: [
+                    { count: 8, startX: 36, startZ: 80, spacingZ: 7.5, rotateY: 0 },
+                    { count: 8, startX: 44, startZ: 79, spacingZ: 7.55, rotateY: Math.PI }
+                ]
+            });
+            createCustomTwinHouseBunch({
+                y: 0.2,
+                scale: 0.22,
+                spacingZ: 7.5,
+                houseOffsetX: 0,  
+                houseOffsetZ: -1,  
+                rows: [
+                    { count: 8, startX: 16, startZ: 80, spacingZ: 7.5, rotateY: 0 },
+                    { count: 8, startX: 24, startZ: 79, spacingZ: 7.55, rotateY: Math.PI }
+                ]
+            });
+            // 3rd Line 
             createCustomTwinHouseBunch({
                 y: 0.2,
                 scale: 0.22,
@@ -3744,6 +3784,8 @@
                     { count: 8, startX: 64, startZ: 11, spacingZ: 7.55, rotateY: Math.PI }
                 ]
             });
+     
+
             createCustomTwinHouseBunch({
                 y: 0.2,
                 scale: 0.22,
@@ -3949,6 +3991,44 @@
                     label: 'Custom Solid Empty Land'
                 });
             // empty Cluster land Start from here
+            // 3rd Line 
+            createEmptyLand({
+                x: 21,
+                y: 0.05,
+                z: 105,
+                w: 60,
+                d: 16,
+                rotateY: Math.PI / 2,
+                color: 0xc4c8ce,
+                borderColor: 0x333333,
+                borderWidth: 1,
+                label: 'Custom Solid Empty Land'
+            });
+            createEmptyLand({
+                x: 41,
+                y: 0.05,
+                z: 105,
+                w: 60,
+                d: 16,
+                rotateY: Math.PI / 2,
+                color: 0xc4c8ce,
+                borderColor: 0x333333,
+                borderWidth: 1,
+                label: 'Custom Solid Empty Land'
+            });
+            createEmptyLand({
+                x: 61,
+                y: 0.05,
+                z: 105,
+                w: 60,
+                d: 16,
+                rotateY: Math.PI / 2,
+                color: 0xc4c8ce,
+                borderColor: 0x333333,
+                borderWidth: 1,
+                label: 'Custom Solid Empty Land'
+            });
+            // 3rd Line 
             createEmptyLand({
                 x: 61,
                 y: 0.05,
